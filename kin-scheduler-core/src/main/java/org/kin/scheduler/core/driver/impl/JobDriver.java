@@ -4,6 +4,8 @@ import org.kin.framework.utils.ExceptionUtils;
 import org.kin.scheduler.core.driver.Driver;
 import org.kin.scheduler.core.driver.TaskSubmitFuture;
 import org.kin.scheduler.core.task.Task;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
@@ -14,6 +16,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @date 2020-02-09
  */
 public class JobDriver extends Driver {
+    private static final Logger log = LoggerFactory.getLogger(JobTaskScheduler.class);
+
     private JobTaskScheduler taskScheduler;
     private AtomicInteger taskIdCounter = new AtomicInteger();
 
@@ -27,19 +31,22 @@ public class JobDriver extends Driver {
         taskScheduler = new JobTaskScheduler(job);
         taskScheduler.init();
         taskScheduler.start();
+
+        log.info("driver(appName={}, master={}) started", jobContext.getAppName(), jobContext.getMasterAddress());
     }
 
     @Override
     public void close() {
-        super.close();
-        if(Objects.nonNull(taskScheduler)){
+        if (Objects.nonNull(taskScheduler)) {
             taskScheduler.close();
         }
+        super.close();
+        log.info("driver(appName={}, master={}) closed", jobContext.getAppName(), jobContext.getMasterAddress());
     }
 
     private void assignTaskId(Task task) {
         task.setJobId(job.getJobId());
-        task.setTaskId(task.getJobId().concat("-task").concat(String.valueOf(taskIdCounter.getAndIncrement())));
+        task.setTaskId(task.getJobId().concat("-Task").concat(String.valueOf(taskIdCounter.getAndIncrement())));
     }
 
     public <R> TaskSubmitFuture<R> submitTask(Task task) {

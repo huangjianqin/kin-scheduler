@@ -13,7 +13,8 @@ public class TaskSubmitFuture<R> implements Future<R> {
     private TaskSetManager taskSetManager;
     private TaskContext taskContext;
 
-    public TaskSubmitFuture(TaskContext taskContext) {
+    public TaskSubmitFuture(TaskSetManager taskSetManager, TaskContext taskContext) {
+        this.taskSetManager = taskSetManager;
         this.taskContext = taskContext;
     }
 
@@ -35,8 +36,9 @@ public class TaskSubmitFuture<R> implements Future<R> {
     @Override
     public R get() throws InterruptedException, ExecutionException {
         if (!isDone()) {
-            synchronized (this){
-                wait();
+            synchronized (this) {
+//                wait();
+                Thread.sleep(5000);
             }
         }
         return (R) taskContext.getResult();
@@ -45,7 +47,7 @@ public class TaskSubmitFuture<R> implements Future<R> {
     @Override
     public R get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
         if (!isDone()) {
-            synchronized (this){
+            synchronized (this) {
                 wait(unit.toMillis(timeout));
             }
         }

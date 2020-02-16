@@ -1,9 +1,7 @@
 package org.kin.scheduler.core.driver.impl;
 
 import org.kin.framework.JvmCloseCleaner;
-import org.kin.framework.utils.ExceptionUtils;
 import org.kin.scheduler.core.driver.TaskSubmitFuture;
-import org.kin.scheduler.core.driver.exception.SubmitJobFailureException;
 import org.kin.scheduler.core.task.Task;
 import org.kin.scheduler.core.task.TaskExecStrategy;
 
@@ -11,7 +9,6 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ExecutionException;
 
 /**
  * @author huangjianqin
@@ -21,7 +18,7 @@ public class JobContext {
     private static Map<String, JobDriver> DRIVERS = new HashMap<>();
 
     static {
-        JvmCloseCleaner.DEFAULT().add(() -> {
+        JvmCloseCleaner.DEFAULT().add(JvmCloseCleaner.MAX_PRIORITY, () -> {
             for (JobDriver driver : DRIVERS.values()) {
                 driver.close();
             }
@@ -121,6 +118,7 @@ public class JobContext {
         for (JobDriver driver : DRIVERS.values()) {
             driver.close();
         }
+        DRIVERS.clear();
         System.exit(0);
     }
 

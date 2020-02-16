@@ -1,5 +1,6 @@
 package org.kin.scheduler.core.worker;
 
+import org.kin.framework.JvmCloseCleaner;
 import org.kin.framework.concurrent.ThreadManager;
 import org.kin.framework.service.AbstractService;
 import org.kin.framework.utils.ExceptionUtils;
@@ -98,7 +99,10 @@ public class Worker extends AbstractService implements WorkerBackend {
             System.exit(-1);
         }
 
-        synchronized (this){
+        JvmCloseCleaner.DEFAULT().add(JvmCloseCleaner.MAX_PRIORITY, () -> stop());
+
+        log.info("worker({}) started", workerId);
+        synchronized (this) {
             try {
                 wait();
             } catch (InterruptedException e) {
@@ -109,6 +113,9 @@ public class Worker extends AbstractService implements WorkerBackend {
 
     @Override
     public void stop() {
+        if (!isInState(State.STARTED)) {
+            return;
+        }
         super.stop();
         //取消注册
         try {
@@ -133,6 +140,8 @@ public class Worker extends AbstractService implements WorkerBackend {
         executors.clear();
 
         embeddedExecutorThreads.shutdown();
+
+        log.info("worker({}) closed", workerId);
     }
 
     private WorkerRegisterInfo generateWorkerRegisterInfo() {
@@ -170,13 +179,18 @@ public class Worker extends AbstractService implements WorkerBackend {
 
         int executorBackendPort = getAvailableExecutorBackendPort();
         if (executorBackendPort > 0) {
-            String executorId = String.valueOf(executorIdCounter++);
+            String executorId = workerId.concat("-Executor").concat(String.valueOf(executorIdCounter++));
 
             if (config.isAllowEmbeddedExecutor()) {
                 //启动内置Executor
                 int executorParallelism = launchInfo.getParallelism();
                 embeddedExecutorRunnable = new EmbeddedExecutorRunnable(executorId, executorBackendPort, executorParallelism);
                 embeddedExecutorThreads.execute(embeddedExecutorRunnable);
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
                 //TODO 优化启动好executor才返回
                 result = ExecutorLaunchResult.success(executorId, NetUtils.getIpPort(config.getWorkerBackendHost(), executorBackendPort));
             } else {

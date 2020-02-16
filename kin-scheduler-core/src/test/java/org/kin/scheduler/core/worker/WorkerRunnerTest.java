@@ -47,7 +47,7 @@ public class WorkerRunnerTest {
         }
 
         if (CollectionUtils.isNonEmpty(threads)) {
-            JvmCloseCleaner.DEFAULT().add(() -> {
+            JvmCloseCleaner.DEFAULT().add(JvmCloseCleaner.MAX_PRIORITY, () -> {
                 for (Thread thread : threads) {
                     thread.interrupt();
                 }

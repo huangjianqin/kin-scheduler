@@ -21,7 +21,7 @@ public abstract class Driver extends AbstractService {
     private static final Logger log = LoggerFactory.getLogger(Driver.class);
 
     private ReferenceConfig<DriverMasterBackend> driverMasterBackendReferenceConfig;
-    protected DriverMasterBackend masterBackend;
+    protected DriverMasterBackend driverMasterBackend;
     protected JobContext jobContext;
     protected volatile Job job;
 
@@ -36,27 +36,25 @@ public abstract class Driver extends AbstractService {
         driverMasterBackendReferenceConfig = References.reference(DriverMasterBackend.class)
                 .appName(getName())
                 .urls(jobContext.getMasterAddress());
-        masterBackend = driverMasterBackendReferenceConfig.get();
+        driverMasterBackend = driverMasterBackendReferenceConfig.get();
     }
 
     @Override
     public void start() {
         //提交job
         super.start();
-        try{
-            SubmitJobResponse response = masterBackend.submitJob(SubmitJobRequest.create(jobContext.getAppName(), jobContext.getParallelism()));
+        try {
+            SubmitJobResponse response = driverMasterBackend.submitJob(SubmitJobRequest.create(jobContext.getAppName(), jobContext.getParallelism()));
             if (Objects.nonNull(response)) {
-                if(response.isSuccess()){
+                if (response.isSuccess()) {
                     job = response.getJob();
-                }
-                else{
+                } else {
                     throw new SubmitJobFailureException(response.getDesc());
                 }
-            }
-            else{
+            } else {
                 throw new SubmitJobFailureException("master no response");
             }
-        }catch (Exception e){
+        } catch (Exception e) {
             close();
             throw new SubmitJobFailureException(e.getMessage());
         }
@@ -65,15 +63,11 @@ public abstract class Driver extends AbstractService {
     @Override
     public void close() {
         super.close();
-        if(Objects.nonNull(masterBackend) && Objects.nonNull(job)){
-            masterBackend.jonFinish(job.getJobId());
+        if (Objects.nonNull(driverMasterBackend) && Objects.nonNull(job)) {
+            driverMasterBackend.jonFinish(job.getJobId());
         }
-        if(Objects.nonNull(driverMasterBackendReferenceConfig)){
+        if (Objects.nonNull(driverMasterBackendReferenceConfig)) {
             driverMasterBackendReferenceConfig.disable();
         }
-    }
-
-    public boolean isJobSubmitSuccess(){
-        return Objects.nonNull(job);
     }
 }

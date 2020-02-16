@@ -22,5 +22,5 @@ public interface TaskHandler<PARAM extends Serializable> {
      *
      * @param Task task信息
      */
-    Object exec(Task<PARAM> Task);
+    Serializable exec(Task<PARAM> Task);
 }

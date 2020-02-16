@@ -37,8 +37,7 @@ public class ExecutorContext {
         if (Objects.nonNull(executorBackendReferenceConfig)) {
             if (isEmbedded()) {
                 embeddedExecutorRunnable.interrupt();
-            }
-            else{
+            } else {
                 executorBackend.destroy();
             }
             executorBackendReferenceConfig.disable();

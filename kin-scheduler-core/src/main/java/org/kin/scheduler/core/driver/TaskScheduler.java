@@ -33,6 +33,7 @@ public abstract class TaskScheduler extends AbstractService {
                     .appName(getName().concat(entry.getKey()))
                     .urls(entry.getValue());
             executorBackends.put(entry.getKey(), executorBackendReferenceConfig.get());
+            executorBackendReferenceConfigs.add(executorBackendReferenceConfig);
         }
         taskSetManager = new TaskSetManager();
     }
@@ -46,7 +47,7 @@ public abstract class TaskScheduler extends AbstractService {
     public void close() {
         super.close();
         //取消所有未执行完的task
-        if(Objects.nonNull(taskSetManager)){
+        if (Objects.nonNull(taskSetManager)) {
             for (TaskContext taskContext : taskSetManager.getAllUnFinishTask()) {
                 String execingTaskExecutorId = taskContext.getExecingTaskExecutorId();
                 if (StringUtils.isNotBlank(execingTaskExecutorId)) {
@@ -57,7 +58,7 @@ public abstract class TaskScheduler extends AbstractService {
                 }
             }
         }
-        if(Objects.nonNull(executorBackendReferenceConfigs)){
+        if (Objects.nonNull(executorBackendReferenceConfigs)) {
             for (ReferenceConfig<ExecutorBackend> executorBackendReferenceConfig : executorBackendReferenceConfigs) {
                 executorBackendReferenceConfig.disable();
             }

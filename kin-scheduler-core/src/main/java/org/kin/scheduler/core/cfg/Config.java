@@ -1,8 +1,5 @@
 package org.kin.scheduler.core.cfg;
 
-import org.kin.framework.utils.NetUtils;
-import org.kin.framework.utils.StringUtils;
-
 /**
  * @author huangjianqin
  * @date 2020-02-08
@@ -20,7 +17,7 @@ public class Config {
     //Executor rpc端口(后续端口是累加上去)
     private int executorBackendPort;
 
-    public void check(){
+    public void check() {
     }
 
     //setter && getter

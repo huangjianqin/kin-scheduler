@@ -10,7 +10,7 @@ public class PrintTaskTest {
     public static void main(String[] args) {
         JobContext context = JobContext.build().appName("print").master("0.0.0.0:46668");
         try{
-            context.run("test");
+            context.runSync("test");
         }finally {
             context.stop();
         }

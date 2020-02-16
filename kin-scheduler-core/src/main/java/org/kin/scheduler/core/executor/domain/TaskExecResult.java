@@ -2,6 +2,8 @@ package org.kin.scheduler.core.executor.domain;
 
 import org.kin.scheduler.core.domain.RPCResult;
 
+import java.io.Serializable;
+
 /**
  * @author huangjianqin
  * @date 2020-02-06
@@ -10,7 +12,7 @@ public class TaskExecResult extends RPCResult {
     //是否需要重试
     private boolean needRetry;
     //处理器执行返回结果
-    private Object execResult;
+    private Serializable execResult;
 
     private TaskExecResult() {
     }
@@ -19,13 +21,13 @@ public class TaskExecResult extends RPCResult {
         this(success, desc, false, null);
     }
 
-    public TaskExecResult(boolean success, String desc, boolean needRetry, Object execResult) {
+    public TaskExecResult(boolean success, String desc, boolean needRetry, Serializable execResult) {
         super(success, desc);
         this.needRetry = needRetry;
         this.execResult = execResult;
     }
 
-    private TaskExecResult(boolean result, String desc, Object execResult) {
+    private TaskExecResult(boolean result, String desc, Serializable execResult) {
         this(result, desc, false, execResult);
     }
 
@@ -35,7 +37,7 @@ public class TaskExecResult extends RPCResult {
         return success("");
     }
 
-    public static TaskExecResult success(Object execResult) {
+    public static TaskExecResult success(Serializable execResult) {
         return success("", execResult);
     }
 
@@ -43,7 +45,7 @@ public class TaskExecResult extends RPCResult {
         return new TaskExecResult(true, desc);
     }
 
-    public static TaskExecResult success(String desc, Object execResult) {
+    public static TaskExecResult success(String desc, Serializable execResult) {
         return new TaskExecResult(true, desc, execResult);
     }
 
@@ -55,8 +57,19 @@ public class TaskExecResult extends RPCResult {
         return new TaskExecResult(false, desc, true, null);
     }
 
-    //setter && getter
+    //-------------------------------------------------------------------------------------------
 
+    @Override
+    public String toString() {
+        return "TaskExecResult{" +
+                "needRetry=" + needRetry +
+                ", execResult=" + execResult +
+                ", success=" + success +
+                ", desc='" + desc + '\'' +
+                '}';
+    }
+
+    //setter && getter
     public boolean isNeedRetry() {
         return needRetry;
     }
@@ -65,11 +78,11 @@ public class TaskExecResult extends RPCResult {
         this.needRetry = needRetry;
     }
 
-    public Object getExecResult() {
+    public Serializable getExecResult() {
         return execResult;
     }
 
-    public void setExecResult(Object execResult) {
+    public void setExecResult(Serializable execResult) {
         this.execResult = execResult;
     }
 }

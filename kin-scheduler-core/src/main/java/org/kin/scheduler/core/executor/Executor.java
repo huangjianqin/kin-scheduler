@@ -17,6 +17,7 @@ import org.kin.scheduler.core.task.handler.TaskHandlers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.*;
@@ -80,7 +81,8 @@ public class Executor extends AbstractService implements ExecutorBackend {
     @Override
     public void start() {
         super.start();
-        synchronized (this){
+        log.info("executor({}) started", executorId);
+        synchronized (this) {
             try {
                 wait();
             } catch (InterruptedException e) {
@@ -89,9 +91,9 @@ public class Executor extends AbstractService implements ExecutorBackend {
         }
     }
 
-    @Override
-    public TaskExecResult execTask(Task task) {
+    private TaskExecResult execTask0(Task task) {
         if (this.isInState(State.STARTED)) {
+            log.debug("execing task({})", task);
             try {
                 TaskRunner newTaskRunner = new TaskRunner(task);
                 List<TaskRunner> exTaskRunners = taskId2TaskRunners.get(task.getTaskId());
@@ -119,7 +121,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
                         break;
                 }
 
-                Future future = threads.execute(task.getTaskId(), newTaskRunner);
+                Future<Serializable> future = threads.execute(task.getTaskId(), newTaskRunner);
 
                 //保存newTaskRunner
                 exTaskRunners = taskId2TaskRunners.get(task.getTaskId());
@@ -134,7 +136,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
                     }
                 }
 
-                Object execResult;
+                Serializable execResult;
                 if (task.getTimeout() > 0) {
                     try {
                         execResult = future.get(task.getTimeout(), TimeUnit.SECONDS);
@@ -149,6 +151,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
                     execResult = null;
                 }
 
+
                 return TaskExecResult.success(
                         task.getExecStrategy().getDesc()
                                 .concat("run task >>>> ")
@@ -160,24 +163,40 @@ public class Executor extends AbstractService implements ExecutorBackend {
             }
         }
 
-        return TaskExecResult.failureWithRetry("executor stopped");
+        return TaskExecResult.failureWithRetry(String.format("executor(%s) stopped", executorId));
+    }
+
+    @Override
+    public TaskExecResult execTask(Task task) {
+        TaskExecResult execResult = execTask0(task);
+        log.debug("exec task({}) finished, resulst >>>> {}", task.getTaskId(), execResult);
+        return execResult;
+    }
+
+    public RPCResult cancelTask0(String taskId) {
+        if (isInState(State.STARTED)) {
+            if (taskId2TaskRunners.containsKey(taskId)) {
+                for (TaskRunner taskRunner : taskId2TaskRunners.get(taskId)) {
+                    taskRunner.interrupt();
+                }
+                taskId2TaskRunners.remove(taskId);
+                return RPCResult.success();
+            }
+            return RPCResult.failure(String.format("executor(%s) has not run task(%s)", executorId, taskId));
+        }
+        return TaskExecResult.failureWithRetry(String.format("executor(%s) stopped", executorId));
     }
 
     @Override
     public RPCResult cancelTask(String taskId) {
-        if (taskId2TaskRunners.containsKey(taskId)) {
-            for (TaskRunner taskRunner : taskId2TaskRunners.get(taskId)) {
-                taskRunner.interrupt();
-            }
-            taskId2TaskRunners.remove(taskId);
-            return RPCResult.success();
-        }
-        return RPCResult.failure(String.format("executor(%s) has not run task(%s)", executorId, taskId));
+        RPCResult result = cancelTask0(taskId);
+        log.debug("task({}) cancel result >>>>", result);
+        return result;
     }
 
     @Override
     public void destroy() {
-        stop();
+        close();
         System.exit(0);
     }
 
@@ -192,14 +211,15 @@ public class Executor extends AbstractService implements ExecutorBackend {
     @Override
     public void close() {
         super.close();
-        if(Objects.nonNull(serviceConfig)){
+        if (Objects.nonNull(serviceConfig)) {
             serviceConfig.disable();
         }
         threads.shutdown();
+        log.info("executor({}) closed", executorId);
     }
 
     //-----------------------------------------------------------------------------------------------------------------
-    private class TaskRunner implements Callable {
+    private class TaskRunner implements Callable<Serializable> {
         private Task task;
         private Lock lock = new ReentrantLock();
         private volatile boolean isStopped;
@@ -210,7 +230,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
         }
 
         @Override
-        public Object call() {
+        public Serializable call() {
             //有可能未开始执行就给interrupt了
             lock.lock();
             try {

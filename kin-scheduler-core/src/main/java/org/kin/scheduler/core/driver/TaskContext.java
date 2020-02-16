@@ -46,7 +46,7 @@ public class TaskContext {
         if (isUnFinish()) {
             this.result = result;
             this.status = TASK_FINISH;
-            synchronized (future){
+            synchronized (future) {
                 future.notifyAll();
             }
         }

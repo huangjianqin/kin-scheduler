@@ -11,6 +11,8 @@ import org.kin.scheduler.core.driver.exception.TaskRetryTimesOutException;
 import org.kin.scheduler.core.executor.ExecutorBackend;
 import org.kin.scheduler.core.executor.domain.TaskExecResult;
 import org.kin.scheduler.core.task.Task;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -23,6 +25,8 @@ import java.util.stream.Collectors;
  * @date 2020-02-12
  */
 public class JobTaskScheduler extends TaskScheduler {
+    private static final Logger log = LoggerFactory.getLogger(JobTaskScheduler.class);
+
     private ThreadManager threads;
 
     public JobTaskScheduler(Job job) {
@@ -42,10 +46,10 @@ public class JobTaskScheduler extends TaskScheduler {
             TaskContext taskContext = taskSetManager.init(Collections.singletonList(task)).get(0);
             //调度task
             TaskExecRunnable execRunnable = new TaskExecRunnable(taskContext);
-            TaskSubmitFuture future = new TaskSubmitFuture(taskContext);
+            TaskSubmitFuture future = new TaskSubmitFuture(taskSetManager, taskContext);
             taskContext.submitTask(future, execRunnable);
             threads.execute(execRunnable);
-
+            log.debug("submitTask >>>> {}", taskContext.getTask());
             return future;
         }
 
@@ -54,10 +58,11 @@ public class JobTaskScheduler extends TaskScheduler {
 
     @Override
     public void close() {
-        super.close();
-        if(Objects.nonNull(threads)){
+        if (Objects.nonNull(threads)) {
             threads.shutdownNow();
         }
+        super.close();
+        log.info("JobTaskScheduler closed");
     }
 
     public class TaskExecRunnable implements Runnable {
@@ -77,7 +82,7 @@ public class JobTaskScheduler extends TaskScheduler {
                         .filter(entry -> !taskContext.getExecedExecutorIds().contains(entry.getKey()))
                         .collect(Collectors.toList());
 
-                if(CollectionUtils.isNonEmpty(executorBackends)){
+                if (CollectionUtils.isNonEmpty(executorBackends)) {
                     Map.Entry<String, ExecutorBackend> entry = executorBackends.get(random.nextInt(executorBackends.size()));
 
                     Task task = taskContext.getTask();
@@ -86,6 +91,7 @@ public class JobTaskScheduler extends TaskScheduler {
                     if (Objects.nonNull(execResult)) {
                         if (execResult.isSuccess()) {
                             taskSetManager.taskFinish(task.getTaskId(), execResult.getExecResult());
+                            log.info("Task({}) finished, result >>>> {}", task.getTaskId(), execResult.getExecResult());
                         }
                         if (execResult.isNeedRetry() && taskContext.retry()) {
                             run();
@@ -93,12 +99,12 @@ public class JobTaskScheduler extends TaskScheduler {
                     }
                 }
             } catch (Exception e) {
-                if (!TaskRetryTimesOutException.class.isAssignableFrom(e.getClass())) {
+                if (!TaskRetryTimesOutException.class.isAssignableFrom(e.getClass()) &&
+                        !InterruptedException.class.isAssignableFrom(e.getClass())) {
                     if (taskContext.retry()) {
                         run();
                     }
                 }
-                throw e;
             }
         }
 

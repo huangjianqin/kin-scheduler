@@ -37,6 +37,15 @@ public class RPCResult implements Serializable {
         return new RPCResult(false, desc);
     }
 
+    //-------------------------------------------------------------------------------------
+
+    @Override
+    public String toString() {
+        return "RPCResult{" +
+                "success=" + success +
+                ", desc='" + desc + '\'' +
+                '}';
+    }
 
     //setter && getter
     public boolean isSuccess() {

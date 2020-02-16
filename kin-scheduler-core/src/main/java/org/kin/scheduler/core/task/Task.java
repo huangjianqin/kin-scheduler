@@ -55,6 +55,17 @@ public class Task<PARAM extends Serializable> implements Serializable {
         return Objects.hash(taskId);
     }
 
+    @Override
+    public String toString() {
+        return "Task{" +
+                "jobId='" + jobId + '\'' +
+                ", taskId='" + taskId + '\'' +
+                ", param=" + param +
+                ", execStrategy=" + execStrategy +
+                ", timeout=" + timeout +
+                '}';
+    }
+
     //setter && getter
     public String getJobId() {
         return jobId;

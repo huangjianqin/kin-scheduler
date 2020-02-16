@@ -71,7 +71,7 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
     @Override
     public void start() {
         super.start();
-        synchronized (this){
+        synchronized (this) {
             try {
                 wait();
             } catch (InterruptedException e) {
@@ -197,7 +197,7 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
     public void jonFinish(String jobId) {
         if (isInState(State.STARTED)) {
             JobRes jobRes = jobUsedRes.remove(jobId);
-            if(Objects.nonNull(jobRes)){
+            if (Objects.nonNull(jobRes)) {
                 for (ExecutorRes useExecutorRes : jobRes.getUseExecutorReses()) {
                     WorkerContext worker = workers.get(useExecutorRes.getWorkerRes().getWorkerId());
                     //关闭executor
