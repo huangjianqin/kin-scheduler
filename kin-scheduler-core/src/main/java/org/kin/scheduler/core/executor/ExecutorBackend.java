@@ -19,7 +19,7 @@ public interface ExecutorBackend {
     /**
      * rpc请求取消task
      */
-    RPCResult cancelTask(String taskId);
+    RPCResult cancelTask(String jobId, String taskId);
 
     /**
      * 销毁executor

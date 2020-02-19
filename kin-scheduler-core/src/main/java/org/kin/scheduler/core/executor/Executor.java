@@ -14,6 +14,7 @@ import org.kin.scheduler.core.executor.domain.TaskExecResult;
 import org.kin.scheduler.core.task.Task;
 import org.kin.scheduler.core.task.handler.TaskHandler;
 import org.kin.scheduler.core.task.handler.TaskHandlers;
+import org.kin.scheduler.core.utils.LogUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,7 +30,9 @@ import java.util.concurrent.locks.ReentrantLock;
  * @date 2020-02-06
  */
 public class Executor extends AbstractService implements ExecutorBackend {
-    private static final Logger log = LoggerFactory.getLogger(Executor.class);
+
+    //所属的workerId
+    private String workerId;
 
     private String executorId;
     //Executor暴露给worker的host
@@ -44,20 +47,28 @@ public class Executor extends AbstractService implements ExecutorBackend {
     private final TaskHandlers taskHandlers = new TaskHandlers();
     //rpc服务配置
     private ServiceConfig serviceConfig;
+    //log路径
+    private String logBasePath;
+    //日志信息
+    private LogContext logContext;
+    //executor log
+    private Logger log;
 
     //--------------------------------------------------------------------
     private ConcurrentMap<String, List<TaskRunner>> taskId2TaskRunners = new ConcurrentHashMap<>();
 
-    public Executor(String executorId, String backendHost, int backendPort) {
-        this(executorId, backendHost, backendPort, SysUtils.CPU_NUM);
+    public Executor(String workerId, String executorId, String backendHost, int backendPort) {
+        this(workerId, executorId, backendHost, backendPort, SysUtils.CPU_NUM, LogUtils.BASE_PATH);
     }
 
-    public Executor(String executorId, String backendHost, int backendPort, int parallelism) {
-        super("Executor-".concat(executorId));
+    public Executor(String workerId, String executorId, String backendHost, int backendPort, int parallelism, String logBasePath) {
+        super(executorId);
+        this.workerId = workerId;
         this.executorId = executorId;
         this.backendHost = backendHost;
         this.backendPort = backendPort;
         this.parallelism = parallelism;
+        this.logBasePath = logBasePath;
     }
 
     @Override
@@ -65,6 +76,8 @@ public class Executor extends AbstractService implements ExecutorBackend {
         super.init();
         this.threads = new PartitionTaskExecutor<String>(parallelism, EfficientHashPartitioner.INSTANCE);
         this.taskHandlers.init();
+        logContext = new LogContext(executorId);
+        log = LogUtils.getWorkerLogger(logBasePath, workerId);
 
         try {
             serviceConfig = Services.service(this, ExecutorBackend.class)
@@ -91,7 +104,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
         }
     }
 
-    private TaskExecResult execTask0(Task task) {
+    private TaskExecResult execTask0(Task task, Logger log) {
         if (this.isInState(State.STARTED)) {
             log.debug("execing task({})", task);
             try {
@@ -168,7 +181,8 @@ public class Executor extends AbstractService implements ExecutorBackend {
 
     @Override
     public TaskExecResult execTask(Task task) {
-        TaskExecResult execResult = execTask0(task);
+        Logger log = logContext.getJobLogger(logBasePath, task.getJobId());
+        TaskExecResult execResult = execTask0(task, log);
         log.debug("exec task({}) finished, resulst >>>> {}", task.getTaskId(), execResult);
         return execResult;
     }
@@ -188,7 +202,8 @@ public class Executor extends AbstractService implements ExecutorBackend {
     }
 
     @Override
-    public RPCResult cancelTask(String taskId) {
+    public RPCResult cancelTask(String jobId, String taskId) {
+        Logger log = logContext.getJobLogger(logBasePath, jobId);
         RPCResult result = cancelTask0(taskId);
         log.debug("task({}) cancel result >>>>", result);
         return result;
@@ -215,6 +230,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
             serviceConfig.disable();
         }
         threads.shutdown();
+        logContext.stop();
         log.info("executor({}) closed", executorId);
     }
 

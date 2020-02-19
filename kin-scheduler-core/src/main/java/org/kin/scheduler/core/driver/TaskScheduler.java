@@ -53,7 +53,7 @@ public abstract class TaskScheduler extends AbstractService {
                 if (StringUtils.isNotBlank(execingTaskExecutorId)) {
                     ExecutorBackend executorBackend = executorBackends.get(execingTaskExecutorId);
                     if (Objects.nonNull(executorBackend)) {
-                        executorBackend.cancelTask(taskContext.getTask().getTaskId());
+                        executorBackend.cancelTask(taskContext.getTask().getJobId(), taskContext.getTask().getTaskId());
                     }
                 }
             }

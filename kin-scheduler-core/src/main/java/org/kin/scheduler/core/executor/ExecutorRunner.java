@@ -11,27 +11,27 @@ import org.slf4j.LoggerFactory;
  * worker以commandline方式启动Executor
  */
 public class ExecutorRunner {
-    private static final Logger log = LoggerFactory.getLogger(ExecutorRunner.class);
-
     public static void main(String[] args) {
         if (args.length >= 3) {
-            String executorId = args[0];
-            String backendHost = args[1];
-            int backendPort = Integer.valueOf(args[2]);
+            String workerid = args[0];
+            String executorId = args[1];
+            String backendHost = args[2];
+            int backendPort = Integer.valueOf(args[3]);
             int parallelism = SysUtils.CPU_NUM;
-            if (args.length >= 4) {
-                int parallelismArg = Integer.valueOf(args[3]);
+            if (args.length >= 5) {
+                int parallelismArg = Integer.valueOf(args[4]);
                 if (parallelismArg > 0) {
                     parallelism = parallelismArg;
                 }
             }
+            String logBasePath = args[5];
 
-            runExecutor(executorId, backendHost, backendPort, parallelism);
+            runExecutor(workerid, executorId, backendHost, backendPort, parallelism, logBasePath);
         }
     }
 
-    public static void runExecutor(String executorId, String backendHost, int backendPort, int parallelism) {
-        Executor executor = new Executor(executorId, backendHost, backendPort, parallelism);
+    public static void runExecutor(String workerId, String executorId, String backendHost, int backendPort, int parallelism, String logBasePath) {
+        Executor executor = new Executor(workerId, executorId, backendHost, backendPort, parallelism, logBasePath);
         try {
             executor.init();
             executor.start();

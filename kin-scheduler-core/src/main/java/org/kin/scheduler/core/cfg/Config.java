@@ -16,6 +16,8 @@ public class Config {
     private int parallelism;
     //Executor rpc端口(后续端口是累加上去)
     private int executorBackendPort;
+    //日志路径
+    private String logPath;
 
     public void check() {
     }
@@ -75,5 +77,13 @@ public class Config {
 
     public void setExecutorBackendPort(int executorBackendPort) {
         this.executorBackendPort = executorBackendPort;
+    }
+
+    public String getLogPath() {
+        return logPath;
+    }
+
+    public void setLogPath(String logPath) {
+        this.logPath = logPath;
     }
 }

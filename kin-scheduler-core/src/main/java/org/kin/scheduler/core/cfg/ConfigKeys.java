@@ -1,6 +1,6 @@
 package org.kin.scheduler.core.cfg;
 
-import org.kin.scheduler.core.utils.SchedulerCfgUtils;
+import org.kin.scheduler.core.utils.CfgUtils;
 
 import java.util.Properties;
 
@@ -16,7 +16,7 @@ public enum ConfigKeys {
     WorkerBackendHost("WorkerBackendHost") {
         @Override
         public void set(Config config, Properties properties) {
-            config.setWorkerBackendHost(SchedulerCfgUtils.getValue(properties, this));
+            config.setWorkerBackendHost(CfgUtils.getValue(properties, this));
         }
     },
     /**
@@ -25,7 +25,7 @@ public enum ConfigKeys {
     WorkerBackendPort("WorkerBackendPort") {
         @Override
         public void set(Config config, Properties properties) {
-            config.setWorkerBackendPort(SchedulerCfgUtils.getValue(properties, this));
+            config.setWorkerBackendPort(CfgUtils.getValue(properties, this));
         }
     },
     /**
@@ -34,7 +34,7 @@ public enum ConfigKeys {
     MasterBackendHost("MasterBackendHost") {
         @Override
         public void set(Config config, Properties properties) {
-            config.setMasterBackendHost(SchedulerCfgUtils.getValue(properties, this));
+            config.setMasterBackendHost(CfgUtils.getValue(properties, this));
         }
     },
     /**
@@ -43,7 +43,7 @@ public enum ConfigKeys {
     MasterBackendPort("MasterBackendPort") {
         @Override
         public void set(Config config, Properties properties) {
-            config.setMasterBackendPort(SchedulerCfgUtils.getValue(properties, this));
+            config.setMasterBackendPort(CfgUtils.getValue(properties, this));
         }
     },
     /**
@@ -52,7 +52,7 @@ public enum ConfigKeys {
     AllowEmbeddedExecutor("是否允许worker内置Executor(与Worker共享资源)") {
         @Override
         public void set(Config config, Properties properties) {
-            config.setAllowEmbeddedExecutor(SchedulerCfgUtils.getValue(properties, this));
+            config.setAllowEmbeddedExecutor(CfgUtils.getValue(properties, this));
         }
     },
     /**
@@ -61,7 +61,7 @@ public enum ConfigKeys {
     Parallelism("Executor并发数") {
         @Override
         public void set(Config config, Properties properties) {
-            config.setParallelism(SchedulerCfgUtils.getValue(properties, this));
+            config.setParallelism(CfgUtils.getValue(properties, this));
         }
     },
     /**
@@ -70,7 +70,16 @@ public enum ConfigKeys {
     ExecutorBackendPort("Executor rpc端口") {
         @Override
         public void set(Config config, Properties properties) {
-            config.setExecutorBackendPort(SchedulerCfgUtils.getValue(properties, this));
+            config.setExecutorBackendPort(CfgUtils.getValue(properties, this));
+        }
+    },
+    /**
+     * 日志路径
+     */
+    LogPath("日志路径") {
+        @Override
+        public void set(Config config, Properties properties) {
+            config.setLogPath(CfgUtils.getValue(properties, this));
         }
     },
     ;

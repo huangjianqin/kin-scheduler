@@ -11,7 +11,7 @@ public class MasterRunner {
     public static void main(String[] args) {
         //读取scheduler.yml来获取配置
         Config config = Configs.getCfg();
-        Master master = new Master(config.getMasterBackendHost(), config.getMasterBackendPort());
+        Master master = new Master(config.getMasterBackendHost(), config.getMasterBackendPort(), config.getLogPath());
         try {
             master.init();
             master.start();

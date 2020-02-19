@@ -13,6 +13,7 @@ import org.kin.scheduler.core.cfg.Config;
 import org.kin.scheduler.core.executor.ExecutorRunner;
 import org.kin.scheduler.core.master.MasterBackend;
 import org.kin.scheduler.core.master.WorkerRes;
+import org.kin.scheduler.core.utils.LogUtils;
 import org.kin.scheduler.core.worker.domain.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +29,8 @@ import java.util.concurrent.TimeUnit;
  * @date 2020-02-06
  */
 public class Worker extends AbstractService implements WorkerBackend {
-    private static final Logger log = LoggerFactory.getLogger(Worker.class);
+    private Logger log;
+
     private String workerId;
     //worker配置
     private final Config config;
@@ -57,6 +59,7 @@ public class Worker extends AbstractService implements WorkerBackend {
     @Override
     public void init() {
         super.init();
+        log = LogUtils.getWorkerLogger(config.getLogPath(), workerId);
         masterBackendReferenceConfig = References.reference(MasterBackend.class)
                 .appName(getName().concat("-MasterBackend"))
                 .urls(NetUtils.getIpPort(config.getMasterBackendHost(), config.getMasterBackendPort()));
@@ -189,7 +192,7 @@ public class Worker extends AbstractService implements WorkerBackend {
                 try {
                     Thread.sleep(2000);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+
                 }
                 //TODO 优化启动好executor才返回
                 result = ExecutorLaunchResult.success(executorId, NetUtils.getIpPort(config.getWorkerBackendHost(), executorBackendPort));
@@ -210,9 +213,15 @@ public class Worker extends AbstractService implements WorkerBackend {
     }
 
     private int getAvailableExecutorBackendPort() {
-        int executorBackendPort = config.getExecutorBackendPort();
-        while (NetUtils.isPortInRange(executorBackendPort) && !NetUtils.isValidPort(executorBackendPort)) {
-            executorBackendPort++;
+        int executorBackendPort;
+        if(config.isAllowEmbeddedExecutor()){
+            executorBackendPort = config.getWorkerBackendPort();
+        }
+        else{
+            executorBackendPort = config.getExecutorBackendPort();
+            while (NetUtils.isPortInRange(executorBackendPort) && !NetUtils.isValidPort(executorBackendPort)) {
+                executorBackendPort++;
+            }
         }
 
         return NetUtils.isPortInRange(executorBackendPort) ? executorBackendPort : -1;
@@ -250,7 +259,7 @@ public class Worker extends AbstractService implements WorkerBackend {
         @Override
         public void run() {
             curThread = Thread.currentThread();
-            ExecutorRunner.runExecutor(executorId, config.getWorkerBackendHost(), executorBackendPort, executorParallelism);
+            ExecutorRunner.runExecutor(workerId, executorId, config.getWorkerBackendHost(), executorBackendPort, executorParallelism, config.getLogPath());
         }
 
         public void interrupt() {

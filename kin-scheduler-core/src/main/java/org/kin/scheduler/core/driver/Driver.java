@@ -18,8 +18,6 @@ import java.util.Objects;
  * @date 2020-02-09
  */
 public abstract class Driver extends AbstractService {
-    private static final Logger log = LoggerFactory.getLogger(Driver.class);
-
     private ReferenceConfig<DriverMasterBackend> driverMasterBackendReferenceConfig;
     protected DriverMasterBackend driverMasterBackend;
     protected JobContext jobContext;

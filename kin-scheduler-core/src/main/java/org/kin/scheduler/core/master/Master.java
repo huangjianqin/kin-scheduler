@@ -8,6 +8,7 @@ import org.kin.kinrpc.config.Services;
 import org.kin.scheduler.core.driver.Job;
 import org.kin.scheduler.core.master.domain.SubmitJobRequest;
 import org.kin.scheduler.core.master.domain.SubmitJobResponse;
+import org.kin.scheduler.core.utils.LogUtils;
 import org.kin.scheduler.core.worker.domain.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,11 +23,13 @@ import java.util.stream.Collectors;
  * @date 2020-02-07
  */
 public class Master extends AbstractService implements MasterBackend, DriverMasterBackend {
-    private static Logger log = LoggerFactory.getLogger(Master.class);
+    private Logger log;
 
     private String masterBackendHost;
     //master rpc端口
     private int masterBackendPort;
+    //日志路径
+    private String logPath;
     //-------------------------------------------------------------------------------------------------
     //已注册的worker
     private Map<String, WorkerContext> workers = new HashMap<>();
@@ -35,16 +38,18 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
     private DateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmssSSS");
     private Map<String, JobRes> jobUsedRes = new HashMap<>();
 
-    public Master(String masterBackendHost, int masterBackendPort) {
+    public Master(String masterBackendHost, int masterBackendPort, String logPath) {
         super("Master");
         this.masterBackendHost = masterBackendHost;
         this.masterBackendPort = masterBackendPort;
+        this.logPath = logPath;
     }
 
     //-------------------------------------------------------------------------------------------------
     @Override
     public void init() {
         super.init();
+        log = LogUtils.getMasterLogger(logPath, "master");
         masterBackendServiceConfig = Services.service(this, MasterBackend.class)
                 .appName(getName())
                 .bind(masterBackendHost, masterBackendPort)
@@ -151,7 +156,7 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
             return SubmitJobResponse.failure("master not started");
         }
         String appName = request.getAppName();
-        String jobId = appName.concat("-Job".concat(dateFormat.format(new Date())));
+        String jobId = "app-".concat(appName.concat("-Job".concat(dateFormat.format(new Date()))));
         //寻找可用executor
         List<WorkerRes> availableWorkerReses = getAvailableWorkerRes();
         int needParallelism = request.getParallelism();

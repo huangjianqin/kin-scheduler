@@ -8,7 +8,7 @@ import java.util.Properties;
  * @author huangjianqin
  * @date 2020-02-12
  */
-public class SchedulerCfgUtils {
+public class CfgUtils {
     private static final String PREFIX = "kin.scheduler.";
 
     public static <V> V getValue(Properties properties, Enum e) {

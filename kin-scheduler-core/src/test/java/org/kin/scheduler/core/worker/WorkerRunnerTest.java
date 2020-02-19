@@ -5,7 +5,7 @@ import org.kin.framework.utils.CollectionUtils;
 import org.kin.framework.utils.NetUtils;
 import org.kin.framework.utils.YamlUtils;
 import org.kin.scheduler.core.cfg.ConfigKeys;
-import org.kin.scheduler.core.utils.SchedulerCfgUtils;
+import org.kin.scheduler.core.utils.CfgUtils;
 
 import java.io.InputStream;
 import java.util.*;
@@ -20,7 +20,7 @@ public class WorkerRunnerTest {
     public static void main(String[] args) {
         //读取scheduler.yml来获取worker起始端口
         Properties workerCfgProperties = YamlUtils.loadYaml2Properties("scheduler.yml");
-        int workerBackendPort = SchedulerCfgUtils.getValue(workerCfgProperties, ConfigKeys.WorkerBackendPort);
+        int workerBackendPort = CfgUtils.getValue(workerCfgProperties, ConfigKeys.WorkerBackendPort);
 
         ExecutorService executors = Executors.newCachedThreadPool();
         List<Thread> threads = new ArrayList<>();

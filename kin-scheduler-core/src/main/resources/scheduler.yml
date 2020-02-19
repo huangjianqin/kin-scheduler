@@ -8,3 +8,4 @@ kin:
     parallelism: 5
 #    executorParallelism:
     executorBackendPort: 51000
+    logPath: /logs
