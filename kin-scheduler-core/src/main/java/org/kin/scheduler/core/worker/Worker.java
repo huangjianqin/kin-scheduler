@@ -1,5 +1,6 @@
 package org.kin.scheduler.core.worker;
 
+import ch.qos.logback.classic.Logger;
 import org.kin.framework.JvmCloseCleaner;
 import org.kin.framework.concurrent.ThreadManager;
 import org.kin.framework.service.AbstractService;
@@ -15,7 +16,7 @@ import org.kin.scheduler.core.master.MasterBackend;
 import org.kin.scheduler.core.master.WorkerRes;
 import org.kin.scheduler.core.utils.LogUtils;
 import org.kin.scheduler.core.worker.domain.*;
-import org.slf4j.Logger;
+
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;

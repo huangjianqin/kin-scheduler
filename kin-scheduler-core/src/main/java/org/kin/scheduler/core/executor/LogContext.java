@@ -5,6 +5,8 @@ import ch.qos.logback.classic.LoggerContext;
 import org.kin.scheduler.core.utils.LogUtils;
 
 import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 /**
  * @author huangjianqin
@@ -17,15 +19,26 @@ import java.io.File;
  * basePath/{yyyy-MM-dd}/jobs/{jobId}.log
  */
 public class LogContext extends LoggerContext {
+    private static final SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+
     public LogContext(String executorId) {
         setName(executorId);
+    }
+
+    private String getFile(String jobId){
+        return "jobs".concat(File.separator).concat(jobId);
     }
 
     public Logger getJobLogger(String basePath, String jobId) {
         String loggerName = jobId.concat("Logger");
         String appenderName = jobId.concat("Appender");
-        String file = "jobs".concat(File.separator).concat(jobId);
+        String file = getFile(jobId);
         return LogUtils.getLogger(this, basePath, loggerName, appenderName, file);
+    }
+
+    public String JobLogFile(String basePath, String jobId){
+        String file = getFile(jobId);
+        return basePath.concat(File.separator).concat(df.format(new Date())).concat(File.separator).concat(file).concat(".log");
     }
 
     @Override

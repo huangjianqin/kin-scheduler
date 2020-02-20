@@ -1,5 +1,6 @@
 package org.kin.scheduler.core.executor;
 
+import ch.qos.logback.classic.Logger;
 import com.google.common.base.Preconditions;
 import org.kin.framework.concurrent.PartitionTaskExecutor;
 import org.kin.framework.concurrent.impl.EfficientHashPartitioner;
@@ -12,10 +13,11 @@ import org.kin.kinrpc.config.Services;
 import org.kin.scheduler.core.domain.RPCResult;
 import org.kin.scheduler.core.executor.domain.TaskExecResult;
 import org.kin.scheduler.core.task.Task;
+import org.kin.scheduler.core.task.TaskLoggers;
 import org.kin.scheduler.core.task.handler.TaskHandler;
 import org.kin.scheduler.core.task.handler.TaskHandlers;
 import org.kin.scheduler.core.utils.LogUtils;
-import org.slf4j.Logger;
+
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
@@ -41,7 +43,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
     private int backendPort;
     //Executor的并行数
     private int parallelism;
-    //Executor的线程池
+    //Executor的线程池, task执行线程池
     private PartitionTaskExecutor<String> threads;
     //Executor加载的处理器
     private final TaskHandlers taskHandlers = new TaskHandlers();
@@ -259,9 +261,12 @@ public class Executor extends AbstractService implements ExecutorBackend {
 
             currentThread = Thread.currentThread();
             try {
+                //获取task handler
                 TaskHandler taskHandler = taskHandlers.getTaskHandler(task);
                 Preconditions.checkNotNull(taskHandler, "task handler is null");
                 if (taskHandler != null) {
+                    //更新上下文日志
+                    TaskLoggers.updateLogger(log);
                     return taskHandler.exec(task);
                 }
             } finally {

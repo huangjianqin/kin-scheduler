@@ -1,5 +1,6 @@
 package org.kin.scheduler.core.master;
 
+import ch.qos.logback.classic.Logger;
 import org.kin.framework.service.AbstractService;
 import org.kin.framework.utils.CollectionUtils;
 import org.kin.framework.utils.StringUtils;
@@ -10,7 +11,7 @@ import org.kin.scheduler.core.master.domain.SubmitJobRequest;
 import org.kin.scheduler.core.master.domain.SubmitJobResponse;
 import org.kin.scheduler.core.utils.LogUtils;
 import org.kin.scheduler.core.worker.domain.*;
-import org.slf4j.Logger;
+
 import org.slf4j.LoggerFactory;
 
 import java.text.DateFormat;
