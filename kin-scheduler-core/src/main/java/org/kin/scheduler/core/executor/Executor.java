@@ -18,9 +18,6 @@ import org.kin.scheduler.core.task.handler.TaskHandler;
 import org.kin.scheduler.core.task.handler.TaskHandlers;
 import org.kin.scheduler.core.utils.LogUtils;
 
-import org.slf4j.LoggerFactory;
-
-import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.*;
@@ -261,14 +258,13 @@ public class Executor extends AbstractService implements ExecutorBackend {
                     TaskLoggers.updateLoggerFile(logContext.getJobLogFile(logBasePath, task.getJobId()));
                     return TaskExecResult.success(
                             task.getExecStrategy().getDesc()
-                            .concat("run task >>>> ")
-                            .concat(task.toString()),
+                                    .concat("run task >>>> ")
+                                    .concat(task.toString()),
                             taskHandler.exec(task));
                 }
-            }catch (Exception e){
+            } catch (Exception e) {
                 return TaskExecResult.failure("task execute encounter error >>>>".concat(ExceptionUtils.getExceptionDesc(e)));
-            }
-            finally {
+            } finally {
                 isStopped = true;
                 cleanFinishedTask(task);
             }

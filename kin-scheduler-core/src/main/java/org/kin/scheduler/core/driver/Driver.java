@@ -8,8 +8,6 @@ import org.kin.scheduler.core.driver.impl.JobContext;
 import org.kin.scheduler.core.master.DriverMasterBackend;
 import org.kin.scheduler.core.master.domain.SubmitJobRequest;
 import org.kin.scheduler.core.master.domain.SubmitJobResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
 

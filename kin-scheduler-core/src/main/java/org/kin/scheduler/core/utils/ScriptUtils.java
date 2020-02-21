@@ -50,7 +50,7 @@ public class ScriptUtils {
      *
      * @return 返回进程 启动 结果
      */
-    public static int execCommand(String command, String logFile, String workingDirectory,String... params) {
+    public static int execCommand(String command, String logFile, String workingDirectory, String... params) {
         try {
             return execCommand0(command, logFile, workingDirectory, params);
         } catch (Exception e) {
@@ -67,7 +67,7 @@ public class ScriptUtils {
      */
     private static int execCommand0(String command, String logFile, String workingDirectory, String... params) throws Exception {
         File workingDirectoryFile = new File(workingDirectory);
-        if(!workingDirectoryFile.exists()){
+        if (!workingDirectoryFile.exists()) {
             throw new WorkingDirectoryNotExistsException(workingDirectory);
         }
         FileOutputStream fileOutputStream = null;   //

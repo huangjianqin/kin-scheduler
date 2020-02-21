@@ -12,8 +12,6 @@ import org.kin.scheduler.core.master.domain.SubmitJobResponse;
 import org.kin.scheduler.core.utils.LogUtils;
 import org.kin.scheduler.core.worker.domain.*;
 
-import org.slf4j.LoggerFactory;
-
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;

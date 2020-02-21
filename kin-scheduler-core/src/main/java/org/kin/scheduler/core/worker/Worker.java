@@ -17,8 +17,6 @@ import org.kin.scheduler.core.master.WorkerRes;
 import org.kin.scheduler.core.utils.LogUtils;
 import org.kin.scheduler.core.worker.domain.*;
 
-import org.slf4j.LoggerFactory;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -215,10 +213,9 @@ public class Worker extends AbstractService implements WorkerBackend {
 
     private int getAvailableExecutorBackendPort() {
         int executorBackendPort;
-        if(config.isAllowEmbeddedExecutor()){
+        if (config.isAllowEmbeddedExecutor()) {
             executorBackendPort = config.getWorkerBackendPort();
-        }
-        else{
+        } else {
             executorBackendPort = config.getExecutorBackendPort();
             while (NetUtils.isPortInRange(executorBackendPort) && !NetUtils.isValidPort(executorBackendPort)) {
                 executorBackendPort++;

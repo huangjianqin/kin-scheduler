@@ -43,13 +43,12 @@ public enum ScriptResourcesStore {
     /**
      * 源代码
      */
-    RESOURCE_CODE("源代码"){
+    RESOURCE_CODE("源代码") {
         @Override
         public boolean cloneResources(String scriptResources, String user, String password, String path) {
             return ScriptUtils.createScriptFile(path, scriptResources);
         }
-    }
-    ;
+    };
     public static ScriptResourcesStore[] STORES = values();
     private String desc;
 

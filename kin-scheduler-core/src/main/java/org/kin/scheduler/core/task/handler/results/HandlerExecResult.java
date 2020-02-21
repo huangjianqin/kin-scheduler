@@ -18,11 +18,11 @@ public class HandlerExecResult implements Serializable {
 
     //----------------------------------------------------------------------------------------
 
-    public static HandlerExecResult success(){
+    public static HandlerExecResult success() {
         return new HandlerExecResult(true);
     }
 
-    public static HandlerExecResult failure(){
+    public static HandlerExecResult failure() {
         return new HandlerExecResult(false);
     }
 

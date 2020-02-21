@@ -11,7 +11,7 @@ import java.io.Serializable;
  * <p>
  * 必须包含无参constructor
  * 单例模式调用
- *
+ * <p>
  * {@link TaskLoggers} 获取当前日志输出
  */
 public interface TaskHandler<PARAM extends Serializable, RESULT extends Serializable> {

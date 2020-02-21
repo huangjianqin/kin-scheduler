@@ -10,19 +10,19 @@ public class TaskLoggers {
     private static ThreadLocal<Logger> threadLocalLogger = new ThreadLocal<>();
     private static ThreadLocal<String> threadLocalLoggerFile = new ThreadLocal<>();
 
-    public static void updateLogger(Logger log){
+    public static void updateLogger(Logger log) {
         threadLocalLogger.set(log);
     }
 
-    public static Logger getLogger(){
+    public static Logger getLogger() {
         return threadLocalLogger.get();
     }
 
-    public static void updateLoggerFile(String logFile){
+    public static void updateLoggerFile(String logFile) {
         threadLocalLoggerFile.set(logFile);
     }
 
-    public static String getLoggerFile(){
+    public static String getLoggerFile() {
         return threadLocalLoggerFile.get();
     }
 }

@@ -4,7 +4,7 @@ package org.kin.scheduler.core.task.handler.params;
  * @author huangjianqin
  * @date 2020-02-21
  */
-public class ScriptParam extends GlueParam{
+public class ScriptParam extends GlueParam {
     private String ScriptResources;
     private String ScriptResourcesStore;
     private String user;

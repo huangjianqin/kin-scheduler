@@ -1,8 +1,6 @@
 package org.kin.scheduler.core.executor;
 
 import org.kin.framework.utils.SysUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author huangjianqin

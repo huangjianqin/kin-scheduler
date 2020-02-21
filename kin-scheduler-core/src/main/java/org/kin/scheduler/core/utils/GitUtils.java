@@ -2,11 +2,7 @@ package org.kin.scheduler.core.utils;
 
 import org.eclipse.jgit.api.CloneCommand;
 import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.ListBranchCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.lib.Ref;
-import org.eclipse.jgit.lib.Repository;
-import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 
 import java.io.File;
@@ -20,14 +16,14 @@ public class GitUtils {
     /**
      * clone git repository brance 'master'
      */
-    public static boolean cloneRepository(String remote, String user, String password, String targetDir){
+    public static boolean cloneRepository(String remote, String user, String password, String targetDir) {
         return cloneRepository(remote, "master", user, password, targetDir);
     }
 
     /**
      * clone git repository
      */
-    public static boolean cloneRepository(String remote, String branch, String user, String password, String targetDir){
+    public static boolean cloneRepository(String remote, String branch, String user, String password, String targetDir) {
         File targetDirFile = new File(targetDir);
         if (!targetDirFile.exists()) {
             targetDirFile.mkdir();

@@ -12,7 +12,6 @@ import org.kin.scheduler.core.task.handler.params.GlueParam;
 import org.kin.scheduler.core.task.handler.results.GlueResult;
 import org.kin.scheduler.core.utils.ScriptUtils;
 
-import java.io.Serializable;
 import java.util.Objects;
 
 /**
@@ -29,23 +28,22 @@ public class GlueHandler implements TaskHandler<GlueParam, GlueResult> {
     }
 
     @Override
-    public GlueResult exec(Task<GlueParam> task) throws Exception{
+    public GlueResult exec(Task<GlueParam> task) throws Exception {
         GlueParam glueParam = task.getParam();
-        if(Objects.nonNull(glueParam)){
+        if (Objects.nonNull(glueParam)) {
             GlueType glueType = GlueType.getByType(glueParam.getType());
-            if(Objects.nonNull(glueType)){
+            if (Objects.nonNull(glueType)) {
                 log.info("exec glue >>> {}", glueType);
-                if(glueType.isScript()){
+                if (glueType.isScript()) {
                     //获取task handler
                     TaskHandler taskHandler = TaskHandlers.getTaskHandler(task);
                     Preconditions.checkNotNull(taskHandler, "task handler is null");
                     if (taskHandler != null) {
                         return (GlueResult) taskHandler.exec(task);
                     }
-                }
-                else{
+                } else {
                     int exitValue = ScriptUtils.execCommand(glueParam.getCommand(), TaskLoggers.getLoggerFile());
-                    if(exitValue== 0){
+                    if (exitValue == 0) {
                         return GlueResult.success();
                     }
                 }

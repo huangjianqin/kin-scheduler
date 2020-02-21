@@ -36,7 +36,7 @@ public class TaskHandlers {
                 try {
                     Constructor constructor = taskHandlerType.getConstructor();
                     TaskHandler taskHandler = null;
-                    if(taskHandlerType.isAnnotationPresent(Singleton.class)){
+                    if (taskHandlerType.isAnnotationPresent(Singleton.class)) {
                         taskHandler = (TaskHandler) constructor.newInstance();
                     }
                     paramType2TaskHandler.put(taskHandler.getTaskParamType(), new TaskHandlerInfo(taskHandlerType, taskHandler));
@@ -51,7 +51,7 @@ public class TaskHandlers {
 
     public static TaskHandler getTaskHandler(Task task) {
         Class<?> paramType = task.getParam().getClass();
-        if(paramType2TaskHandler.containsKey(paramType)){
+        if (paramType2TaskHandler.containsKey(paramType)) {
             return paramType2TaskHandler.get(paramType).get();
         }
 
@@ -59,7 +59,7 @@ public class TaskHandlers {
     }
 
     //--------------------------------------------------------------------------------------------------------
-    private static class TaskHandlerInfo{
+    private static class TaskHandlerInfo {
         private Class<? extends TaskHandler> type;
         private TaskHandler singleton;
 
@@ -72,12 +72,11 @@ public class TaskHandlers {
             this.singleton = singleton;
         }
 
-        public TaskHandler get(){
-            if(Objects.nonNull(singleton)){
+        public TaskHandler get() {
+            if (Objects.nonNull(singleton)) {
                 //单利模式的TaskHandler
                 return singleton;
-            }
-            else{
+            } else {
                 Constructor constructor;
                 try {
                     constructor = type.getConstructor();

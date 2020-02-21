@@ -25,7 +25,7 @@ public class LogContext extends LoggerContext {
         setName(executorId);
     }
 
-    private String getFile(String jobId){
+    private String getFile(String jobId) {
         return "jobs".concat(File.separator).concat(jobId);
     }
 
@@ -36,7 +36,7 @@ public class LogContext extends LoggerContext {
         return LogUtils.getLogger(this, basePath, loggerName, appenderName, file);
     }
 
-    public String getJobLogFile(String basePath, String jobId){
+    public String getJobLogFile(String basePath, String jobId) {
         String file = getFile(jobId);
         return basePath.concat(File.separator).concat(df.format(new Date())).concat(File.separator).concat(file).concat(".log");
     }

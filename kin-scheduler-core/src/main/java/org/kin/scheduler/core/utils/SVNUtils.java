@@ -21,10 +21,11 @@ public class SVNUtils {
         SVNRepositoryFactoryImpl.setup();
         FSRepositoryFactory.setup();
     }
+
     /**
      * checkout svn repository
      */
-    public static boolean checkoutRepository(String remote, String user, String password, String targetDir){
+    public static boolean checkoutRepository(String remote, String user, String password, String targetDir) {
         File targetDirFile = new File(targetDir);
         if (!targetDirFile.exists()) {
             targetDirFile.mkdir();

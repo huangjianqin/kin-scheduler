@@ -55,9 +55,9 @@ public enum GlueType {
     }
 
     //----------------------------------------------------------------------------------
-    public static GlueType getByType(String type){
-        if(StringUtils.isNotBlank(type)){
-            for (GlueType item: TYPES) {
+    public static GlueType getByType(String type) {
+        if (StringUtils.isNotBlank(type)) {
+            for (GlueType item : TYPES) {
                 if (item.name().toLowerCase().equals(type.toLowerCase())) {
                     return item;
                 }
