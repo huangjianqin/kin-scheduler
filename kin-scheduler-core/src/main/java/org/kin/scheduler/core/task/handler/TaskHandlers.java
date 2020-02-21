@@ -2,6 +2,7 @@ package org.kin.scheduler.core.task.handler;
 
 import org.kin.framework.utils.ExceptionUtils;
 import org.kin.scheduler.core.task.Task;
+import org.kin.scheduler.core.task.handler.domain.Singleton;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 
@@ -9,6 +10,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * @author huangjianqin
@@ -19,30 +21,72 @@ import java.util.Map;
  */
 public class TaskHandlers {
     //存储TaskHandler单例, 重复使用
-    private Map<Class<?>, TaskHandler> paramType2TaskHandler;
+    private static Map<Class<?>, TaskHandlerInfo> paramType2TaskHandler;
 
-    public void init() {
-        synchronized (this) {
-            Map<Class<?>, TaskHandler> paramType2TaskHandler = new HashMap<>();
+    static {
+        init();
+    }
+
+    private static void init() {
+        synchronized (TaskHandlers.class) {
+            Map<Class<?>, TaskHandlerInfo> paramType2TaskHandler = new HashMap<>();
 
             Reflections reflections = new Reflections(TaskHandler.class.getPackage().getName(), new SubTypesScanner());
-            for (Class<?> taskHandlerType : reflections.getSubTypesOf(TaskHandler.class)) {
+            for (Class<? extends TaskHandler> taskHandlerType : reflections.getSubTypesOf(TaskHandler.class)) {
                 try {
                     Constructor constructor = taskHandlerType.getConstructor();
-                    TaskHandler taskHandler = (TaskHandler) constructor.newInstance();
-                    paramType2TaskHandler.put(taskHandler.getTaskParamType(), taskHandler);
+                    TaskHandler taskHandler = null;
+                    if(taskHandlerType.isAnnotationPresent(Singleton.class)){
+                        taskHandler = (TaskHandler) constructor.newInstance();
+                    }
+                    paramType2TaskHandler.put(taskHandler.getTaskParamType(), new TaskHandlerInfo(taskHandlerType, taskHandler));
                 } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
                     ExceptionUtils.log(e);
                 }
-
             }
 
-            this.paramType2TaskHandler = paramType2TaskHandler;
+            TaskHandlers.paramType2TaskHandler = paramType2TaskHandler;
         }
     }
 
-    public TaskHandler getTaskHandler(Task task) {
+    public static TaskHandler getTaskHandler(Task task) {
         Class<?> paramType = task.getParam().getClass();
-        return paramType2TaskHandler.get(paramType);
+        if(paramType2TaskHandler.containsKey(paramType)){
+            return paramType2TaskHandler.get(paramType).get();
+        }
+
+        return null;
+    }
+
+    //--------------------------------------------------------------------------------------------------------
+    private static class TaskHandlerInfo{
+        private Class<? extends TaskHandler> type;
+        private TaskHandler singleton;
+
+        public TaskHandlerInfo(Class<? extends TaskHandler> type) {
+            this.type = type;
+        }
+
+        public TaskHandlerInfo(Class<? extends TaskHandler> type, TaskHandler singleton) {
+            this.type = type;
+            this.singleton = singleton;
+        }
+
+        public TaskHandler get(){
+            if(Objects.nonNull(singleton)){
+                //单利模式的TaskHandler
+                return singleton;
+            }
+            else{
+                Constructor constructor;
+                try {
+                    constructor = type.getConstructor();
+                    return (TaskHandler) constructor.newInstance();
+                } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+                    ExceptionUtils.log(e);
+                }
+                return null;
+            }
+        }
     }
 }

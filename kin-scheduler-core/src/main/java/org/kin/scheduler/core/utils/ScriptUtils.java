@@ -1,9 +1,10 @@
 package org.kin.scheduler.core.utils;
 
-import org.apache.commons.exec.CommandLine;
-import org.apache.commons.exec.DefaultExecutor;
-import org.apache.commons.exec.PumpStreamHandler;
+import org.apache.commons.exec.*;
+import org.kin.scheduler.core.task.TaskLoggers;
+import org.kin.scheduler.core.task.handler.exception.WorkingDirectoryNotExistsException;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
@@ -21,25 +22,54 @@ public class ScriptUtils {
     /**
      * make script file
      */
-    public static void markScriptFile(String scriptFileName, String content) throws IOException {
+    public static boolean createScriptFile(String scriptFileName, String content) {
         FileOutputStream fileOutputStream = null;
         try {
             fileOutputStream = new FileOutputStream(scriptFileName);
             fileOutputStream.write(content.getBytes("UTF-8"));
             fileOutputStream.close();
+            return true;
         } catch (Exception e) {
-            throw e;
-        }finally{
-            if(fileOutputStream != null){
-                fileOutputStream.close();
+            TaskLoggers.getLogger().error(e.getMessage(), e);
+        } finally {
+            if (fileOutputStream != null) {
+                try {
+                    fileOutputStream.close();
+                } catch (IOException e) {
+                    TaskLoggers.getLogger().error(e.getMessage(), e);
+                }
             }
         }
+
+        return false;
     }
 
     /**
-     * 日志文件输出方式
+     * 异步启动进程
+     * 自定义进程标准输出日志文件输出方式
+     *
+     * @return 返回进程 启动 结果
      */
-    public static int execCommand(String command, String logFile, String... params) throws IOException {
+    public static int execCommand(String command, String logFile, String workingDirectory,String... params) {
+        try {
+            return execCommand0(command, logFile, workingDirectory, params);
+        } catch (Exception e) {
+            TaskLoggers.getLogger().error(e.getMessage(), e);
+        }
+        return -1;
+    }
+
+    /**
+     * 异步启动进程
+     * 自定义进程标准输出日志文件输出方式
+     *
+     * @return 返回进程 启动 结果
+     */
+    private static int execCommand0(String command, String logFile, String workingDirectory, String... params) throws Exception {
+        File workingDirectoryFile = new File(workingDirectory);
+        if(!workingDirectoryFile.exists()){
+            throw new WorkingDirectoryNotExistsException(workingDirectory);
+        }
         FileOutputStream fileOutputStream = null;   //
         try {
             fileOutputStream = new FileOutputStream(logFile, true);
@@ -47,26 +77,79 @@ public class ScriptUtils {
 
             // command
             CommandLine commandline = new CommandLine(command);
-            if (params!=null && params.length>0) {
+            if (params != null && params.length > 0) {
                 commandline.addArguments(params);
             }
 
+            //设置60秒超时，执行超过60秒后会直接终止
+//            ExecuteWatchdog watchdog = new ExecuteWatchdog(-1);
+//            DefaultExecuteResultHandler resultHandler = new DefaultExecuteResultHandler();
             // exec
             DefaultExecutor exec = new DefaultExecutor();
             exec.setExitValues(null);
+//            exec.setWatchdog(watchdog);
             exec.setStreamHandler(streamHandler);
-            //TODO
-//            exec.setWorkingDirectory();
+            exec.setWorkingDirectory(workingDirectoryFile);
             int exitValue = exec.execute(commandline);  // exit code: 0=success, 1=error
             return exitValue;
-        } catch (Exception e) {
-
-            return -1;
         } finally {
             if (fileOutputStream != null) {
                 try {
                     fileOutputStream.close();
                 } catch (IOException e) {
+                    TaskLoggers.getLogger().error(e.getMessage(), e);
+                }
+            }
+        }
+    }
+
+    /**
+     * 同步启动进程, 等待进程结束并返回结果
+     * 自定义进程标准输出日志文件输出方式
+     *
+     * @return 返回进程 执行 结果
+     */
+    public static int execCommand(String command, String logFile) {
+        try {
+            return execCommand0(command, logFile);
+        } catch (Exception e) {
+            TaskLoggers.getLogger().error(e.getMessage(), e);
+        }
+        return -1;
+    }
+
+    /**
+     * 同步启动进程, 等待进程结束并返回结果
+     * 自定义进程标准输出日志文件输出方式
+     *
+     * @return 返回进程 执行 结果
+     */
+    private static int execCommand0(String command, String logFile) throws Exception {
+        FileOutputStream fileOutputStream = null;   //
+        try {
+            fileOutputStream = new FileOutputStream(logFile, true);
+            PumpStreamHandler streamHandler = new PumpStreamHandler(fileOutputStream, fileOutputStream, null);
+
+            // command
+            CommandLine commandline = new CommandLine(command);
+
+            //设置60秒超时，执行超过60秒后会直接终止
+            ExecuteWatchdog watchdog = new ExecuteWatchdog(-1);
+            DefaultExecuteResultHandler resultHandler = new DefaultExecuteResultHandler();
+            // exec
+            DefaultExecutor exec = new DefaultExecutor();
+            exec.setExitValues(null);
+            exec.setWatchdog(watchdog);
+            exec.setStreamHandler(streamHandler);
+            exec.execute(commandline, resultHandler);  // exit code: 0=success, 1=error
+            resultHandler.waitFor();
+            return resultHandler.getExitValue();
+        } finally {
+            if (fileOutputStream != null) {
+                try {
+                    fileOutputStream.close();
+                } catch (IOException e) {
+                    TaskLoggers.getLogger().error(e.getMessage(), e);
                 }
 
             }

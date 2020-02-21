@@ -14,7 +14,7 @@ import java.io.Serializable;
  *
  * {@link TaskLoggers} 获取当前日志输出
  */
-public interface TaskHandler<PARAM extends Serializable> {
+public interface TaskHandler<PARAM extends Serializable, RESULT extends Serializable> {
     /**
      * @return 返回该handler处理的Task 参数类型
      */
@@ -25,5 +25,5 @@ public interface TaskHandler<PARAM extends Serializable> {
      *
      * @param Task task信息
      */
-    Serializable exec(Task<PARAM> Task);
+    RESULT exec(Task<PARAM> task) throws Exception;
 }

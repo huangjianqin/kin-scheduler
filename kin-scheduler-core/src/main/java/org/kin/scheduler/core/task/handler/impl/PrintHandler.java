@@ -2,6 +2,7 @@ package org.kin.scheduler.core.task.handler.impl;
 
 import org.kin.scheduler.core.task.Task;
 import org.kin.scheduler.core.task.handler.TaskHandler;
+import org.kin.scheduler.core.task.handler.domain.Singleton;
 
 import java.io.Serializable;
 
@@ -11,19 +12,20 @@ import java.io.Serializable;
  * <p>
  * 打印Task信息的handler
  */
-public class PrintHandler implements TaskHandler<String> {
+@Singleton
+public class PrintHandler implements TaskHandler<String, Integer> {
     @Override
     public Class<String> getTaskParamType() {
         return String.class;
     }
 
     @Override
-    public Serializable exec(Task<String> Task) {
-        System.out.println(Task.getJobId());
-        System.out.println(Task.getTaskId());
-        System.out.println(Task.getExecStrategy());
-        System.out.println(Task.getParam());
+    public Integer exec(Task<String> task) throws Exception{
+        System.out.println(task.getJobId());
+        System.out.println(task.getTaskId());
+        System.out.println(task.getExecStrategy());
+        System.out.println(task.getParam());
 
-        return null;
+        return 1;
     }
 }

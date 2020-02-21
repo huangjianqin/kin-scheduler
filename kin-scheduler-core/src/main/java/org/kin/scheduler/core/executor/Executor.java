@@ -45,8 +45,6 @@ public class Executor extends AbstractService implements ExecutorBackend {
     private int parallelism;
     //Executor的线程池, task执行线程池
     private PartitionTaskExecutor<String> threads;
-    //Executor加载的处理器
-    private final TaskHandlers taskHandlers = new TaskHandlers();
     //rpc服务配置
     private ServiceConfig serviceConfig;
     //log路径
@@ -77,7 +75,6 @@ public class Executor extends AbstractService implements ExecutorBackend {
     public void init() {
         super.init();
         this.threads = new PartitionTaskExecutor<String>(parallelism, EfficientHashPartitioner.INSTANCE);
-        this.taskHandlers.init();
         logContext = new LogContext(executorId);
         log = LogUtils.getWorkerLogger(logBasePath, workerId);
 
@@ -136,7 +133,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
                         break;
                 }
 
-                Future<Serializable> future = threads.execute(task.getTaskId(), newTaskRunner);
+                Future<TaskExecResult> future = threads.execute(task.getTaskId(), newTaskRunner);
 
                 //保存newTaskRunner
                 exTaskRunners = taskId2TaskRunners.get(task.getTaskId());
@@ -151,14 +148,13 @@ public class Executor extends AbstractService implements ExecutorBackend {
                     }
                 }
 
-                Serializable execResult;
+                TaskExecResult execResult;
                 if (task.getTimeout() > 0) {
                     try {
                         execResult = future.get(task.getTimeout(), TimeUnit.SECONDS);
                     } catch (TimeoutException e) {
-                        execResult = null;
                         cleanFinishedTask(task);
-                        return TaskExecResult.failure("execute time out");
+                        return TaskExecResult.failure("task execute time out");
                     }
                 } else if (task.getTimeout() == 0) {
                     execResult = future.get();
@@ -166,12 +162,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
                     execResult = null;
                 }
 
-
-                return TaskExecResult.success(
-                        task.getExecStrategy().getDesc()
-                                .concat("run task >>>> ")
-                                .concat(task.toString()),
-                        execResult);
+                return execResult;
             } catch (Exception e) {
                 cleanFinishedTask(task);
                 return TaskExecResult.failure(ExceptionUtils.getExceptionDesc(e));
@@ -237,7 +228,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
     }
 
     //-----------------------------------------------------------------------------------------------------------------
-    private class TaskRunner implements Callable<Serializable> {
+    private class TaskRunner implements Callable<TaskExecResult> {
         private Task task;
         private Lock lock = new ReentrantLock();
         private volatile boolean isStopped;
@@ -248,7 +239,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
         }
 
         @Override
-        public Serializable call() {
+        public TaskExecResult call() {
             //有可能未开始执行就给interrupt了
             lock.lock();
             try {
@@ -262,19 +253,27 @@ public class Executor extends AbstractService implements ExecutorBackend {
             currentThread = Thread.currentThread();
             try {
                 //获取task handler
-                TaskHandler taskHandler = taskHandlers.getTaskHandler(task);
+                TaskHandler taskHandler = TaskHandlers.getTaskHandler(task);
                 Preconditions.checkNotNull(taskHandler, "task handler is null");
                 if (taskHandler != null) {
                     //更新上下文日志
                     TaskLoggers.updateLogger(log);
-                    return taskHandler.exec(task);
+                    TaskLoggers.updateLoggerFile(logContext.getJobLogFile(logBasePath, task.getJobId()));
+                    return TaskExecResult.success(
+                            task.getExecStrategy().getDesc()
+                            .concat("run task >>>> ")
+                            .concat(task.toString()),
+                            taskHandler.exec(task));
                 }
-            } finally {
+            }catch (Exception e){
+                return TaskExecResult.failure("task execute encounter error >>>>".concat(ExceptionUtils.getExceptionDesc(e)));
+            }
+            finally {
                 isStopped = true;
                 cleanFinishedTask(task);
             }
 
-            return null;
+            return TaskExecResult.failure("task execute encounter unknown error");
         }
 
         public void interrupt() {
