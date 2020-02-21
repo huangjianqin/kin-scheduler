@@ -29,7 +29,7 @@ public class ScriptHandler implements TaskHandler<ScriptParam, GlueResult> {
         return ScriptParam.class;
     }
 
-    protected String getOrCreateRealRunEnvPath(String jobId) {
+    public static String getOrCreateRealRunEnvPath(String jobId) {
         String realRunEnvPath = runEnvPath.concat(jobId);
         File realRunEnvFile = new File(realRunEnvPath);
         if (!realRunEnvFile.exists()) {

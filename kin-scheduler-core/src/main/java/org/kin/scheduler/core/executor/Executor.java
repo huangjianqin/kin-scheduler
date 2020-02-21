@@ -7,6 +7,7 @@ import org.kin.framework.concurrent.impl.EfficientHashPartitioner;
 import org.kin.framework.service.AbstractService;
 import org.kin.framework.utils.CollectionUtils;
 import org.kin.framework.utils.ExceptionUtils;
+import org.kin.framework.utils.FileUtils;
 import org.kin.framework.utils.SysUtils;
 import org.kin.kinrpc.config.ServiceConfig;
 import org.kin.kinrpc.config.Services;
@@ -16,10 +17,15 @@ import org.kin.scheduler.core.task.Task;
 import org.kin.scheduler.core.task.TaskLoggers;
 import org.kin.scheduler.core.task.handler.TaskHandler;
 import org.kin.scheduler.core.task.handler.TaskHandlers;
+import org.kin.scheduler.core.task.handler.impl.ScriptHandler;
 import org.kin.scheduler.core.utils.LogUtils;
 
+import java.io.File;
+import java.nio.file.Files;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -52,7 +58,10 @@ public class Executor extends AbstractService implements ExecutorBackend {
     private Logger log;
 
     //--------------------------------------------------------------------
+    //存储task执行runnable, 用于中断task执行
     private ConcurrentMap<String, List<TaskRunner>> taskId2TaskRunners = new ConcurrentHashMap<>();
+    //存储执行过的jobId, 用于shutdown executor时, 清理job占用的脚本资源
+    private Set<String> execedJobIds = new HashSet<>();
 
     public Executor(String workerId, String executorId, String backendHost, int backendPort) {
         this(workerId, executorId, backendHost, backendPort, SysUtils.CPU_NUM, LogUtils.BASE_PATH);
@@ -221,6 +230,13 @@ public class Executor extends AbstractService implements ExecutorBackend {
         }
         threads.shutdown();
         logContext.stop();
+        //清理job占用的脚本资源
+        for (String execedJobId : execedJobIds) {
+            File file = new File(ScriptHandler.getOrCreateRealRunEnvPath(execedJobId));
+            if(file.exists()){
+                FileUtils.delete(file);
+            }
+        }
         log.info("executor({}) closed", executorId);
     }
 
@@ -253,6 +269,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
                 TaskHandler taskHandler = TaskHandlers.getTaskHandler(task);
                 Preconditions.checkNotNull(taskHandler, "task handler is null");
                 if (taskHandler != null) {
+                    execedJobIds.add(task.getJobId());
                     //更新上下文日志
                     TaskLoggers.updateLogger(log);
                     TaskLoggers.updateLoggerFile(logContext.getJobLogFile(logBasePath, task.getJobId()));
