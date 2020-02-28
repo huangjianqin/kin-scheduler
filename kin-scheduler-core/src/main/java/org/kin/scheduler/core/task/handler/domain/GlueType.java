@@ -55,6 +55,7 @@ public enum GlueType {
     }
 
     //----------------------------------------------------------------------------------
+
     public static GlueType getByType(String type) {
         if (StringUtils.isNotBlank(type)) {
             for (GlueType item : TYPES) {

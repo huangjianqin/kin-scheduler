@@ -15,6 +15,7 @@ public class WorkerRegisterInfo {
     }
 
     //setter && getter
+
     public WorkerInfo getWorkerInfo() {
         return workerInfo;
     }

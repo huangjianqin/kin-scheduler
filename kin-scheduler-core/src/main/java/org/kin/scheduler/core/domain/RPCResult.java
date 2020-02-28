@@ -7,9 +7,9 @@ import java.io.Serializable;
  * @date 2020-02-06
  */
 public class RPCResult implements Serializable {
-    //执行结果
+    /** 执行结果 */
     protected boolean success;
-    //结果描述
+    /** 结果描述 */
     protected String desc;
 
     public RPCResult() {
@@ -25,6 +25,7 @@ public class RPCResult implements Serializable {
     }
 
     //-------------------------------------------------------------------------------------
+
     public static RPCResult success() {
         return success("");
     }
@@ -48,6 +49,7 @@ public class RPCResult implements Serializable {
     }
 
     //setter && getter
+
     public boolean isSuccess() {
         return success;
     }

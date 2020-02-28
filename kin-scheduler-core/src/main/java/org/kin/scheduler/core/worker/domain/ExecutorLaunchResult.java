@@ -24,6 +24,7 @@ public class ExecutorLaunchResult extends RPCResult {
     }
 
     //-----------------------------------------------------------------------------------------
+
     public static ExecutorLaunchResult success(String executorId, String address) {
         return new ExecutorLaunchResult(true, "", executorId, address);
     }
@@ -33,6 +34,7 @@ public class ExecutorLaunchResult extends RPCResult {
     }
 
     //setter && getter
+
     public String getExecutorId() {
         return executorId;
     }

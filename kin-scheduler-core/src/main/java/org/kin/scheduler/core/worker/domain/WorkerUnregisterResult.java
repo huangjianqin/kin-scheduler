@@ -15,6 +15,7 @@ public class WorkerUnregisterResult extends RPCResult {
     }
 
     //------------------------------------------------------------------------------------
+
     public static WorkerUnregisterResult success() {
         return success("");
     }

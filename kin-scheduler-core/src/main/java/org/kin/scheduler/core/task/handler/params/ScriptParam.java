@@ -11,6 +11,7 @@ public class ScriptParam extends GlueParam {
     private String password;
 
     //setter && getter
+
     public String getScriptResources() {
         return ScriptResources;
     }

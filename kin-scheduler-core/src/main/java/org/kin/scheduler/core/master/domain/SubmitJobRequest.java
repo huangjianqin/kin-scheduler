@@ -21,6 +21,7 @@ public class SubmitJobRequest implements Serializable {
     }
 
     //setter && getter
+
     public String getAppName() {
         return appName;
     }

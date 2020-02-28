@@ -21,7 +21,6 @@ import org.kin.scheduler.core.task.handler.impl.ScriptHandler;
 import org.kin.scheduler.core.utils.LogUtils;
 
 import java.io.File;
-import java.nio.file.Files;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -36,31 +35,31 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class Executor extends AbstractService implements ExecutorBackend {
 
-    //所属的workerId
+    /** 所属的workerId */
     private String workerId;
 
     private String executorId;
-    //Executor暴露给worker的host
+    /** Executor暴露给worker的host */
     private String backendHost;
-    //Executor暴露给worker的端口
+    /** Executor暴露给worker的端口 */
     private int backendPort;
-    //Executor的并行数
+    /** Executor的并行数 */
     private int parallelism;
-    //Executor的线程池, task执行线程池
+    /** Executor的线程池, task执行线程池 */
     private PartitionTaskExecutor<String> threads;
-    //rpc服务配置
+    /** rpc服务配置 */
     private ServiceConfig serviceConfig;
-    //log路径
+    /** log路径 */
     private String logBasePath;
-    //日志信息
+    /** 日志信息 */
     private LogContext logContext;
-    //executor log
+    /** executor log */
     private Logger log;
 
     //--------------------------------------------------------------------
-    //存储task执行runnable, 用于中断task执行
+    /** 存储task执行runnable, 用于中断task执行 */
     private ConcurrentMap<String, List<TaskRunner>> taskId2TaskRunners = new ConcurrentHashMap<>();
-    //存储执行过的jobId, 用于shutdown executor时, 清理job占用的脚本资源
+    /** 存储执行过的jobId, 用于shutdown executor时, 清理job占用的脚本资源 */
     private Set<String> execedJobIds = new HashSet<>();
 
     public Executor(String workerId, String executorId, String backendHost, int backendPort) {
@@ -241,6 +240,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
     }
 
     //-----------------------------------------------------------------------------------------------------------------
+
     private class TaskRunner implements Callable<TaskExecResult> {
         private Task task;
         private Lock lock = new ReentrantLock();
@@ -273,11 +273,13 @@ public class Executor extends AbstractService implements ExecutorBackend {
                     //更新上下文日志
                     TaskLoggers.updateLogger(log);
                     TaskLoggers.updateLoggerFile(logContext.getJobLogFile(logBasePath, task.getJobId()));
-                    return TaskExecResult.success(
+                    TaskExecResult execResult = TaskExecResult.success(
                             task.getExecStrategy().getDesc()
                                     .concat("run task >>>> ")
                                     .concat(task.toString()),
                             taskHandler.exec(task));
+                    TaskLoggers.removeAll();
+                    return execResult;
                 }
             } catch (Exception e) {
                 return TaskExecResult.failure("task execute encounter error >>>>".concat(ExceptionUtils.getExceptionDesc(e)));

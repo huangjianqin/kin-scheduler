@@ -26,6 +26,7 @@ public class WorkerInfo {
     }
 
     //setter && getter
+
     public String getWorkerId() {
         return workerId;
     }

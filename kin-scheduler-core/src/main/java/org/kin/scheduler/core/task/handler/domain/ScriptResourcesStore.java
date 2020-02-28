@@ -59,6 +59,7 @@ public enum ScriptResourcesStore {
     public abstract boolean cloneResources(String scriptResources, String user, String password, String path);
 
     //----------------------------------------------------------------------------------
+
     public static ScriptResourcesStore getByName(String name) {
         if (StringUtils.isNotBlank(name)) {
             for (ScriptResourcesStore item : STORES) {

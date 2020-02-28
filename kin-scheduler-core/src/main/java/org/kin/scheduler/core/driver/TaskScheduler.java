@@ -27,7 +27,7 @@ public abstract class TaskScheduler extends AbstractService {
     public void init() {
         super.init();
         executorBackendReferenceConfigs = new ArrayList<>();
-        executorBackends = new HashMap<>();
+        executorBackends = new HashMap<>(job.getAvailableExecutors().size());
         for (Map.Entry<String, String> entry : job.getAvailableExecutors().entrySet()) {
             ReferenceConfig<ExecutorBackend> executorBackendReferenceConfig = References.reference(ExecutorBackend.class)
                     .appName(getName().concat(entry.getKey()))

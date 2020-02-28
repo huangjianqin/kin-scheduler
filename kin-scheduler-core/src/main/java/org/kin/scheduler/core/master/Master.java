@@ -25,12 +25,12 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
     private Logger log;
 
     private String masterBackendHost;
-    //master rpc端口
+    /** master rpc端口 */
     private int masterBackendPort;
-    //日志路径
+    /** 日志路径 */
     private String logPath;
     //-------------------------------------------------------------------------------------------------
-    //已注册的worker
+    /** 已注册的worker */
     private Map<String, WorkerContext> workers = new HashMap<>();
     private ServiceConfig masterBackendServiceConfig;
     private ServiceConfig driverMasterBackendServiceConfig;
@@ -45,6 +45,7 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
     }
 
     //-------------------------------------------------------------------------------------------------
+
     @Override
     public void init() {
         super.init();
@@ -96,6 +97,7 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
     }
 
     //-------------------------------------------------------------------------------------------------
+
     @Override
     public WorkerRegisterResult registerWorker(WorkerRegisterInfo registerInfo) {
         if (!isInState(State.STARTED)) {
@@ -138,6 +140,7 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
     }
 
     //-------------------------------------------------------------------------------------------------
+
     private List<WorkerRes> getAvailableWorkerRes() {
         return workers.values().stream()
                 .filter(worker -> worker.getRes().getParallelism() < worker.getWorkerInfo().getMaxParallelism())
@@ -179,7 +182,7 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
 
         if (needParallelism == 0 && CollectionUtils.isNonEmpty(useWorkerReses)) {
             List<ExecutorRes> executorReses = new ArrayList<>();
-            Map<String, String> executorAddresses = new HashMap<>();
+            Map<String, String> executorAddresses = new HashMap<>(useWorkerReses.size());
             for (WorkerRes useWorkerRes : useWorkerReses) {
                 WorkerContext worker = workers.get(useWorkerRes.getWorkerId());
                 //启动executor

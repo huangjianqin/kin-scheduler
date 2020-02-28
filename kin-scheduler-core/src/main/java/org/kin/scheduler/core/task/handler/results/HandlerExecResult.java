@@ -27,6 +27,7 @@ public class HandlerExecResult implements Serializable {
     }
 
     //setter && getter
+
     public boolean isSuccess() {
         return success;
     }

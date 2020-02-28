@@ -26,9 +26,9 @@ public class JobContext {
     }
 
     private String appName;
-    //master rpc接口
+    /** master rpc接口 */
     private String masterAddress;
-    //并发
+    /** 并发 */
     private int parallelism = 1;
 
     public JobContext() {
@@ -39,6 +39,7 @@ public class JobContext {
     }
 
     //-----------------------------------------------------------------------------------------------
+
     public static JobContext build() {
         return new JobContext();
     }
@@ -48,6 +49,7 @@ public class JobContext {
     }
 
     //-----------------------------------------------------------------------------------------------
+
     public JobContext appName(String appName) {
         this.appName = appName;
         return this;
@@ -123,6 +125,7 @@ public class JobContext {
     }
 
     //getter
+
     public String getAppName() {
         return appName;
     }

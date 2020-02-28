@@ -18,8 +18,10 @@ public class TaskContext {
     private Task task;
     private int status;
     private Object result;
-    //执行过该task的ExecutorId
-    //最后一个item表示正执行该task的ExecutorId
+    /**
+     * 执行过该task的ExecutorId
+     * 最后一个item表示正执行该task的ExecutorId
+     */
     private List<String> execedExecutorIds = new ArrayList<>();
     private int retryTimes;
     private TaskSubmitFuture future;
@@ -73,6 +75,7 @@ public class TaskContext {
     }
 
     //getter
+
     public Task getTask() {
         return task;
     }

@@ -16,6 +16,7 @@ public class JobRes {
     }
 
     //getter
+
     public String getJobId() {
         return jobId;
     }

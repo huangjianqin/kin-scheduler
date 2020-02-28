@@ -20,7 +20,7 @@ import java.util.Objects;
  */
 @Singleton
 public class ScriptHandler implements TaskHandler<ScriptParam, GlueResult> {
-    private static final String runEnvPath = "/runEnv";
+    private static final String RUN_ENCV_PATH = "/runEnv";
 
     private Logger log = TaskLoggers.getLogger();
 
@@ -30,7 +30,7 @@ public class ScriptHandler implements TaskHandler<ScriptParam, GlueResult> {
     }
 
     public static String getOrCreateRealRunEnvPath(String jobId) {
-        String realRunEnvPath = runEnvPath.concat(jobId);
+        String realRunEnvPath = RUN_ENCV_PATH.concat(jobId);
         File realRunEnvFile = new File(realRunEnvPath);
         if (!realRunEnvFile.exists()) {
             realRunEnvFile.mkdirs();

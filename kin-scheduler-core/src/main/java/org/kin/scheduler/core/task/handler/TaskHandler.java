@@ -16,14 +16,16 @@ import java.io.Serializable;
  */
 public interface TaskHandler<PARAM extends Serializable, RESULT extends Serializable> {
     /**
-     * @return 返回该handler处理的Task 参数类型
+     * 返回该handler处理的Task 参数类型
+     * @return handler处理的Task 参数类型
      */
     Class<PARAM> getTaskParamType();
 
     /**
      * 处理Task
-     *
      * @param Task task信息
+     * @throws 异常
+     * @return task执行结果
      */
     RESULT exec(Task<PARAM> task) throws Exception;
 }

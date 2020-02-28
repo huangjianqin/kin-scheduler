@@ -14,7 +14,7 @@ public class ExecutorContext {
     private String executorId;
     private ReferenceConfig<ExecutorBackend> executorBackendReferenceConfig;
     private ExecutorBackend executorBackend;
-    //内嵌在worker的Executor
+    /** 内嵌在worker的Executor */
     private Worker.EmbeddedExecutorRunnable embeddedExecutorRunnable;
 
     public ExecutorContext(String executorId) {
@@ -45,6 +45,7 @@ public class ExecutorContext {
     }
 
     //setter && getter
+
     public boolean isEmbedded() {
         return embeddedExecutorRunnable != null;
     }

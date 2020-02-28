@@ -25,4 +25,9 @@ public class TaskLoggers {
     public static String getLoggerFile() {
         return threadLocalLoggerFile.get();
     }
+
+    public static void removeAll() {
+        threadLocalLogger.remove();
+        threadLocalLoggerFile.remove();
+    }
 }

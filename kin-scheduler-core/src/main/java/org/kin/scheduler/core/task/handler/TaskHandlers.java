@@ -20,7 +20,7 @@ import java.util.Objects;
  * 负责寻找合适的TaskHandler
  */
 public class TaskHandlers {
-    //存储TaskHandler单例, 重复使用
+    /** 存储TaskHandler单例, 重复使用 */
     private static Map<Class<?>, TaskHandlerInfo> paramType2TaskHandler;
 
     static {
@@ -59,6 +59,7 @@ public class TaskHandlers {
     }
 
     //--------------------------------------------------------------------------------------------------------
+
     private static class TaskHandlerInfo {
         private Class<? extends TaskHandler> type;
         private TaskHandler singleton;

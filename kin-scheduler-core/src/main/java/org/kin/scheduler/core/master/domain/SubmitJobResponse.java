@@ -19,6 +19,7 @@ public class SubmitJobResponse extends RPCResult {
     }
 
     //-------------------------------------------------------
+
     public static SubmitJobResponse success(Job job) {
         return new SubmitJobResponse(true, "", job);
     }
@@ -28,6 +29,7 @@ public class SubmitJobResponse extends RPCResult {
     }
 
     //setter && getter
+
     public Job getJob() {
         return job;
     }

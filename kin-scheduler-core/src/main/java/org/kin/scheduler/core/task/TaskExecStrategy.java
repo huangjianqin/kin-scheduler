@@ -22,6 +22,7 @@ public enum TaskExecStrategy {
     }
 
     //getter
+
     public String getDesc() {
         return desc;
     }

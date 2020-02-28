@@ -19,7 +19,7 @@ import java.util.Date;
  * basePath/{yyyy-MM-dd}/jobs/{jobId}.log
  */
 public class LogContext extends LoggerContext {
-    private static final SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+    private final SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
 
     public LogContext(String executorId) {
         setName(executorId);

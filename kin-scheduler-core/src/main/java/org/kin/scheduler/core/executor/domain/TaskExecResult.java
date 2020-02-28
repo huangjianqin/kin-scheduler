@@ -9,9 +9,9 @@ import java.io.Serializable;
  * @date 2020-02-06
  */
 public class TaskExecResult extends RPCResult {
-    //是否需要重试
+    /** 是否需要重试 */
     private boolean needRetry;
-    //处理器执行返回结果
+    /** 处理器执行返回结果 */
     private Serializable execResult;
 
     private TaskExecResult() {
@@ -70,6 +70,7 @@ public class TaskExecResult extends RPCResult {
     }
 
     //setter && getter
+
     public boolean isNeedRetry() {
         return needRetry;
     }

@@ -11,6 +11,7 @@ public class GlueParam implements Serializable {
     protected String type;
 
     //setter && getter
+
     public String getCommand() {
         return command;
     }

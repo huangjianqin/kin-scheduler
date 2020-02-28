@@ -12,11 +12,11 @@ import java.util.Objects;
 public class Task<PARAM extends Serializable> implements Serializable {
     private String jobId;
     private String taskId;
-    //自定义Task参数类型
+    /** 自定义Task参数类型 */
     private PARAM param;
-    //Task执行策略
+    /** Task执行策略 */
     private TaskExecStrategy execStrategy;
-    //Task执行超时, <0 表示不等待, 0一直等待, >0 表示超时等待
+    /** Task执行超时, <0 表示不等待, 0一直等待, >0 表示超时等待 */
     private int timeout = -1;
 
     public Task() {
@@ -42,10 +42,15 @@ public class Task<PARAM extends Serializable> implements Serializable {
 
 
     //--------------------------------------------------------------------------------------------
+
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         Task<?> task = (Task<?>) o;
         return Objects.equals(taskId, task.taskId);
     }
@@ -67,6 +72,7 @@ public class Task<PARAM extends Serializable> implements Serializable {
     }
 
     //setter && getter
+
     public String getJobId() {
         return jobId;
     }

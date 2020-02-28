@@ -31,22 +31,24 @@ public class Worker extends AbstractService implements WorkerBackend {
     private Logger log;
 
     private String workerId;
-    //worker配置
+    /** worker配置 */
     private final Config config;
-    //RPC服务配置
+    /** RPC服务配置 */
     private ServiceConfig workerServiceConfig;
-    //RPC引用配置
+    /** RPC引用配置 */
     private ReferenceConfig<MasterBackend> masterBackendReferenceConfig;
-    //master 的rpc接口
+    /** master 的rpc接口 */
     private MasterBackend masterBackend;
-    //executor 的rpc接口
+    /** executor 的rpc接口 */
     private Map<String, ExecutorContext> executors = new HashMap<>();
-    //executorId counter
-    //类actor执行, 所有rpc请求都是同一线程处理, 不需要用原子类
+    /**
+     * executorId counter
+     * 类actor执行, 所有rpc请求都是同一线程处理, 不需要用原子类
+     */
     private int executorIdCounter = 1;
-    //已使用资源
+    /** 已使用资源 */
     private WorkerRes res;
-    //embedded executor threads
+    /** embedded executor threads */
     private ThreadManager embeddedExecutorThreads;
 
     public Worker(String workerId, Config config) {
@@ -241,6 +243,7 @@ public class Worker extends AbstractService implements WorkerBackend {
     }
 
     //--------------------------------------------------------------------------------------------------
+
     class EmbeddedExecutorRunnable implements Runnable {
         private String executorId;
         private int executorBackendPort;

@@ -39,6 +39,7 @@ public class WorkerContext extends AbstractService {
     }
 
     //getter
+
     public WorkerInfo getWorkerInfo() {
         return workerInfo;
     }

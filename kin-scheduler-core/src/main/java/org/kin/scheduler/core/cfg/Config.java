@@ -6,23 +6,24 @@ package org.kin.scheduler.core.cfg;
  */
 public class Config {
     private String workerBackendHost;
-    //不一定=配置值, 因为是根据定义worker的数量, 逐渐递增
+    /** 不一定=配置值, 因为是根据定义worker的数量, 逐渐递增 */
     private int workerBackendPort;
     private String masterBackendHost;
     private int masterBackendPort;
-    //是否允许worker内置Executor(与Worker共享资源)
+    /** 是否允许worker内置Executor(与Worker共享资源) */
     private boolean allowEmbeddedExecutor;
-    //Executor并发数
+    /** Executor并发数 */
     private int parallelism;
-    //Executor rpc端口(后续端口是累加上去)
+    /** Executor rpc端口(后续端口是累加上去) */
     private int executorBackendPort;
-    //日志路径
+    /** 日志路径 */
     private String logPath;
 
     public void check() {
     }
 
     //setter && getter
+
     public String getWorkerBackendHost() {
         return workerBackendHost;
     }

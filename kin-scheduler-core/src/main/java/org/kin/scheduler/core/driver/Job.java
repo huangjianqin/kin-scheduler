@@ -19,6 +19,7 @@ public class Job {
     }
 
     //setter && getter
+
     public String getJobId() {
         return jobId;
     }
