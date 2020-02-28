@@ -27,8 +27,8 @@ public class TaskExecResult extends RPCResult {
         this.execResult = execResult;
     }
 
-    private TaskExecResult(boolean result, String desc, Serializable execResult) {
-        this(result, desc, false, execResult);
+    private TaskExecResult(boolean success, String desc, Serializable execResult) {
+        this(success, desc, false, execResult);
     }
 
     //-------------------------------------------------------------------------------------------

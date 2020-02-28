@@ -268,27 +268,24 @@ public class Executor extends AbstractService implements ExecutorBackend {
                 //获取task handler
                 TaskHandler taskHandler = TaskHandlers.getTaskHandler(task);
                 Preconditions.checkNotNull(taskHandler, "task handler is null");
-                if (taskHandler != null) {
-                    execedJobIds.add(task.getJobId());
-                    //更新上下文日志
-                    TaskLoggers.updateLogger(log);
-                    TaskLoggers.updateLoggerFile(logContext.getJobLogFile(logBasePath, task.getJobId()));
-                    TaskExecResult execResult = TaskExecResult.success(
-                            task.getExecStrategy().getDesc()
-                                    .concat("run task >>>> ")
-                                    .concat(task.toString()),
-                            taskHandler.exec(task));
-                    TaskLoggers.removeAll();
-                    return execResult;
-                }
+
+                execedJobIds.add(task.getJobId());
+                //更新上下文日志
+                TaskLoggers.updateLogger(log);
+                TaskLoggers.updateLoggerFile(logContext.getJobLogFile(logBasePath, task.getJobId()));
+                TaskExecResult execResult = TaskExecResult.success(
+                        task.getExecStrategy().getDesc()
+                                .concat("run task >>>> ")
+                                .concat(task.toString()),
+                        taskHandler.exec(task));
+                TaskLoggers.removeAll();
+                return execResult;
             } catch (Exception e) {
                 return TaskExecResult.failure("task execute encounter error >>>>".concat(ExceptionUtils.getExceptionDesc(e)));
             } finally {
                 isStopped = true;
                 cleanFinishedTask(task);
             }
-
-            return TaskExecResult.failure("task execute encounter unknown error");
         }
 
         public void interrupt() {

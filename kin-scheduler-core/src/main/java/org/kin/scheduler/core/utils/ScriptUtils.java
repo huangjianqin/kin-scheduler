@@ -7,6 +7,7 @@ import org.kin.scheduler.core.task.handler.exception.WorkingDirectoryNotExistsEx
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 /**
  * 1、使用java调用控制台进程方式"Runtime.getRuntime().exec()"来运行脚本(shell或python)
@@ -26,7 +27,7 @@ public class ScriptUtils {
         FileOutputStream fileOutputStream = null;
         try {
             fileOutputStream = new FileOutputStream(scriptFileName);
-            fileOutputStream.write(content.getBytes("UTF-8"));
+            fileOutputStream.write(content.getBytes(StandardCharsets.UTF_8));
             fileOutputStream.close();
             return true;
         } catch (Exception e) {
@@ -90,8 +91,7 @@ public class ScriptUtils {
 //            exec.setWatchdog(watchdog);
             exec.setStreamHandler(streamHandler);
             exec.setWorkingDirectory(workingDirectoryFile);
-            int exitValue = exec.execute(commandline);  // exit code: 0=success, 1=error
-            return exitValue;
+            return exec.execute(commandline);
         } finally {
             if (fileOutputStream != null) {
                 try {

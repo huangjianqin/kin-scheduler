@@ -38,9 +38,8 @@ public class GlueHandler implements TaskHandler<GlueParam, GlueResult> {
                     //获取task handler
                     TaskHandler taskHandler = TaskHandlers.getTaskHandler(task);
                     Preconditions.checkNotNull(taskHandler, "task handler is null");
-                    if (taskHandler != null) {
-                        return (GlueResult) taskHandler.exec(task);
-                    }
+
+                    return (GlueResult) taskHandler.exec(task);
                 } else {
                     int exitValue = ScriptUtils.execCommand(glueParam.getCommand(), TaskLoggers.getLoggerFile());
                     if (exitValue == 0) {

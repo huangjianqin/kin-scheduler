@@ -23,8 +23,8 @@ public interface TaskHandler<PARAM extends Serializable, RESULT extends Serializ
 
     /**
      * 处理Task
-     * @param Task task信息
-     * @throws 异常
+     * @param task task信息
+     * @throws Exception 异常
      * @return task执行结果
      */
     RESULT exec(Task<PARAM> task) throws Exception;

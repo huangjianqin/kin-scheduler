@@ -7,7 +7,10 @@ import org.tmatesoft.svn.core.internal.io.dav.DAVRepositoryFactory;
 import org.tmatesoft.svn.core.internal.io.fs.FSRepositoryFactory;
 import org.tmatesoft.svn.core.internal.io.svn.SVNRepositoryFactoryImpl;
 import org.tmatesoft.svn.core.internal.wc.DefaultSVNOptions;
-import org.tmatesoft.svn.core.wc.*;
+import org.tmatesoft.svn.core.wc.SVNClientManager;
+import org.tmatesoft.svn.core.wc.SVNRevision;
+import org.tmatesoft.svn.core.wc.SVNUpdateClient;
+import org.tmatesoft.svn.core.wc.SVNWCUtil;
 
 import java.io.File;
 
@@ -33,9 +36,9 @@ public class SVNUtils {
 
         try {
             SVNURL svnUrl = SVNURL.parseURIEncoded(remote);
-            ISVNOptions options = SVNWCUtil.createDefaultOptions(true);
+            DefaultSVNOptions options = SVNWCUtil.createDefaultOptions(true);
             SVNClientManager svnClientManager = SVNClientManager.newInstance(
-                    (DefaultSVNOptions) options, user, password);
+                    options, user, password);
             SVNUpdateClient updateClient = svnClientManager.getUpdateClient();
             updateClient.setIgnoreExternals(false);
 

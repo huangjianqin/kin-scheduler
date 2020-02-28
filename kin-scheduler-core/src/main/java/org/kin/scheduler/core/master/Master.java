@@ -116,7 +116,7 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
                 return WorkerRegisterResult.failure(String.format("worker(workerId=%s) has registered", workerInfo.getWorkerId()));
             }
         } else {
-            return WorkerRegisterResult.failure(String.format("worker(workerId=%s) register info error", workerInfo.getWorkerId()));
+            return WorkerRegisterResult.failure(String.format("worker(workerId=null) register info error"));
         }
     }
 
@@ -168,12 +168,7 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
                 break;
             }
 
-            int useParallelism = 0;
-            if (needParallelism >= availableWorkerRes.getParallelism()) {
-                useParallelism = availableWorkerRes.getParallelism();
-            } else {
-                useParallelism = needParallelism;
-            }
+            int useParallelism = Math.min(needParallelism, availableWorkerRes.getParallelism());
             needParallelism -= useParallelism;
             WorkerRes useWorkerRes = new WorkerRes(availableWorkerRes.getWorkerId());
             useWorkerRes.recoverParallelismRes(useParallelism);

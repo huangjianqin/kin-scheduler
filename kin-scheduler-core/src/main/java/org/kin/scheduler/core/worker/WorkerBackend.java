@@ -17,7 +17,7 @@ public interface WorkerBackend {
 
     /**
      * rpc请求销毁executor
-     * @param executorId
+     * @param executorId executorId
      */
     void shutdownExecutor(String executorId);
 }

@@ -38,8 +38,8 @@ public class TaskHandlers {
                     TaskHandler taskHandler = null;
                     if (taskHandlerType.isAnnotationPresent(Singleton.class)) {
                         taskHandler = (TaskHandler) constructor.newInstance();
+                        paramType2TaskHandler.put(taskHandler.getTaskParamType(), new TaskHandlerInfo(taskHandlerType, taskHandler));
                     }
-                    paramType2TaskHandler.put(taskHandler.getTaskParamType(), new TaskHandlerInfo(taskHandlerType, taskHandler));
                 } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
                     ExceptionUtils.log(e);
                 }

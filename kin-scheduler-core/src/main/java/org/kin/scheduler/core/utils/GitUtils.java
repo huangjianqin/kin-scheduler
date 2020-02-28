@@ -6,7 +6,7 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 
 import java.io.File;
-import java.util.Arrays;
+import java.util.Collections;
 
 /**
  * @author huangjianqin
@@ -29,7 +29,7 @@ public class GitUtils {
             targetDirFile.mkdir();
         }
 
-        CloneCommand clone = Git.cloneRepository().setURI(remote).setDirectory(targetDirFile).setBranchesToClone(Arrays.asList(branch));
+        CloneCommand clone = Git.cloneRepository().setURI(remote).setDirectory(targetDirFile).setBranchesToClone(Collections.singletonList(branch));
 //        if (REMOTE_URL.contains("ssh")) {
 //            MySShSessionFactory myFactory = new MySShSessionFactory();
 //            myFactory.setSshKeyFilePath("C:/id_rsa");

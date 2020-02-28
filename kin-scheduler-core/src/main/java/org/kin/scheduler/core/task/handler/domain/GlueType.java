@@ -31,7 +31,7 @@ public enum GlueType {
     private String cmd;
     private String suffix;
 
-    private GlueType(String desc, boolean isScript, String cmd, String suffix) {
+    GlueType(String desc, boolean isScript, String cmd, String suffix) {
         this.desc = desc;
         this.isScript = isScript;
         this.cmd = cmd;

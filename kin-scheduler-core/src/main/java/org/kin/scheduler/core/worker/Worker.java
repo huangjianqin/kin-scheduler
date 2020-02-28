@@ -98,12 +98,12 @@ public class Worker extends AbstractService implements WorkerBackend {
                 System.exit(-1);
             }
         } catch (Exception e) {
-            log.error("worker register encounter error >>> {}", e);
+            log.error("worker register encounter error >>> {}", e, e);
             stop();
             System.exit(-1);
         }
 
-        JvmCloseCleaner.DEFAULT().add(JvmCloseCleaner.MAX_PRIORITY, () -> stop());
+        JvmCloseCleaner.DEFAULT().add(JvmCloseCleaner.MAX_PRIORITY, this::stop);
 
         log.info("worker({}) started", workerId);
         synchronized (this) {
@@ -125,10 +125,10 @@ public class Worker extends AbstractService implements WorkerBackend {
         try {
             WorkerUnregisterResult unregisterResult = masterBackend.unregisterWorker(workerId);
             if (!unregisterResult.isSuccess()) {
-                log.error("worker unregister error >>> ", unregisterResult.getDesc());
+                log.error("worker unregister error >>> {}", unregisterResult.getDesc());
             }
         } catch (Exception e) {
-            log.error("worker unregister encounter error >>> {}", e);
+            log.error("worker unregister encounter error >>> {}", e, e);
         }
         stop0();
     }
