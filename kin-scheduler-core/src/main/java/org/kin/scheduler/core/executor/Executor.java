@@ -2,8 +2,8 @@ package org.kin.scheduler.core.executor;
 
 import ch.qos.logback.classic.Logger;
 import com.google.common.base.Preconditions;
-import org.kin.framework.concurrent.PartitionTaskExecutor;
-import org.kin.framework.concurrent.impl.EfficientHashPartitioner;
+import org.kin.framework.concurrent.SimpleThreadFactory;
+import org.kin.framework.concurrent.ThreadManager;
 import org.kin.framework.service.AbstractService;
 import org.kin.framework.utils.CollectionUtils;
 import org.kin.framework.utils.ExceptionUtils;
@@ -46,7 +46,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
     /** Executor的并行数 */
     private int parallelism;
     /** Executor的线程池, task执行线程池 */
-    private PartitionTaskExecutor<String> threads;
+    private ThreadManager threads;
     /** rpc服务配置 */
     private ServiceConfig serviceConfig;
     /** log路径 */
@@ -79,7 +79,8 @@ public class Executor extends AbstractService implements ExecutorBackend {
     @Override
     public void init() {
         super.init();
-        this.threads = new PartitionTaskExecutor<String>(parallelism, EfficientHashPartitioner.INSTANCE);
+        this.threads = new ThreadManager(new ThreadPoolExecutor(parallelism, parallelism, 60, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>(), new SimpleThreadFactory("executor-".concat(executorId).concat("-"))));
         logContext = new LogContext(executorId);
         log = LogUtils.getWorkerLogger(logBasePath, workerId);
 
@@ -138,7 +139,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
                         break;
                 }
 
-                Future<TaskExecResult> future = threads.execute(task.getTaskId(), newTaskRunner);
+                Future<TaskExecResult> future = threads.submit(newTaskRunner);
 
                 //保存newTaskRunner
                 exTaskRunners = taskId2TaskRunners.get(task.getTaskId());
@@ -232,7 +233,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
         //清理job占用的脚本资源
         for (String execedJobId : execedJobIds) {
             File file = new File(ScriptHandler.getOrCreateRealRunEnvPath(execedJobId));
-            if(file.exists()){
+            if (file.exists()) {
                 FileUtils.delete(file);
             }
         }
