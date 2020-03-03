@@ -1,6 +1,5 @@
 package org.kin.scheduler.core.task.handler;
 
-import org.kin.framework.utils.ExceptionUtils;
 import org.kin.scheduler.core.task.Task;
 import org.kin.scheduler.core.task.handler.domain.Singleton;
 import org.reflections.Reflections;
@@ -35,13 +34,13 @@ public class TaskHandlers {
             for (Class<? extends TaskHandler> taskHandlerType : reflections.getSubTypesOf(TaskHandler.class)) {
                 try {
                     Constructor constructor = taskHandlerType.getConstructor();
-                    TaskHandler taskHandler = null;
+                    TaskHandler taskHandler;
                     if (taskHandlerType.isAnnotationPresent(Singleton.class)) {
                         taskHandler = (TaskHandler) constructor.newInstance();
                         paramType2TaskHandler.put(taskHandler.getTaskParamType(), new TaskHandlerInfo(taskHandlerType, taskHandler));
                     }
                 } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
-                    ExceptionUtils.log(e);
+                    e.printStackTrace();
                 }
             }
 
@@ -83,7 +82,7 @@ public class TaskHandlers {
                     constructor = type.getConstructor();
                     return (TaskHandler) constructor.newInstance();
                 } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
-                    ExceptionUtils.log(e);
+                    e.printStackTrace();
                 }
                 return null;
             }

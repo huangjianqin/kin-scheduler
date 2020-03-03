@@ -6,6 +6,8 @@ import org.kin.kinrpc.config.References;
 import org.kin.scheduler.core.worker.WorkerBackend;
 import org.kin.scheduler.core.worker.domain.WorkerInfo;
 
+import java.util.Objects;
+
 /**
  * @author huangjianqin
  * @date 2020-02-09
@@ -17,10 +19,9 @@ public class WorkerContext extends AbstractService {
     private WorkerRes res;
 
     public WorkerContext(WorkerInfo workerInfo) {
-        super(WorkerContext.class.getSimpleName().concat(workerInfo.getWorkerId()));
+        super(workerInfo.getWorkerId());
         this.workerInfo = workerInfo;
         this.res = new WorkerRes(workerInfo.getWorkerId());
-        this.res.recoverParallelismRes(workerInfo.getUesdParallelism());
     }
 
     @Override
@@ -50,5 +51,22 @@ public class WorkerContext extends AbstractService {
 
     public WorkerRes getRes() {
         return res;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        WorkerContext that = (WorkerContext) o;
+        return Objects.equals(workerInfo, that.workerInfo);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(workerInfo);
     }
 }

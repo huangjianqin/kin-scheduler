@@ -31,6 +31,12 @@ public class LogUtils {
         return getLogger(basePath, loggerName, appenderName, workerId);
     }
 
+    public static Logger getExecutorLogger(String basePath, String workerId, String executorId) {
+        String loggerName = executorId.concat("Logger");
+        String appenderName = executorId.concat("Appender");
+        return getLogger(basePath, loggerName, appenderName, workerId.concat(File.separator).concat(executorId));
+    }
+
     public static Logger getLogger(String basePath, String loggerName, String appenderName, String file) {
         LoggerContext lc = (LoggerContext) org.slf4j.LoggerFactory.getILoggerFactory();
         return getLogger(lc, basePath, loggerName, appenderName, file);

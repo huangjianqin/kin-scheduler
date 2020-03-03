@@ -31,13 +31,13 @@ public class ScriptUtils {
             fileOutputStream.close();
             return true;
         } catch (Exception e) {
-            TaskLoggers.getLogger().error(e.getMessage(), e);
+            TaskLoggers.logger().error(e.getMessage(), e);
         } finally {
             if (fileOutputStream != null) {
                 try {
                     fileOutputStream.close();
                 } catch (IOException e) {
-                    TaskLoggers.getLogger().error(e.getMessage(), e);
+                    TaskLoggers.logger().error(e.getMessage(), e);
                 }
             }
         }
@@ -55,7 +55,7 @@ public class ScriptUtils {
         try {
             return execCommand0(command, logFile, workingDirectory, params);
         } catch (Exception e) {
-            TaskLoggers.getLogger().error(e.getMessage(), e);
+            TaskLoggers.logger().error(e.getMessage(), e);
         }
         return -1;
     }
@@ -97,7 +97,7 @@ public class ScriptUtils {
                 try {
                     fileOutputStream.close();
                 } catch (IOException e) {
-                    TaskLoggers.getLogger().error(e.getMessage(), e);
+                    TaskLoggers.logger().error(e.getMessage(), e);
                 }
             }
         }
@@ -113,7 +113,7 @@ public class ScriptUtils {
         try {
             return execCommand0(command, logFile);
         } catch (Exception e) {
-            TaskLoggers.getLogger().error(e.getMessage(), e);
+            TaskLoggers.logger().error(e.getMessage(), e);
         }
         return -1;
     }
@@ -149,7 +149,7 @@ public class ScriptUtils {
                 try {
                     fileOutputStream.close();
                 } catch (IOException e) {
-                    TaskLoggers.getLogger().error(e.getMessage(), e);
+                    TaskLoggers.logger().error(e.getMessage(), e);
                 }
 
             }

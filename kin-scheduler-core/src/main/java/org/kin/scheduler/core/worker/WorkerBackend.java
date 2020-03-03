@@ -1,5 +1,6 @@
 package org.kin.scheduler.core.worker;
 
+import org.kin.scheduler.core.domain.RPCResult;
 import org.kin.scheduler.core.worker.domain.ExecutorLaunchInfo;
 import org.kin.scheduler.core.worker.domain.ExecutorLaunchResult;
 
@@ -19,5 +20,5 @@ public interface WorkerBackend {
      * rpc请求销毁executor
      * @param executorId executorId
      */
-    void shutdownExecutor(String executorId);
+    RPCResult shutdownExecutor(String executorId);
 }

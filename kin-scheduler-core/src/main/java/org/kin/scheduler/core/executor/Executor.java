@@ -13,6 +13,7 @@ import org.kin.kinrpc.config.ServiceConfig;
 import org.kin.kinrpc.config.Services;
 import org.kin.scheduler.core.domain.RPCResult;
 import org.kin.scheduler.core.executor.domain.TaskExecResult;
+import org.kin.scheduler.core.log.LogContext;
 import org.kin.scheduler.core.task.Task;
 import org.kin.scheduler.core.task.TaskLoggers;
 import org.kin.scheduler.core.task.handler.TaskHandler;
@@ -43,17 +44,15 @@ public class Executor extends AbstractService implements ExecutorBackend {
     private String backendHost;
     /** Executor暴露给worker的端口 */
     private int backendPort;
-    /** Executor的并行数 */
-    private int parallelism;
     /** Executor的线程池, task执行线程池 */
     private ThreadManager threads;
     /** rpc服务配置 */
     private ServiceConfig serviceConfig;
     /** log路径 */
-    private String logBasePath;
+    private String logPath;
     /** 日志信息 */
     private LogContext logContext;
-    /** executor log */
+    /** logger */
     private Logger log;
 
     //--------------------------------------------------------------------
@@ -63,34 +62,31 @@ public class Executor extends AbstractService implements ExecutorBackend {
     private Set<String> execedJobIds = new HashSet<>();
 
     public Executor(String workerId, String executorId, String backendHost, int backendPort) {
-        this(workerId, executorId, backendHost, backendPort, SysUtils.CPU_NUM, LogUtils.BASE_PATH);
+        this(workerId, executorId, backendHost, backendPort, LogUtils.BASE_PATH);
     }
 
-    public Executor(String workerId, String executorId, String backendHost, int backendPort, int parallelism, String logBasePath) {
+    public Executor(String workerId, String executorId, String backendHost, int backendPort, String logPath) {
         super(executorId);
         this.workerId = workerId;
         this.executorId = executorId;
         this.backendHost = backendHost;
         this.backendPort = backendPort;
-        this.parallelism = parallelism;
-        this.logBasePath = logBasePath;
+        this.logPath = logPath;
     }
 
     @Override
     public void init() {
         super.init();
-        this.threads = new ThreadManager(new ThreadPoolExecutor(parallelism, parallelism, 60, TimeUnit.SECONDS,
+        this.threads = new ThreadManager(new ThreadPoolExecutor(SysUtils.CPU_NUM, SysUtils.CPU_NUM, 60, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<>(), new SimpleThreadFactory("executor-".concat(executorId).concat("-"))));
         logContext = new LogContext(executorId);
-        log = LogUtils.getWorkerLogger(logBasePath, workerId);
-
+        log = LogUtils.getExecutorLogger(logPath, workerId, executorId);
         try {
             serviceConfig = Services.service(this, ExecutorBackend.class)
                     .appName(getName())
                     .bind(backendHost, backendPort);
             serviceConfig.export();
         } catch (Exception e) {
-            ExceptionUtils.log(e);
             //TODO
             System.exit(-1);
         }
@@ -180,7 +176,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
 
     @Override
     public TaskExecResult execTask(Task task) {
-        Logger log = logContext.getJobLogger(logBasePath, task.getJobId());
+        Logger log = logContext.getJobLogger(logPath, task.getJobId());
         TaskExecResult execResult = execTask0(task, log);
         log.debug("exec task({}) finished, resulst >>>> {}", task.getTaskId(), execResult);
         return execResult;
@@ -202,7 +198,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
 
     @Override
     public RPCResult cancelTask(String jobId, String taskId) {
-        Logger log = logContext.getJobLogger(logBasePath, jobId);
+        Logger log = logContext.getJobLogger(logPath, jobId);
         RPCResult result = cancelTask0(taskId);
         log.debug("task({}) cancel result >>>>", result);
         return result;
@@ -273,7 +269,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
                 execedJobIds.add(task.getJobId());
                 //更新上下文日志
                 TaskLoggers.updateLogger(log);
-                TaskLoggers.updateLoggerFile(logContext.getJobLogFile(logBasePath, task.getJobId()));
+                TaskLoggers.updateLoggerFile(logContext.getJobLogFile(logPath, task.getJobId()));
                 TaskExecResult execResult = TaskExecResult.success(
                         task.getExecStrategy().getDesc()
                                 .concat("run task >>>> ")

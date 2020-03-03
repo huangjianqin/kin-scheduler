@@ -40,7 +40,7 @@ public abstract class Driver extends AbstractService {
         //提交job
         super.start();
         try {
-            SubmitJobResponse response = driverMasterBackend.submitJob(SubmitJobRequest.create(jobContext.getAppName(), jobContext.getParallelism()));
+            SubmitJobResponse response = driverMasterBackend.submitJob(SubmitJobRequest.create(jobContext.getAppName(), jobContext.getAllocateStrategyType()));
             if (Objects.nonNull(response)) {
                 if (response.isSuccess()) {
                     job = response.getJob();

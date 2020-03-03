@@ -7,7 +7,6 @@ import org.kin.scheduler.core.task.TaskLoggers;
 import org.kin.scheduler.core.task.handler.TaskHandler;
 import org.kin.scheduler.core.task.handler.TaskHandlers;
 import org.kin.scheduler.core.task.handler.domain.GlueType;
-import org.kin.scheduler.core.task.handler.domain.Singleton;
 import org.kin.scheduler.core.task.handler.params.GlueParam;
 import org.kin.scheduler.core.task.handler.results.GlueResult;
 import org.kin.scheduler.core.utils.ScriptUtils;
@@ -18,9 +17,8 @@ import java.util.Objects;
  * @author huangjianqin
  * @date 2020-02-21
  */
-@Singleton
 public class GlueHandler implements TaskHandler<GlueParam, GlueResult> {
-    private Logger log = TaskLoggers.getLogger();
+    private Logger log = TaskLoggers.logger();
 
     @Override
     public Class<GlueParam> getTaskParamType() {

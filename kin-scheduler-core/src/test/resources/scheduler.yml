@@ -5,6 +5,4 @@ kin:
 #    masterBackendHost:
     masterBackendPort: 46668
     allowEmbeddedExecutor: true
-    parallelism: 5
-#    executorParallelism:
     executorBackendPort: 51000

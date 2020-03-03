@@ -14,7 +14,7 @@ public class TaskLoggers {
         threadLocalLogger.set(log);
     }
 
-    public static Logger getLogger() {
+    public static Logger logger() {
         return threadLocalLogger.get();
     }
 

@@ -1,5 +1,7 @@
 package org.kin.scheduler.core.master.domain;
 
+import org.kin.scheduler.core.master.executor.AllocateStrategyType;
+
 import java.io.Serializable;
 
 /**
@@ -8,15 +10,15 @@ import java.io.Serializable;
  */
 public class SubmitJobRequest implements Serializable {
     private String appName;
-    private int parallelism;
+    private String allocateStrategy;
 
     public SubmitJobRequest() {
     }
 
-    public static SubmitJobRequest create(String appName, int parallelism) {
+    public static SubmitJobRequest create(String appName, AllocateStrategyType allocateStrategy) {
         SubmitJobRequest request = new SubmitJobRequest();
         request.setAppName(appName);
-        request.setParallelism(parallelism);
+        request.setAllocateStrategy(allocateStrategy.name());
         return request;
     }
 
@@ -30,11 +32,11 @@ public class SubmitJobRequest implements Serializable {
         this.appName = appName;
     }
 
-    public int getParallelism() {
-        return parallelism;
+    public String getAllocateStrategy() {
+        return allocateStrategy;
     }
 
-    public void setParallelism(int parallelism) {
-        this.parallelism = parallelism;
+    public void setAllocateStrategy(String allocateStrategy) {
+        this.allocateStrategy = allocateStrategy;
     }
 }

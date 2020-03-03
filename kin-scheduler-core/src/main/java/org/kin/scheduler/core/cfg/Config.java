@@ -12,8 +12,6 @@ public class Config {
     private int masterBackendPort;
     /** 是否允许worker内置Executor(与Worker共享资源) */
     private boolean allowEmbeddedExecutor;
-    /** Executor并发数 */
-    private int parallelism;
     /** Executor rpc端口(后续端口是累加上去) */
     private int executorBackendPort;
     /** 日志路径 */
@@ -62,14 +60,6 @@ public class Config {
 
     public void setAllowEmbeddedExecutor(boolean allowEmbeddedExecutor) {
         this.allowEmbeddedExecutor = allowEmbeddedExecutor;
-    }
-
-    public int getParallelism() {
-        return parallelism;
-    }
-
-    public void setParallelism(int parallelism) {
-        this.parallelism = parallelism;
     }
 
     public int getExecutorBackendPort() {

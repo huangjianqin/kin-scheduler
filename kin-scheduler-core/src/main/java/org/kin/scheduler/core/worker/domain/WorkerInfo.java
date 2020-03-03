@@ -1,5 +1,7 @@
 package org.kin.scheduler.core.worker.domain;
 
+import java.util.Objects;
+
 /**
  * @author huangjianqin
  * @date 2020-02-09
@@ -10,19 +12,15 @@ public class WorkerInfo {
 
     private long usedMemory;
     private long maxMemory;
-    private int uesdParallelism;
-    private int maxParallelism;
 
     public WorkerInfo() {
     }
 
-    public WorkerInfo(String workerId, String address, long usedMemory, long maxMemory, int uesdParallelism, int maxParallelism) {
+    public WorkerInfo(String workerId, String address, long usedMemory, long maxMemory) {
         this.workerId = workerId;
         this.address = address;
         this.usedMemory = usedMemory;
         this.maxMemory = maxMemory;
-        this.uesdParallelism = uesdParallelism;
-        this.maxParallelism = maxParallelism;
     }
 
     //setter && getter
@@ -59,19 +57,21 @@ public class WorkerInfo {
         this.maxMemory = maxMemory;
     }
 
-    public int getUesdParallelism() {
-        return uesdParallelism;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        WorkerInfo that = (WorkerInfo) o;
+        return Objects.equals(workerId, that.workerId);
     }
 
-    public void setUesdParallelism(int uesdParallelism) {
-        this.uesdParallelism = uesdParallelism;
-    }
-
-    public int getMaxParallelism() {
-        return maxParallelism;
-    }
-
-    public void setMaxParallelism(int maxParallelism) {
-        this.maxParallelism = maxParallelism;
+    @Override
+    public int hashCode() {
+        return Objects.hash(workerId);
     }
 }

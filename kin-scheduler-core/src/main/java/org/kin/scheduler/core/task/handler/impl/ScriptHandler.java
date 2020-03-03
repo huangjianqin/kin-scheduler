@@ -6,7 +6,6 @@ import org.kin.scheduler.core.task.TaskLoggers;
 import org.kin.scheduler.core.task.handler.TaskHandler;
 import org.kin.scheduler.core.task.handler.domain.GlueType;
 import org.kin.scheduler.core.task.handler.domain.ScriptResourcesStore;
-import org.kin.scheduler.core.task.handler.domain.Singleton;
 import org.kin.scheduler.core.task.handler.params.ScriptParam;
 import org.kin.scheduler.core.task.handler.results.GlueResult;
 import org.kin.scheduler.core.utils.ScriptUtils;
@@ -18,11 +17,10 @@ import java.util.Objects;
  * @author huangjianqin
  * @date 2020-02-21
  */
-@Singleton
 public class ScriptHandler implements TaskHandler<ScriptParam, GlueResult> {
     private static final String RUN_ENCV_PATH = "/runEnv";
 
-    private Logger log = TaskLoggers.getLogger();
+    private Logger log = TaskLoggers.logger();
 
     @Override
     public Class<ScriptParam> getTaskParamType() {

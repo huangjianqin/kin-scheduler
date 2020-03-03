@@ -2,6 +2,7 @@ package org.kin.scheduler.core.driver.impl;
 
 import org.kin.framework.JvmCloseCleaner;
 import org.kin.scheduler.core.driver.TaskSubmitFuture;
+import org.kin.scheduler.core.master.executor.AllocateStrategyType;
 import org.kin.scheduler.core.task.Task;
 import org.kin.scheduler.core.task.TaskExecStrategy;
 
@@ -28,8 +29,8 @@ public class JobContext {
     private String appName;
     /** master rpc接口 */
     private String masterAddress;
-    /** 并发 */
-    private int parallelism = 1;
+    /** executor分配策略 */
+    private AllocateStrategyType allocateStrategyType = AllocateStrategyType.Hash;
 
     public JobContext() {
     }
@@ -60,8 +61,9 @@ public class JobContext {
         return this;
     }
 
-    public JobContext parallelism(int parallelism) {
-        this.parallelism = parallelism;
+    public JobContext master(String masterAddress, AllocateStrategyType allocateStrategyType) {
+        master(masterAddress);
+        this.allocateStrategyType = allocateStrategyType;
         return this;
     }
 
@@ -134,7 +136,7 @@ public class JobContext {
         return masterAddress;
     }
 
-    public int getParallelism() {
-        return parallelism;
+    public AllocateStrategyType getAllocateStrategyType() {
+        return allocateStrategyType;
     }
 }

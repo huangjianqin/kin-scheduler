@@ -56,15 +56,6 @@ public enum ConfigKeys {
         }
     },
     /**
-     * Executor并发数, 默认等于cpu核数
-     */
-    Parallelism("Executor并发数") {
-        @Override
-        public void set(Config config, Properties properties) {
-            config.setParallelism(CfgUtils.getValue(properties, this));
-        }
-    },
-    /**
      * Executor rpc端口(后续端口是累加上去)
      */
     ExecutorBackendPort("Executor rpc端口") {

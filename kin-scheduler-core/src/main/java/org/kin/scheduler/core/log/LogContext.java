@@ -1,4 +1,4 @@
-package org.kin.scheduler.core.executor;
+package org.kin.scheduler.core.log;
 
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
@@ -15,6 +15,7 @@ import java.util.Date;
  * TODO 暂不细分日志(每个task一个日志)
  * 日志目录
  * basePath/{yyyy-MM-dd}/{workerId}.log
+ * basePath/{yyyy-MM-dd}/{workerId}/{executorId}.log
  * basePath/{yyyy-MM-dd}/{masterId}.log
  * basePath/{yyyy-MM-dd}/jobs/{jobId}.log
  */

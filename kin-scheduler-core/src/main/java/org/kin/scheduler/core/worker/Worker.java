@@ -1,25 +1,24 @@
 package org.kin.scheduler.core.worker;
 
-import ch.qos.logback.classic.Logger;
 import org.kin.framework.JvmCloseCleaner;
 import org.kin.framework.concurrent.ThreadManager;
 import org.kin.framework.service.AbstractService;
-import org.kin.framework.utils.ExceptionUtils;
 import org.kin.framework.utils.NetUtils;
 import org.kin.kinrpc.config.ReferenceConfig;
 import org.kin.kinrpc.config.References;
 import org.kin.kinrpc.config.ServiceConfig;
 import org.kin.kinrpc.config.Services;
 import org.kin.scheduler.core.cfg.Config;
+import org.kin.scheduler.core.domain.RPCResult;
 import org.kin.scheduler.core.executor.ExecutorRunner;
+import org.kin.scheduler.core.log.StaticLogger;
 import org.kin.scheduler.core.master.MasterBackend;
 import org.kin.scheduler.core.master.WorkerRes;
-import org.kin.scheduler.core.utils.LogUtils;
 import org.kin.scheduler.core.worker.domain.*;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -28,8 +27,6 @@ import java.util.concurrent.TimeUnit;
  * @date 2020-02-06
  */
 public class Worker extends AbstractService implements WorkerBackend {
-    private Logger log;
-
     private String workerId;
     /** worker配置 */
     private final Config config;
@@ -55,12 +52,12 @@ public class Worker extends AbstractService implements WorkerBackend {
         super("Worker-".concat(workerId));
         this.workerId = workerId;
         this.config = config;
+        StaticLogger.init(config.getLogPath(), workerId);
     }
 
     @Override
     public void init() {
         super.init();
-        log = LogUtils.getWorkerLogger(config.getLogPath(), workerId);
         masterBackendReferenceConfig = References.reference(MasterBackend.class)
                 .appName(getName().concat("-MasterBackend"))
                 .urls(NetUtils.getIpPort(config.getMasterBackendHost(), config.getMasterBackendPort()));
@@ -72,7 +69,7 @@ public class Worker extends AbstractService implements WorkerBackend {
                     .actorLike();
             workerServiceConfig.export();
         } catch (Exception e) {
-            ExceptionUtils.log(e);
+            StaticLogger.log.error(e.getMessage(), e);
             System.exit(-1);
         }
 
@@ -80,7 +77,7 @@ public class Worker extends AbstractService implements WorkerBackend {
 
         if (config.isAllowEmbeddedExecutor()) {
             embeddedExecutorThreads = new ThreadManager(
-                    new ThreadPoolExecutor(config.getParallelism(), config.getParallelism(), 60, TimeUnit.SECONDS, new LinkedBlockingQueue<>()));
+                    new ThreadPoolExecutor(0, Integer.MAX_VALUE, 60, TimeUnit.SECONDS, new SynchronousQueue<>()));
         }
     }
 
@@ -93,19 +90,19 @@ public class Worker extends AbstractService implements WorkerBackend {
         try {
             WorkerRegisterResult registerResult = masterBackend.registerWorker(registerInfo);
             if (!registerResult.isSuccess()) {
-                log.error("worker register error >>> {}".concat(registerResult.getDesc()));
+                StaticLogger.log.error("worker register error >>> {}".concat(registerResult.getDesc()));
                 stop();
                 System.exit(-1);
             }
         } catch (Exception e) {
-            log.error("worker register encounter error >>> {}", e, e);
+            StaticLogger.log.error("worker register encounter error >>> {}", e, e);
             stop();
             System.exit(-1);
         }
 
         JvmCloseCleaner.DEFAULT().add(JvmCloseCleaner.MAX_PRIORITY, this::stop);
 
-        log.info("worker({}) started", workerId);
+        StaticLogger.log.info("worker({}) started", workerId);
         synchronized (this) {
             try {
                 wait();
@@ -125,10 +122,10 @@ public class Worker extends AbstractService implements WorkerBackend {
         try {
             WorkerUnregisterResult unregisterResult = masterBackend.unregisterWorker(workerId);
             if (!unregisterResult.isSuccess()) {
-                log.error("worker unregister error >>> {}", unregisterResult.getDesc());
+                StaticLogger.log.error("worker unregister error >>> {}", unregisterResult.getDesc());
             }
         } catch (Exception e) {
-            log.error("worker unregister encounter error >>> {}", e, e);
+            StaticLogger.log.error("worker unregister encounter error >>> {}", e, e);
         }
         stop0();
     }
@@ -145,7 +142,7 @@ public class Worker extends AbstractService implements WorkerBackend {
 
         embeddedExecutorThreads.shutdown();
 
-        log.info("worker({}) closed", workerId);
+        StaticLogger.log.info("worker({}) closed", workerId);
     }
 
     private WorkerRegisterInfo generateWorkerRegisterInfo() {
@@ -154,8 +151,7 @@ public class Worker extends AbstractService implements WorkerBackend {
 
     private WorkerInfo generateWorkerInfo() {
         return new WorkerInfo(workerId, NetUtils.getIpPort(config.getWorkerBackendHost(), config.getWorkerBackendPort()),
-                0, 0,
-                res.getParallelism(), config.getParallelism());
+                0, 0);
     }
 
     @Override
@@ -164,9 +160,9 @@ public class Worker extends AbstractService implements WorkerBackend {
 
         //log
         if (result.isSuccess()) {
-            log.info("lauch executor success >>> executorId({}), executorBackendAddress({})", result.getExecutorId(), result.getAddress());
+            StaticLogger.log.info("lauch executor success >>> executorId({}), executorBackendAddress({})", result.getExecutorId(), result.getAddress());
         } else {
-            log.error("lauch executor fail >>> {}", result.getDesc());
+            StaticLogger.log.error("lauch executor fail >>> {}", result.getDesc());
         }
 
         return result;
@@ -176,19 +172,13 @@ public class Worker extends AbstractService implements WorkerBackend {
         ExecutorLaunchResult result;
         EmbeddedExecutorRunnable embeddedExecutorRunnable = null;
 
-        //检查启动的Executor并发数是否超过上限
-        if (launchInfo.getParallelism() + res.getParallelism() > config.getParallelism()) {
-            return ExecutorLaunchResult.failure(String.format("launching executor's parallelism is to greater(freeParallelism=%d, needParallelism=%d)", config.getParallelism() - res.getParallelism(), launchInfo.getParallelism()));
-        }
-
         int executorBackendPort = getAvailableExecutorBackendPort();
         if (executorBackendPort > 0) {
             String executorId = workerId.concat("-Executor").concat(String.valueOf(executorIdCounter++));
 
             if (config.isAllowEmbeddedExecutor()) {
                 //启动内置Executor
-                int executorParallelism = launchInfo.getParallelism();
-                embeddedExecutorRunnable = new EmbeddedExecutorRunnable(executorId, executorBackendPort, executorParallelism);
+                embeddedExecutorRunnable = new EmbeddedExecutorRunnable(executorId, executorBackendPort);
                 embeddedExecutorThreads.execute(embeddedExecutorRunnable);
                 try {
                     Thread.sleep(2000);
@@ -207,7 +197,6 @@ public class Worker extends AbstractService implements WorkerBackend {
 
         if (result.isSuccess()) {
             connectExecutor(result.getExecutorId(), result.getAddress(), embeddedExecutorRunnable);
-            res.useParallelismRes(launchInfo.getParallelism());
         }
 
         return result;
@@ -228,11 +217,13 @@ public class Worker extends AbstractService implements WorkerBackend {
     }
 
     @Override
-    public void shutdownExecutor(String executorId) {
+    public RPCResult shutdownExecutor(String executorId) {
         ExecutorContext executor = executors.remove(executorId);
         if (executor != null) {
             executor.stop();
+            return RPCResult.success();
         }
+        return RPCResult.failure(String.format("unknown executor(id=%s)", executor));
     }
 
     private void connectExecutor(String executorId, String executorBackendAddress, EmbeddedExecutorRunnable embeddedExecutorRunnable) {
@@ -247,20 +238,18 @@ public class Worker extends AbstractService implements WorkerBackend {
     class EmbeddedExecutorRunnable implements Runnable {
         private String executorId;
         private int executorBackendPort;
-        private int executorParallelism;
 
         private Thread curThread;
 
-        public EmbeddedExecutorRunnable(String executorId, int executorBackendPort, int executorParallelism) {
+        public EmbeddedExecutorRunnable(String executorId, int executorBackendPort) {
             this.executorId = executorId;
             this.executorBackendPort = executorBackendPort;
-            this.executorParallelism = executorParallelism;
         }
 
         @Override
         public void run() {
             curThread = Thread.currentThread();
-            ExecutorRunner.runExecutor(workerId, executorId, config.getWorkerBackendHost(), executorBackendPort, executorParallelism, config.getLogPath());
+            ExecutorRunner.runExecutor(workerId, executorId, config.getWorkerBackendHost(), executorBackendPort, config.getLogPath());
         }
 
         public void interrupt() {
