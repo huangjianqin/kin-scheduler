@@ -19,7 +19,7 @@ public class AllocateStrategies {
     static {
         Set<Class<? extends AllocateStrategy>> allocateStrategyImplClasses =
                 ClassUtils.getSubClass(AllocateStrategy.class.getPackage().getName(), AllocateStrategy.class, false);
-        strategies = new EnumMap<>(AllocateStrategyType.class);
+        Map<AllocateStrategyType, AllocateStrategy> strategies = new EnumMap<>(AllocateStrategyType.class);
         for (Class<? extends AllocateStrategy> allocateStrategyImplClass : allocateStrategyImplClasses) {
             try {
                 String className = allocateStrategyImplClass.getSimpleName();
@@ -32,6 +32,8 @@ public class AllocateStrategies {
                 log.error("init allocate strategy impl class({}) error >>> {}", allocateStrategyImplClass.getName(), e);
             }
         }
+
+        AllocateStrategies.strategies = strategies;
     }
 
     //----------------------------------------------------------------------------------

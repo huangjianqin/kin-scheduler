@@ -1,15 +1,15 @@
 package org.kin.scheduler.core.task.handler;
 
+import org.kin.framework.utils.ClassUtils;
 import org.kin.scheduler.core.task.Task;
 import org.kin.scheduler.core.task.handler.domain.Singleton;
-import org.reflections.Reflections;
-import org.reflections.scanners.SubTypesScanner;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * @author huangjianqin
@@ -28,10 +28,9 @@ public class TaskHandlers {
 
     private static void init() {
         synchronized (TaskHandlers.class) {
-            Map<Class<?>, TaskHandlerInfo> paramType2TaskHandler = new HashMap<>();
-
-            Reflections reflections = new Reflections(TaskHandler.class.getPackage().getName(), new SubTypesScanner());
-            for (Class<? extends TaskHandler> taskHandlerType : reflections.getSubTypesOf(TaskHandler.class)) {
+            Set<Class<? extends TaskHandler>> taskHandlerImplClasses = ClassUtils.getSubClass(TaskHandler.class.getPackage().getName(), TaskHandler.class, false);
+            Map<Class<?>, TaskHandlerInfo> paramType2TaskHandler = new HashMap<>(taskHandlerImplClasses.size());
+            for (Class<? extends TaskHandler> taskHandlerType : taskHandlerImplClasses) {
                 try {
                     Constructor constructor = taskHandlerType.getConstructor();
                     TaskHandler taskHandler;
