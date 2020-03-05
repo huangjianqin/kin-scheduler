@@ -19,13 +19,22 @@ public class ExecutorRunner {
         }
     }
 
-    public static void runExecutor(String workerId, String executorId, String backendHost, int backendPort, String logBasePath) {
-        Executor executor = new Executor(workerId, executorId, backendHost, backendPort, logBasePath);
+    private static void runExecutor0(Executor executor) {
         try {
             executor.init();
             executor.start();
         } finally {
             executor.close();
         }
+    }
+
+    public static void runExecutor(String workerId, String executorId, String backendHost, int backendPort, String logBasePath) {
+        Executor executor = new StandaloneExecutor(workerId, executorId, logBasePath, backendHost, backendPort);
+        runExecutor0(executor);
+    }
+
+    public static void runLocalExecutor(String workerId, String executorId, String logBasePath) {
+        Executor executor = new Executor(workerId, executorId, logBasePath);
+        runExecutor0(executor);
     }
 }

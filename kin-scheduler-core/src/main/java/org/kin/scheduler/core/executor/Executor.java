@@ -9,8 +9,6 @@ import org.kin.framework.utils.CollectionUtils;
 import org.kin.framework.utils.ExceptionUtils;
 import org.kin.framework.utils.FileUtils;
 import org.kin.framework.utils.SysUtils;
-import org.kin.kinrpc.config.ServiceConfig;
-import org.kin.kinrpc.config.Services;
 import org.kin.scheduler.core.domain.RPCResult;
 import org.kin.scheduler.core.executor.domain.TaskExecResult;
 import org.kin.scheduler.core.log.LogContext;
@@ -40,14 +38,8 @@ public class Executor extends AbstractService implements ExecutorBackend {
     private String workerId;
 
     private String executorId;
-    /** Executor暴露给worker的host */
-    private String backendHost;
-    /** Executor暴露给worker的端口 */
-    private int backendPort;
     /** Executor的线程池, task执行线程池 */
     private ThreadManager threads;
-    /** rpc服务配置 */
-    private ServiceConfig serviceConfig;
     /** log路径 */
     private String logPath;
     /** 日志信息 */
@@ -61,16 +53,14 @@ public class Executor extends AbstractService implements ExecutorBackend {
     /** 存储执行过的jobId, 用于shutdown executor时, 清理job占用的脚本资源 */
     private Set<String> execedJobIds = new HashSet<>();
 
-    public Executor(String workerId, String executorId, String backendHost, int backendPort) {
-        this(workerId, executorId, backendHost, backendPort, LogUtils.BASE_PATH);
+    public Executor(String workerId, String executorId) {
+        this(workerId, executorId, LogUtils.BASE_PATH);
     }
 
-    public Executor(String workerId, String executorId, String backendHost, int backendPort, String logPath) {
+    public Executor(String workerId, String executorId, String logPath) {
         super(executorId);
         this.workerId = workerId;
         this.executorId = executorId;
-        this.backendHost = backendHost;
-        this.backendPort = backendPort;
         this.logPath = logPath;
     }
 
@@ -81,15 +71,6 @@ public class Executor extends AbstractService implements ExecutorBackend {
                 new LinkedBlockingQueue<>(), new SimpleThreadFactory("executor-".concat(executorId).concat("-"))));
         logContext = new LogContext(executorId);
         log = LogUtils.getExecutorLogger(logPath, workerId, executorId);
-        try {
-            serviceConfig = Services.service(this, ExecutorBackend.class)
-                    .appName(getName())
-                    .bind(backendHost, backendPort);
-            serviceConfig.export();
-        } catch (Exception e) {
-            //TODO
-            System.exit(-1);
-        }
     }
 
     @Override
@@ -221,9 +202,6 @@ public class Executor extends AbstractService implements ExecutorBackend {
     @Override
     public void close() {
         super.close();
-        if (Objects.nonNull(serviceConfig)) {
-            serviceConfig.disable();
-        }
         threads.shutdown();
         logContext.stop();
         //清理job占用的脚本资源
