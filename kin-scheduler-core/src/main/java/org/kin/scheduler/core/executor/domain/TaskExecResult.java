@@ -7,54 +7,32 @@ import java.io.Serializable;
 /**
  * @author huangjianqin
  * @date 2020-02-06
+ * <p>
+ * task执行结果
  */
 public class TaskExecResult extends RPCResult {
-    /** 是否需要重试 */
-    private boolean needRetry;
+    private String taskId;
+    private String logFileName;
     /** 处理器执行返回结果 */
     private Serializable execResult;
 
-    private TaskExecResult() {
+    public TaskExecResult() {
     }
 
-    private TaskExecResult(boolean success, String desc) {
-        this(success, desc, false, null);
-    }
-
-    public TaskExecResult(boolean success, String desc, boolean needRetry, Serializable execResult) {
+    public TaskExecResult(String taskId, String logFileName, boolean success, String desc, Serializable execResult) {
         super(success, desc);
-        this.needRetry = needRetry;
+        this.taskId = taskId;
+        this.logFileName = logFileName;
         this.execResult = execResult;
     }
 
-    private TaskExecResult(boolean success, String desc, Serializable execResult) {
-        this(success, desc, false, execResult);
-    }
-
     //-------------------------------------------------------------------------------------------
-
-    public static TaskExecResult success() {
-        return success("");
+    public static TaskExecResult success(String taskId, String logFileName, String desc, Serializable execResult) {
+        return new TaskExecResult(taskId, logFileName, true, desc, execResult);
     }
 
-    public static TaskExecResult success(Serializable execResult) {
-        return success("", execResult);
-    }
-
-    public static TaskExecResult success(String desc) {
-        return new TaskExecResult(true, desc);
-    }
-
-    public static TaskExecResult success(String desc, Serializable execResult) {
-        return new TaskExecResult(true, desc, execResult);
-    }
-
-    public static TaskExecResult failure(String desc) {
-        return new TaskExecResult(false, desc);
-    }
-
-    public static TaskExecResult failureWithRetry(String desc) {
-        return new TaskExecResult(false, desc, true, null);
+    public static TaskExecResult failure(String taskId, String logFileName, String desc) {
+        return new TaskExecResult(taskId, logFileName, false, desc, null);
     }
 
     //-------------------------------------------------------------------------------------------
@@ -62,7 +40,6 @@ public class TaskExecResult extends RPCResult {
     @Override
     public String toString() {
         return "TaskExecResult{" +
-                "needRetry=" + needRetry +
                 ", execResult=" + execResult +
                 ", success=" + success +
                 ", desc='" + desc + '\'' +
@@ -70,13 +47,12 @@ public class TaskExecResult extends RPCResult {
     }
 
     //setter && getter
-
-    public boolean isNeedRetry() {
-        return needRetry;
+    public String getTaskId() {
+        return taskId;
     }
 
-    public void setNeedRetry(boolean needRetry) {
-        this.needRetry = needRetry;
+    public void setTaskId(String taskId) {
+        this.taskId = taskId;
     }
 
     public Serializable getExecResult() {
@@ -85,5 +61,9 @@ public class TaskExecResult extends RPCResult {
 
     public void setExecResult(Serializable execResult) {
         this.execResult = execResult;
+    }
+
+    public String getLogFileName() {
+        return logFileName;
     }
 }

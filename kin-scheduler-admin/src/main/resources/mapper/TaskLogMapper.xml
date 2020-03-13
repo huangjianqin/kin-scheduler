@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.kin.scheduler.admin.dao.TaskLogDao">
+
+    <resultMap id="TaskLog" type="org.kin.scheduler.admin.entity.TaskLog">
+        <result column="id" property="id"/>
+
+        <result column="task_id" property="taskId"/>
+        <result column="job_id" property="jobId"/>
+        <result column="desc" property="desc"/>
+        <result column="executor_address" property="executorAddress"/>
+        <result column="type" property="type"/>
+        <result column="param" property="param"/>
+        <result column="exec_strategy" property="execStrategy"/>
+        <result column="route_strategy" property="routeStrategy"/>
+        <result column="exec_timeout" property="execTimeout"/>
+        <result column="retry_times" property="retryTimes"/>
+        <result column="retry_times_limit" property="retryTimesLimit"/>
+
+        <result column="trigger_time" property="triggerTime"/>
+        <result column="trigger_code" property="triggerCode"/>
+
+        <result column="handle_time" property="handleTime"/>
+        <result column="handle_code" property="handleCode"/>
+
+        <result column="log_path" property="logPath"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+		t.id,
+		t.task_id,
+		t.job_id,
+		t.desc,
+		t.executor_address,
+		t.type,
+		t.param,
+		t.exec_strategy,
+		t.route_strategy,
+		t.exec_timeout,
+		t.retry_times,
+		t.retry_times_limit,
+		t.trigger_time,
+		t.trigger_code,
+		t.handle_time,
+		t.handle_code,
+		t.logPath
+	</sql>
+
+    <select id="pageList" resultMap="TaskLog">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM task_log AS tl LEFT JOIN task_info t on tl.taskId=t.id
+        <trim prefix="WHERE" prefixOverrides="AND | OR">
+            <if test="jobId gt 0">
+                AND tl.job_id = #{jobId}
+            </if>
+            <if test="taskId gt 0">
+                AND tl.task_id = #{taskId}
+            </if>
+            <if test="triggerTimeStart != null">
+                AND tl.trigger_time <![CDATA[ >= ]]> #{triggerTimeStart}
+            </if>
+            <if test="triggerTimeEnd != null">
+                AND tl.trigger_time <![CDATA[ <= ]]> #{triggerTimeEnd}
+            </if>
+            <if test="logStatus == 1">
+                AND tl.handle_code = 200
+            </if>
+            <if test="logStatus == 2">
+                AND (
+                tl.trigger_code NOT IN (0, 200) OR
+                tl.handle_code NOT IN (0, 200)
+                )
+            </if>
+            <if test="logStatus == 3">
+                AND tl.trigger_code = 200
+                AND tl.handle_code = 0
+            </if>
+            <if test="userRole == 0">
+                AND t.user_id = #{userId}
+            </if>
+        </trim>
+        ORDER BY tl.trigger_time DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="pageListCount" resultType="int">
+        SELECT count(1)
+        FROM task_log AS tl LEFT JOIN task_info t on tl.taskId=t.id
+        <trim prefix="WHERE" prefixOverrides="AND | OR">
+            <if test="jobId gt 0">
+                AND tl.job_id = #{jobId}
+            </if>
+            <if test="taskId gt 0">
+                AND tl.task_id = #{taskId}
+            </if>
+            <if test="triggerTimeStart != null">
+                AND tl.trigger_time <![CDATA[ >= ]]> #{triggerTimeStart}
+            </if>
+            <if test="triggerTimeEnd != null">
+                AND tl.trigger_time <![CDATA[ <= ]]> #{triggerTimeEnd}
+            </if>
+            <if test="logStatus == 1">
+                AND tl.handle_code = 200
+            </if>
+            <if test="logStatus == 2">
+                AND (
+                tl.trigger_code NOT IN (0, 200) OR
+                tl.handle_code NOT IN (0, 200)
+                )
+            </if>
+            <if test="logStatus == 3">
+                AND tl.trigger_code = 200
+                AND tl.handle_code = 0
+            </if>
+            <if test="userRole == 0">
+                AND t.user_id = #{userId}
+            </if>
+        </trim>
+        ORDER BY tl.trigger_time DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="load" parameterType="java.lang.Integer" resultMap="TaskInfo">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM task_log AS t
+        WHERE t.id = #{id}
+    </select>
+
+
+    <insert id="save" parameterType="org.kin.scheduler.admin.entity.TaskLog" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO task_log (
+        `task_id`,
+        `job_id`,
+		`desc`,
+		`executor_address`,
+		`type`,
+		`param`,
+		`exec_strategy`,
+		`route_strategy`,
+		`exec_timeout`,
+		`retry_times`,
+		`retry_times_limit`,
+        ) VALUES (
+        #{taskId},
+        #{jobId},
+        #{desc},
+        #{executorAddress},
+        #{type},
+        #{param},
+        #{execStrategy},
+        #{routeStrategy},
+        #{execTimeout},
+        #{retryTimes},
+        #{retryTimesLimit},
+        );
+    </insert>
+
+    <update id="updateTriggerInfo">
+		UPDATE task_log
+		SET
+			`trigger_time`= #{triggerTime},
+			`trigger_code`= #{triggerCode},
+			`log_path`= #{logPath},
+		WHERE `id`= #{id}
+	</update>
+
+    <update id="updateHandleInfo">
+		UPDATE task_log
+		SET
+			`handle_time`= #{handleTime},
+			`handle_code`= #{handleCode},
+			`retry_times`= #{retryTimes}
+		WHERE `id`= #{id}
+	</update>
+
+    <delete id="delete">
+		delete from task_log
+		WHERE task_id = #{taskId}
+	</delete>
+
+    <select id="countByHandleCode" resultType="int">
+        SELECT count(1)
+        FROM task_log AS t
+        <trim prefix="WHERE" prefixOverrides="AND | OR">
+            <if test="handleCode gt 0">
+                AND t.handle_code = #{handleCode}
+            </if>
+        </trim>
+    </select>
+
+    <select id="countByDay" resultType="java.util.Map">
+		SELECT
+			DATE_FORMAT(trigger_time,'%Y-%m-%d') `day`,
+			COUNT(handle_code) dayCount,
+			SUM(CASE WHEN (trigger_code in (0, 200) and handle_code = 0) then 1 else 0 end) as runningCount,
+			SUM(CASE WHEN handle_code = 200 then 1 else 0 end) as sucCount
+		FROM task_log
+		WHERE trigger_time BETWEEN #{from} and #{to}
+		GROUP BY `day`
+		ORDER BY `day`
+    </select>
+
+    <delete id="clearLog">
+        delete from task_log
+        <trim prefix="WHERE" prefixOverrides="AND | OR">
+            AND id NOT in(
+            SELECT id FROM task_log AS t
+            <trim prefix="WHERE" prefixOverrides="AND | OR">
+                <if test="task_id gt 0">
+                    AND t.task_id = #{taskId}
+                </if>
+                <if test="jobId gt 0">
+                    AND t.job_Id = #{jobId}
+                </if>
+                <if test="clearBeforeTime != null">
+                    AND t.trigger_time <![CDATA[ <= ]]> #{clearBeforeTime}
+                </if>
+            </trim>
+            <if test="clearBeforeNum gt 0">
+                ORDER BY t.trigger_time desc
+                LIMIT 0, #{clearBeforeNum}
+            </if>
+            )
+        </trim>
+    </delete>
+
+    <select id="findFailJobLogIds" resultType="int">
+		SELECT id FROM `task_log`
+		WHERE !(
+			(trigger_code in (0, 200) and handle_code = 0)
+			OR
+			(handle_code = 200)
+		)
+		ORDER BY id ASC
+	</select>
+
+</mapper>

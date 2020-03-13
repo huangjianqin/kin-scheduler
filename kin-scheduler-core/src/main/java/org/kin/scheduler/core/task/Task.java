@@ -18,6 +18,8 @@ public class Task<PARAM extends Serializable> implements Serializable {
     private TaskExecStrategy execStrategy;
     /** Task执行超时, <0 表示不等待, 0一直等待, >0 表示超时等待 */
     private int timeout = -1;
+    //log文件名，发送者定义, 可以是重试次数1 2 3, 可以是自定义唯一Name
+    private String logFileName;
 
     public Task() {
     }
@@ -111,5 +113,13 @@ public class Task<PARAM extends Serializable> implements Serializable {
 
     public void setTimeout(int timeout) {
         this.timeout = timeout;
+    }
+
+    public String getLogFileName() {
+        return logFileName;
+    }
+
+    public void setLogFileName(String logFileName) {
+        this.logFileName = logFileName;
     }
 }

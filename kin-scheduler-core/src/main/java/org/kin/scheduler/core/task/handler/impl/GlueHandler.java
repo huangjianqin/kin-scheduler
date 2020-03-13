@@ -8,6 +8,7 @@ import org.kin.scheduler.core.task.handler.TaskHandler;
 import org.kin.scheduler.core.task.handler.TaskHandlers;
 import org.kin.scheduler.core.task.handler.domain.GlueType;
 import org.kin.scheduler.core.task.handler.params.GlueParam;
+import org.kin.scheduler.core.task.handler.params.ScriptParam;
 import org.kin.scheduler.core.task.handler.results.GlueResult;
 import org.kin.scheduler.core.utils.ScriptUtils;
 
@@ -33,13 +34,18 @@ public class GlueHandler implements TaskHandler<GlueParam, GlueResult> {
             if (Objects.nonNull(glueType)) {
                 log.info("exec glue >>> {}", glueType);
                 if (glueType.isScript()) {
+                    // fix "\r" in shell
+                    if (GlueType.SHELL.equals(glueType)) {
+                        ((ScriptParam) glueParam).setScriptResources(((ScriptParam) glueParam).getScriptResources().replaceAll("\r", ""));
+                    }
+
                     //获取task handler
                     TaskHandler taskHandler = TaskHandlers.getTaskHandler(task);
                     Preconditions.checkNotNull(taskHandler, "task handler is null");
 
                     return (GlueResult) taskHandler.exec(task);
                 } else {
-                    int exitValue = ScriptUtils.execCommand(glueParam.getCommand(), TaskLoggers.getLoggerFile());
+                    int exitValue = ScriptUtils.execCommand(glueParam.getCommand(), TaskLoggers.getLoggerFileName());
                     if (exitValue == 0) {
                         return GlueResult.success();
                     }

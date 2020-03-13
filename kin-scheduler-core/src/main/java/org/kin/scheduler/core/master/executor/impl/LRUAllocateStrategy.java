@@ -1,7 +1,9 @@
 package org.kin.scheduler.core.master.executor.impl;
 
 import org.kin.framework.collection.LRUMap;
+import org.kin.framework.utils.CollectionUtils;
 import org.kin.framework.utils.TimeUtils;
+import org.kin.scheduler.core.master.ExecutorRes;
 import org.kin.scheduler.core.master.WorkerContext;
 import org.kin.scheduler.core.master.WorkerRes;
 import org.kin.scheduler.core.master.domain.SubmitJobRequest;
@@ -21,35 +23,39 @@ public class LRUAllocateStrategy implements AllocateStrategy {
     private int monitorTime;
 
     @Override
-    public List<WorkerRes> allocate(SubmitJobRequest request, Collection<WorkerContext> workerContexts) {
-        synchronized (lruMap) {
-            int now = TimeUtils.timestamp();
-            if (now >= monitorTime + EXPIRE_TIME) {
-                monitorTime = now;
-                lruMap.clear();
-            }
-
-            //put
-            Map<String, WorkerContext> workerId2Context = new HashMap<>(workerContexts.size());
-            for (WorkerContext workerContext : workerContexts) {
-                workerId2Context.put(workerContext.getWorkerInfo().getWorkerId(), workerContext);
-                lruMap.put(workerContext.getWorkerInfo().getWorkerId(), true);
-            }
-
-            //remove invalid
-            Set<String> invalidWokerIds = new HashSet<>(lruMap.size());
-            for (String workerId : lruMap.keySet()) {
-                if (!workerId2Context.containsKey(workerId)) {
-                    invalidWokerIds.add(workerId);
+    public List<WorkerRes> allocate(SubmitJobRequest request, Collection<WorkerContext> workerContexts, Collection<ExecutorRes> usedExecutorReses) {
+        if (CollectionUtils.isNonEmpty(workerContexts) && CollectionUtils.isEmpty(usedExecutorReses)) {
+            synchronized (lruMap) {
+                int now = TimeUtils.timestamp();
+                if (now >= monitorTime + EXPIRE_TIME) {
+                    monitorTime = now;
+                    lruMap.clear();
                 }
-            }
 
-            for (String workerId : invalidWokerIds) {
-                lruMap.remove(workerId);
-            }
+                //put
+                Map<String, WorkerContext> workerId2Context = new HashMap<>(workerContexts.size());
+                for (WorkerContext workerContext : workerContexts) {
+                    workerId2Context.put(workerContext.getWorkerInfo().getWorkerId(), workerContext);
+                    lruMap.put(workerContext.getWorkerInfo().getWorkerId(), true);
+                }
 
-            String selectedWorkerId = lruMap.keySet().iterator().next();
-            return Collections.singletonList(new WorkerRes(selectedWorkerId));
+                //remove invalid
+                Set<String> invalidWokerIds = new HashSet<>(lruMap.size());
+                for (String workerId : lruMap.keySet()) {
+                    if (!workerId2Context.containsKey(workerId)) {
+                        invalidWokerIds.add(workerId);
+                    }
+                }
+
+                for (String workerId : invalidWokerIds) {
+                    lruMap.remove(workerId);
+                }
+
+                String selectedWorkerId = lruMap.keySet().iterator().next();
+                return Collections.singletonList(new WorkerRes(selectedWorkerId));
+            }
         }
+
+        return null;
     }
 }

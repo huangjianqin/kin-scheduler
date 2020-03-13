@@ -3,7 +3,10 @@ package org.kin.scheduler.core.master;
 import org.kin.framework.service.AbstractService;
 import org.kin.kinrpc.config.ReferenceConfig;
 import org.kin.kinrpc.config.References;
+import org.kin.scheduler.core.domain.RPCResult;
 import org.kin.scheduler.core.worker.WorkerBackend;
+import org.kin.scheduler.core.worker.domain.ExecutorLaunchInfo;
+import org.kin.scheduler.core.worker.domain.ExecutorLaunchResult;
 import org.kin.scheduler.core.worker.domain.WorkerInfo;
 
 import java.util.Objects;
@@ -12,7 +15,7 @@ import java.util.Objects;
  * @author huangjianqin
  * @date 2020-02-09
  */
-public class WorkerContext extends AbstractService {
+public class WorkerContext extends AbstractService implements WorkerBackend {
     private WorkerInfo workerInfo;
     private ReferenceConfig<WorkerBackend> workerBackendReferenceConfig;
     private WorkerBackend workerBackend;
@@ -34,19 +37,23 @@ public class WorkerContext extends AbstractService {
     }
 
     @Override
-    public void close() {
-        super.close();
+    public void stop() {
+        super.stop();
         workerBackendReferenceConfig.disable();
     }
 
-    //getter
+    @Override
+    public ExecutorLaunchResult launchExecutor(ExecutorLaunchInfo launchInfo) {
+        return workerBackend.launchExecutor(launchInfo);
+    }
+
+    @Override
+    public RPCResult shutdownExecutor(String executorId) {
+        return workerBackend.shutdownExecutor(executorId);
+    }
 
     public WorkerInfo getWorkerInfo() {
         return workerInfo;
-    }
-
-    public WorkerBackend getWorkerBackend() {
-        return workerBackend;
     }
 
     public WorkerRes getRes() {

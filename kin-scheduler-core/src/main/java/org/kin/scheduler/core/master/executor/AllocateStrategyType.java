@@ -29,6 +29,10 @@ public enum AllocateStrategyType {
      * 轮询分配
      */
     RoundRobin,
+    /**
+     * 获取全部executor
+     */
+    All,
     ;
 
     //------------------------------------------------------

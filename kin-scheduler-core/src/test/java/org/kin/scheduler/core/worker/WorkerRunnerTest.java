@@ -52,7 +52,7 @@ public class WorkerRunnerTest {
                     thread.interrupt();
                 }
             });
-            synchronized (WorkerRunnerTest.class){
+            synchronized (WorkerRunnerTest.class) {
                 try {
                     WorkerRunnerTest.class.wait();
                 } catch (InterruptedException e) {

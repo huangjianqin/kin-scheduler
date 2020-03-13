@@ -15,6 +15,13 @@ public class MasterRunner {
         try {
             master.init();
             master.start();
+            synchronized (master) {
+                try {
+                    master.wait();
+                } catch (InterruptedException e) {
+
+                }
+            }
         } finally {
             master.stop();
         }

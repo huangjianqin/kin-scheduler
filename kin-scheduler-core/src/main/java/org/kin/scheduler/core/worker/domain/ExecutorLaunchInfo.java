@@ -7,8 +7,20 @@ import java.io.Serializable;
  * @date 2020-02-09
  */
 public class ExecutorLaunchInfo implements Serializable {
+    private String executorDriverBackendAddress;
+
     public ExecutorLaunchInfo() {
     }
 
-    //setter && getter
+    public ExecutorLaunchInfo(String executorDriverBackendAddress) {
+        this.executorDriverBackendAddress = executorDriverBackendAddress;
+    }
+
+    public String getExecutorDriverBackendAddress() {
+        return executorDriverBackendAddress;
+    }
+
+    public void setExecutorDriverBackendAddress(String executorDriverBackendAddress) {
+        this.executorDriverBackendAddress = executorDriverBackendAddress;
+    }
 }

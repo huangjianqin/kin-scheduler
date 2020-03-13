@@ -1,6 +1,7 @@
 package org.kin.scheduler.core.master.executor.impl;
 
 import org.kin.framework.utils.CollectionUtils;
+import org.kin.scheduler.core.master.ExecutorRes;
 import org.kin.scheduler.core.master.WorkerContext;
 import org.kin.scheduler.core.master.WorkerRes;
 import org.kin.scheduler.core.master.domain.SubmitJobRequest;
@@ -15,12 +16,9 @@ import java.util.*;
 public class RandomAllocateStrategy implements AllocateStrategy {
 
     @Override
-    public List<WorkerRes> allocate(SubmitJobRequest request, Collection<WorkerContext> workerContexts) {
-        if (CollectionUtils.isNonEmpty(workerContexts)) {
+    public List<WorkerRes> allocate(SubmitJobRequest request, Collection<WorkerContext> workerContexts, Collection<ExecutorRes> usedExecutorReses) {
+        if (CollectionUtils.isNonEmpty(workerContexts) && CollectionUtils.isEmpty(usedExecutorReses)) {
             List<WorkerContext> workerContextList = new ArrayList<>(workerContexts);
-            if (workerContextList.size() == 1) {
-                return Collections.singletonList(new WorkerRes(workerContextList.get(0).getWorkerInfo().getWorkerId()));
-            }
 
             Random random = new Random();
             return Collections.singletonList(new WorkerRes(workerContextList.get(random.nextInt(workerContextList.size())).getWorkerInfo().getWorkerId()));

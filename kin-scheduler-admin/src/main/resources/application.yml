@@ -1,0 +1,80 @@
+server:
+  port: 8080
+  tomcat:
+    max-threads: 0
+    uri-encoding: UTF-8
+
+spring:
+  http:
+    encoding.charset: UTF-8
+    encoding.force: true
+
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    url: jdbc:mysql://localhost:3306/kin_scheduler?useUnicode=true&autoReconnect=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull
+    username: root
+    password: 123456
+    driver-class-name: com.mysql.jdbc.Driver
+    druid:
+      initialSize: 0
+      minIdle: 0
+      maxActive: 20
+      # 配置获取连接等待超时的时间
+      maxWait: 10000
+      # 配置间隔多久才进行一次检测，检测需要关闭的空闲连接，单位是毫秒
+      timeBetweenEvictionRunsMillis: 60000
+      # 配置一个连接在池中最小生存的时间，单位是毫秒
+      minEvictableIdleTimeMillis: 300000
+      testWhileIdle: true
+      testOnBorrow: false
+      testOnReturn: false
+      # 配置监控统计拦截的filters，去掉后监控界面sql无法统计，'wall'用于防火墙
+      filters: stat,wall,log4j
+      validation-query: SELECT 1
+    # 数据库有表就不执行
+    # 可以定义你的建库文件
+    schema: classpath:schema.sql
+    # 可以定义你的数据文件
+    data: classpath:data.sql
+    # 有了错误是否继续运行
+    #    continueOnError: false
+    # 每次都初始化
+  #    initialization-mode: always
+  # mail
+  mail:
+    host: smtp.qq.com
+    port: 25
+    username: 459564034@qq.com
+    password: ~~hjq8585.+
+    properties:
+      mail.smtp.auth=true
+      mail.smtp.starttls.enable=true
+      mail.smtp.starttls.required=true
+      mail.smtp.socketFactory.class=javax.net.ssl.SSLSocketFactory
+  mvc:
+    static-path-pattern: /static/**
+    view:
+      suffix: .jsp
+      prefix: /WEB-INF/views/
+  resources:
+    static-locations: classpath:/static
+
+  # 格式化输出的json字符串
+  jackson:
+    serialization:
+      indent_output: true
+  # 缓存
+  cache:
+    ehcache:
+      config: classpath:ehcache.xml
+
+# mybatis
+mybatis:
+  mapper-locations: classpath:/mapper/*Mapper.xml
+
+kin:
+  scheduler:
+    #    masterBackendHost:
+    masterBackendPort: 46668
+    logPath: /logs
+

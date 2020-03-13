@@ -22,7 +22,7 @@ public class TaskLoggers {
         threadLocalLoggerFile.set(logFile);
     }
 
-    public static String getLoggerFile() {
+    public static String getLoggerFileName() {
         return threadLocalLoggerFile.get();
     }
 

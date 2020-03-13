@@ -14,14 +14,22 @@ public enum TaskExecStrategy {
     //覆盖先前的, 以最新的task执行
     COVER_EARLY("Cover Early"),
     ;
-
+    public static TaskExecStrategy[] VALUES = values();
     private String desc;
 
     TaskExecStrategy(String desc) {
         this.desc = desc;
     }
 
-    //getter
+    public static TaskExecStrategy getByName(String strategy) {
+        for (TaskExecStrategy execStrategy : VALUES) {
+            if (execStrategy.name().equals(strategy)) {
+                return execStrategy;
+            }
+        }
+
+        return null;
+    }
 
     public String getDesc() {
         return desc;

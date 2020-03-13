@@ -1,26 +1,27 @@
 package org.kin.scheduler.core.worker;
 
 import org.kin.framework.JvmCloseCleaner;
-import org.kin.framework.concurrent.ThreadManager;
 import org.kin.framework.service.AbstractService;
 import org.kin.framework.utils.NetUtils;
+import org.kin.framework.utils.StringUtils;
 import org.kin.kinrpc.config.ReferenceConfig;
 import org.kin.kinrpc.config.References;
 import org.kin.kinrpc.config.ServiceConfig;
 import org.kin.kinrpc.config.Services;
 import org.kin.scheduler.core.cfg.Config;
 import org.kin.scheduler.core.domain.RPCResult;
-import org.kin.scheduler.core.executor.ExecutorRunner;
+import org.kin.scheduler.core.executor.Executor;
+import org.kin.scheduler.core.executor.ExecutorBackend;
+import org.kin.scheduler.core.executor.StandaloneExecutor;
 import org.kin.scheduler.core.log.StaticLogger;
 import org.kin.scheduler.core.master.MasterBackend;
 import org.kin.scheduler.core.master.WorkerRes;
+import org.kin.scheduler.core.utils.LogUtils;
+import org.kin.scheduler.core.utils.ScriptUtils;
 import org.kin.scheduler.core.worker.domain.*;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author huangjianqin
@@ -45,8 +46,8 @@ public class Worker extends AbstractService implements WorkerBackend {
     private int executorIdCounter = 1;
     /** 已使用资源 */
     private WorkerRes res;
-    /** embedded executor threads */
-    private ThreadManager embeddedExecutorThreads;
+    /** embedded executor id 即使所属job已完成也不shutdown */
+    private String embeddedExecutorId;
 
     public Worker(String workerId, Config config) {
         super("Worker-".concat(workerId));
@@ -70,15 +71,9 @@ public class Worker extends AbstractService implements WorkerBackend {
             workerServiceConfig.export();
         } catch (Exception e) {
             StaticLogger.log.error(e.getMessage(), e);
-            System.exit(-1);
         }
 
         res = new WorkerRes(workerId);
-
-        if (config.isAllowEmbeddedExecutor()) {
-            embeddedExecutorThreads = new ThreadManager(
-                    new ThreadPoolExecutor(0, Integer.MAX_VALUE, 60, TimeUnit.SECONDS, new SynchronousQueue<>()));
-        }
     }
 
     @Override
@@ -92,24 +87,15 @@ public class Worker extends AbstractService implements WorkerBackend {
             if (!registerResult.isSuccess()) {
                 StaticLogger.log.error("worker register error >>> {}".concat(registerResult.getDesc()));
                 stop();
-                System.exit(-1);
             }
         } catch (Exception e) {
             StaticLogger.log.error("worker register encounter error >>> {}", e, e);
             stop();
-            System.exit(-1);
         }
 
         JvmCloseCleaner.DEFAULT().add(JvmCloseCleaner.MAX_PRIORITY, this::stop);
 
         StaticLogger.log.info("worker({}) started", workerId);
-        synchronized (this) {
-            try {
-                wait();
-            } catch (InterruptedException e) {
-
-            }
-        }
     }
 
     @Override
@@ -136,11 +122,9 @@ public class Worker extends AbstractService implements WorkerBackend {
         workerServiceConfig.disable();
 
         for (ExecutorContext executorContext : executors.values()) {
-            executorContext.stop();
+            executorContext.endStop();
         }
         executors.clear();
-
-        embeddedExecutorThreads.shutdown();
 
         StaticLogger.log.info("worker({}) closed", workerId);
     }
@@ -170,33 +154,52 @@ public class Worker extends AbstractService implements WorkerBackend {
 
     private ExecutorLaunchResult launchExecutor0(ExecutorLaunchInfo launchInfo) {
         ExecutorLaunchResult result;
-        EmbeddedExecutorRunnable embeddedExecutorRunnable = null;
+        Executor embeddedExecutor = null;
 
         int executorBackendPort = getAvailableExecutorBackendPort();
         if (executorBackendPort > 0) {
-            String executorId = workerId.concat("-Executor").concat(String.valueOf(executorIdCounter++));
-
             if (config.isAllowEmbeddedExecutor()) {
-                //启动内置Executor
-                embeddedExecutorRunnable = new EmbeddedExecutorRunnable(executorId, executorBackendPort);
-                embeddedExecutorThreads.execute(embeddedExecutorRunnable);
-                try {
-                    Thread.sleep(2000);
-                } catch (InterruptedException e) {
-
+                String executorId = workerId;
+                boolean embeddedExecutorinited = StringUtils.isNotBlank(embeddedExecutorId);
+                if (!embeddedExecutorinited) {
+                    //尚未初始化embedded exeuctor
+                    embeddedExecutor = new StandaloneExecutor(workerId, executorId, config.getLogPath(), config.getWorkerBackendHost(),
+                            executorBackendPort, launchInfo.getExecutorDriverBackendAddress());
+                    //启动内置Executor
+                    Executor finalEmbeddedExecutor = embeddedExecutor;
+                    Thread thread = new Thread(finalEmbeddedExecutor::start, getName().concat("-EmbeddedExecutorThread"));
+                    thread.start();
+                    try {
+                        Thread.sleep(200);
+                    } catch (InterruptedException e) {
+                    }
+                    embeddedExecutorId = executorId;
                 }
-                //TODO 优化启动好executor才返回
                 result = ExecutorLaunchResult.success(executorId, NetUtils.getIpPort(config.getWorkerBackendHost(), executorBackendPort));
+
+                if (embeddedExecutorinited) {
+                    //已初始化embedded exeuctor, 直接返回
+                    return result;
+                }
             } else {
-                //TODO 启动新jvm来启动Executor
-                result = ExecutorLaunchResult.failure("not implement");
+                String executorId = workerId.concat("-Executor").concat(String.valueOf(executorIdCounter++));
+                //启动新jvm来启动Executor
+                int commandExecResult = ScriptUtils.execCommand("java -jar kin-scheduler-admin.jar ExecutorRunner",
+                        LogUtils.getExecutorLogFileName(config.getLogPath(), workerId, executorId), "/",
+                        workerId, String.valueOf(executorId), config.getWorkerBackendHost(), String.valueOf(executorBackendPort),
+                        config.getLogPath(), launchInfo.getExecutorDriverBackendAddress());
+                if (commandExecResult == 0) {
+                    result = ExecutorLaunchResult.success(executorId, NetUtils.getIpPort(config.getWorkerBackendHost(), executorBackendPort));
+                } else {
+                    result = ExecutorLaunchResult.failure("executor launch fail");
+                }
             }
         } else {
             result = ExecutorLaunchResult.failure("can not find available port for executor");
         }
 
         if (result.isSuccess()) {
-            connectExecutor(result.getExecutorId(), result.getAddress(), embeddedExecutorRunnable);
+            connectExecutor(result.getExecutorId(), result.getAddress(), embeddedExecutor);
         }
 
         return result;
@@ -220,40 +223,21 @@ public class Worker extends AbstractService implements WorkerBackend {
     public RPCResult shutdownExecutor(String executorId) {
         ExecutorContext executor = executors.remove(executorId);
         if (executor != null) {
-            executor.stop();
+            executor.destroy();
             return RPCResult.success();
         }
         return RPCResult.failure(String.format("unknown executor(id=%s)", executor));
     }
 
-    private void connectExecutor(String executorId, String executorBackendAddress, EmbeddedExecutorRunnable embeddedExecutorRunnable) {
-        ExecutorContext executor = new ExecutorContext(executorId, embeddedExecutorRunnable);
-        executor.start(executorBackendAddress);
+    private void connectExecutor(String executorId, String executorBackendAddress, Executor embeddedExecutor) {
+        ExecutorContext executor = new ExecutorContext(executorId, embeddedExecutor);
+
+        ReferenceConfig<ExecutorBackend> executorBackendReferenceConfig = References.reference(ExecutorBackend.class)
+                .appName("Worker-ExecutorBackend-".concat(executorId))
+                .urls(executorBackendAddress);
+
+        executor.start(executorBackendReferenceConfig);
 
         executors.put(executorId, executor);
-    }
-
-    //--------------------------------------------------------------------------------------------------
-
-    class EmbeddedExecutorRunnable implements Runnable {
-        private String executorId;
-        private int executorBackendPort;
-
-        private Thread curThread;
-
-        public EmbeddedExecutorRunnable(String executorId, int executorBackendPort) {
-            this.executorId = executorId;
-            this.executorBackendPort = executorBackendPort;
-        }
-
-        @Override
-        public void run() {
-            curThread = Thread.currentThread();
-            ExecutorRunner.runExecutor(workerId, executorId, config.getWorkerBackendHost(), executorBackendPort, config.getLogPath());
-        }
-
-        public void interrupt() {
-            curThread.interrupt();
-        }
     }
 }

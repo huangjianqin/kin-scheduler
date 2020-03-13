@@ -5,12 +5,12 @@ import com.google.common.base.Preconditions;
 import org.kin.framework.concurrent.SimpleThreadFactory;
 import org.kin.framework.concurrent.ThreadManager;
 import org.kin.framework.service.AbstractService;
-import org.kin.framework.utils.CollectionUtils;
-import org.kin.framework.utils.ExceptionUtils;
-import org.kin.framework.utils.FileUtils;
-import org.kin.framework.utils.SysUtils;
+import org.kin.framework.utils.*;
 import org.kin.scheduler.core.domain.RPCResult;
+import org.kin.scheduler.core.driver.ExecutorDriverBackend;
+import org.kin.scheduler.core.executor.domain.TaskExecLog;
 import org.kin.scheduler.core.executor.domain.TaskExecResult;
+import org.kin.scheduler.core.executor.domain.TaskSubmitResult;
 import org.kin.scheduler.core.log.LogContext;
 import org.kin.scheduler.core.task.Task;
 import org.kin.scheduler.core.task.TaskLoggers;
@@ -19,7 +19,8 @@ import org.kin.scheduler.core.task.handler.TaskHandlers;
 import org.kin.scheduler.core.task.handler.impl.ScriptHandler;
 import org.kin.scheduler.core.utils.LogUtils;
 
-import java.io.File;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -33,19 +34,19 @@ import java.util.concurrent.locks.ReentrantLock;
  * @date 2020-02-06
  */
 public class Executor extends AbstractService implements ExecutorBackend {
-
     /** 所属的workerId */
-    private String workerId;
-
-    private String executorId;
+    protected String workerId;
+    protected String executorId;
     /** Executor的线程池, task执行线程池 */
-    private ThreadManager threads;
+    protected ThreadManager threads;
     /** log路径 */
-    private String logPath;
+    protected String logPath;
     /** 日志信息 */
-    private LogContext logContext;
+    protected LogContext logContext;
     /** logger */
-    private Logger log;
+    protected Logger log;
+    /** driver服务配置 */
+    protected ExecutorDriverBackend executorDriverBackend;
 
     //--------------------------------------------------------------------
     /** 存储task执行runnable, 用于中断task执行 */
@@ -64,6 +65,14 @@ public class Executor extends AbstractService implements ExecutorBackend {
         this.logPath = logPath;
     }
 
+    public Executor(String workerId, String executorId, String logPath, ExecutorDriverBackend executorDriverBackend) {
+        super(executorId);
+        this.workerId = workerId;
+        this.executorId = executorId;
+        this.logPath = logPath;
+        this.executorDriverBackend = executorDriverBackend;
+    }
+
     @Override
     public void init() {
         super.init();
@@ -77,16 +86,9 @@ public class Executor extends AbstractService implements ExecutorBackend {
     public void start() {
         super.start();
         log.info("executor({}) started", executorId);
-        synchronized (this) {
-            try {
-                wait();
-            } catch (InterruptedException e) {
-
-            }
-        }
     }
 
-    private TaskExecResult execTask0(Task task, Logger log) {
+    private TaskSubmitResult execTask0(Task task, Logger log) {
         if (this.isInState(State.STARTED)) {
             log.debug("execing task({})", task);
             try {
@@ -99,7 +101,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
                         if (CollectionUtils.isNonEmpty(exTaskRunners)) {
                             //同一Task在同一Executor中执行
                             //保留原来执行中或者待执行的task
-                            return TaskExecResult.failure("Discard Later abort task");
+                            return TaskSubmitResult.failure(task.getTaskId(), "Discard Later abort task");
                         }
 
                         break;
@@ -116,7 +118,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
                         break;
                 }
 
-                Future<TaskExecResult> future = threads.submit(newTaskRunner);
+                threads.execute(newTaskRunner);
 
                 //保存newTaskRunner
                 exTaskRunners = taskId2TaskRunners.get(task.getTaskId());
@@ -131,36 +133,21 @@ public class Executor extends AbstractService implements ExecutorBackend {
                     }
                 }
 
-                TaskExecResult execResult;
-                if (task.getTimeout() > 0) {
-                    try {
-                        execResult = future.get(task.getTimeout(), TimeUnit.SECONDS);
-                    } catch (TimeoutException e) {
-                        cleanFinishedTask(task);
-                        return TaskExecResult.failure("task execute time out");
-                    }
-                } else if (task.getTimeout() == 0) {
-                    execResult = future.get();
-                } else {
-                    execResult = null;
-                }
-
-                return execResult;
+                return TaskSubmitResult.success(task.getTaskId(), LogUtils.getTaskLogFileAbsoluteName(logPath, task.getJobId(), task.getTaskId(), task.getLogFileName()));
             } catch (Exception e) {
                 cleanFinishedTask(task);
-                return TaskExecResult.failure(ExceptionUtils.getExceptionDesc(e));
+                return TaskSubmitResult.failure(task.getTaskId(), ExceptionUtils.getExceptionDesc(e));
             }
         }
 
-        return TaskExecResult.failureWithRetry(String.format("executor(%s) stopped", executorId));
+        return TaskSubmitResult.failure(task.getTaskId(), String.format("executor(%s) stopped", executorId));
     }
 
     @Override
-    public TaskExecResult execTask(Task task) {
-        Logger log = logContext.getJobLogger(logPath, task.getJobId());
-        TaskExecResult execResult = execTask0(task, log);
-        log.debug("exec task({}) finished, resulst >>>> {}", task.getTaskId(), execResult);
-        return execResult;
+    public TaskSubmitResult execTask(Task task) {
+        TaskSubmitResult submitResult = execTask0(task, log);
+        log.debug("exec task({}) finished, resulst >>>> {}", task.getTaskId(), submitResult);
+        return submitResult;
     }
 
     public RPCResult cancelTask0(String taskId) {
@@ -174,21 +161,46 @@ public class Executor extends AbstractService implements ExecutorBackend {
             }
             return RPCResult.failure(String.format("executor(%s) has not run task(%s)", executorId, taskId));
         }
-        return TaskExecResult.failureWithRetry(String.format("executor(%s) stopped", executorId));
+        return RPCResult.failure(String.format("executor(%s) stopped", executorId));
     }
 
     @Override
-    public RPCResult cancelTask(String jobId, String taskId) {
-        Logger log = logContext.getJobLogger(logPath, jobId);
+    public RPCResult cancelTask(String taskId) {
+        log.debug("task({}) cancel >>>>", taskId);
         RPCResult result = cancelTask0(taskId);
-        log.debug("task({}) cancel result >>>>", result);
         return result;
     }
 
     @Override
+    public TaskExecLog readLog(String logPath, int fromLineNum) {
+        if (StringUtils.isBlank(logPath)) {
+            return new TaskExecLog(fromLineNum, 0, "readLog fail, logFile not found", true);
+        }
+
+        File logFile = new File(logPath);
+        if (!logFile.exists()) {
+            return new TaskExecLog(fromLineNum, 0, "readLog fail, logFile not found", true);
+        }
+
+        StringBuffer logContentBuffer = new StringBuffer();
+        int toLineNum = 0;
+        try (LineNumberReader reader = new LineNumberReader(new InputStreamReader(new FileInputStream(logFile), StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                toLineNum = reader.getLineNumber();
+                if (toLineNum >= fromLineNum) {
+                    logContentBuffer.append(line).append("\n");
+                }
+            }
+        } catch (IOException e) {
+            log.error("read log file encounter error >>>>", e);
+        }
+        return new TaskExecLog(fromLineNum, toLineNum, logContentBuffer.toString(), fromLineNum == toLineNum);
+    }
+
+    @Override
     public void destroy() {
-        close();
-        System.exit(0);
+        stop();
     }
 
     /**
@@ -200,8 +212,8 @@ public class Executor extends AbstractService implements ExecutorBackend {
     }
 
     @Override
-    public void close() {
-        super.close();
+    public void stop() {
+        super.stop();
         threads.shutdown();
         logContext.stop();
         //清理job占用的脚本资源
@@ -216,7 +228,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
 
     //-----------------------------------------------------------------------------------------------------------------
 
-    private class TaskRunner implements Callable<TaskExecResult> {
+    private class TaskRunner implements Runnable {
         private Task task;
         private Lock lock = new ReentrantLock();
         private volatile boolean isStopped;
@@ -227,12 +239,12 @@ public class Executor extends AbstractService implements ExecutorBackend {
         }
 
         @Override
-        public TaskExecResult call() {
+        public void run() {
             //有可能未开始执行就给interrupt了
             lock.lock();
             try {
                 if (isStopped) {
-                    return null;
+                    return;
                 }
             } finally {
                 lock.unlock();
@@ -240,27 +252,64 @@ public class Executor extends AbstractService implements ExecutorBackend {
 
             currentThread = Thread.currentThread();
             try {
-                //获取task handler
-                TaskHandler taskHandler = TaskHandlers.getTaskHandler(task);
-                Preconditions.checkNotNull(taskHandler, "task handler is null");
+                TaskExecResult execResult = null;
+                if (task.getTimeout() > 0) {
+                    Future<TaskExecResult> future = null;
+                    try {
+                        future = threads.submit(() -> runTask());
+                        execResult = future.get(task.getTimeout(), TimeUnit.SECONDS);
+                    } catch (TimeoutException e) {
+                        execResult = TaskExecResult.failure(task.getTaskId(), task.getLogFileName(), "task execute time out");
+                    } catch (Exception e) {
+                        if (Objects.nonNull(future) && !future.isDone()) {
+                            future.cancel(true);
+                        }
+                        if (e instanceof InterruptedException) {
+                            execResult = TaskExecResult.failure(task.getTaskId(), task.getLogFileName(), "task execute cancel");
+                            TaskLoggers.logger().debug("task({}) canceled >>>>", task.getTaskId());
+                        } else {
+                            execResult = TaskExecResult.failure(task.getTaskId(), task.getLogFileName(), "task execute encounter error >>>>".concat(ExceptionUtils.getExceptionDesc(e)));
+                        }
+                    }
+                } else if (task.getTimeout() == 0) {
+                    execResult = runTask();
+                }
 
-                execedJobIds.add(task.getJobId());
-                //更新上下文日志
-                TaskLoggers.updateLogger(log);
-                TaskLoggers.updateLoggerFile(logContext.getJobLogFile(logPath, task.getJobId()));
-                TaskExecResult execResult = TaskExecResult.success(
+                executorDriverBackend.taskFinish(execResult);
+            } finally {
+                TaskLoggers.logger().detachAndStopAllAppenders();
+                TaskLoggers.removeAll();
+                isStopped = true;
+                cleanFinishedTask(task);
+            }
+        }
+
+        private TaskExecResult runTask() {
+            //获取task handler
+            TaskHandler taskHandler = TaskHandlers.getTaskHandler(task);
+            Preconditions.checkNotNull(taskHandler, "task handler is null");
+
+            execedJobIds.add(task.getJobId());
+            //更新上下文日志
+            TaskLoggers.updateLogger(logContext.getTaskLogger(logPath, task.getJobId(), task.getTaskId(), task.getLogFileName()));
+            TaskLoggers.updateLoggerFile(LogUtils.getTaskLogFileAbsoluteName(logPath, task.getJobId(), task.getTaskId(), task.getLogFileName()));
+            TaskExecResult execResult = null;
+            try {
+                execResult = TaskExecResult.success(
+                        task.getTaskId(),
+                        task.getLogFileName(),
                         task.getExecStrategy().getDesc()
                                 .concat("run task >>>> ")
                                 .concat(task.toString()),
                         taskHandler.exec(task));
-                TaskLoggers.removeAll();
-                return execResult;
             } catch (Exception e) {
-                return TaskExecResult.failure("task execute encounter error >>>>".concat(ExceptionUtils.getExceptionDesc(e)));
-            } finally {
-                isStopped = true;
-                cleanFinishedTask(task);
+                if (e instanceof InterruptedException) {
+                    TaskLoggers.logger().debug("task({}) canceled >>>>", task.getTaskId());
+                } else {
+                    TaskExecResult.failure(task.getTaskId(), task.getLogFileName(), "task execute encounter error >>>>".concat(ExceptionUtils.getExceptionDesc(e)));
+                }
             }
+            return execResult;
         }
 
         public void interrupt() {

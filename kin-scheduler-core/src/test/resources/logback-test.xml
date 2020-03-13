@@ -49,17 +49,17 @@
         <appender-ref ref="asyncERROR"/>
     </logger>
 
-<!--    <logger name="org.kin.kinrpc" level="INFO">-->
-<!--        <appender-ref ref="CONSOLE"/>-->
-<!--        <appender-ref ref="asyncSTDOUT"/>-->
-<!--        <appender-ref ref="asyncERROR"/>-->
-<!--    </logger>-->
+    <!--    <logger name="org.kin.kinrpc" level="INFO">-->
+    <!--        <appender-ref ref="CONSOLE"/>-->
+    <!--        <appender-ref ref="asyncSTDOUT"/>-->
+    <!--        <appender-ref ref="asyncERROR"/>-->
+    <!--    </logger>-->
 
-<!--    <logger name="org.kin.scheduler" level="DEBUG">-->
-<!--        <appender-ref ref="CONSOLE"/>-->
-<!--        <appender-ref ref="asyncSTDOUT"/>-->
-<!--        <appender-ref ref="asyncERROR"/>-->
-<!--    </logger>-->
+    <!--    <logger name="org.kin.scheduler" level="DEBUG">-->
+    <!--        <appender-ref ref="CONSOLE"/>-->
+    <!--        <appender-ref ref="asyncSTDOUT"/>-->
+    <!--        <appender-ref ref="asyncERROR"/>-->
+    <!--    </logger>-->
 
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>

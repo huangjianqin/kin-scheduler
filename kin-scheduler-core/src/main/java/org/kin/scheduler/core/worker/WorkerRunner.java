@@ -26,6 +26,13 @@ public class WorkerRunner {
             try {
                 worker.init();
                 worker.start();
+                synchronized (worker) {
+                    try {
+                        worker.wait();
+                    } catch (InterruptedException e) {
+
+                    }
+                }
             } finally {
                 worker.stop();
             }

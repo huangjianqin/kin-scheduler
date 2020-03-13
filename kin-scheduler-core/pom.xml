@@ -15,12 +15,6 @@
     <dependencies>
         <dependency>
             <groupId>org.kin</groupId>
-            <artifactId>kin-framework</artifactId>
-            <version>${kin-framework.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.kin</groupId>
             <artifactId>kin-rpc</artifactId>
             <version>${kin-rpc.version}</version>
         </dependency>

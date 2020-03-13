@@ -11,14 +11,18 @@ import java.io.Serializable;
 public class SubmitJobRequest implements Serializable {
     private String appName;
     private String allocateStrategy;
+    private String executorDriverBackendAddress;
+    private String masterDriverBackendAddress;
 
     public SubmitJobRequest() {
     }
 
-    public static SubmitJobRequest create(String appName, AllocateStrategyType allocateStrategy) {
+    public static SubmitJobRequest create(String appName, AllocateStrategyType allocateStrategy, String executorDriverBackendAddress, String masterDriverBackendAddress) {
         SubmitJobRequest request = new SubmitJobRequest();
         request.setAppName(appName);
         request.setAllocateStrategy(allocateStrategy.name());
+        request.setExecutorDriverBackendAddress(executorDriverBackendAddress);
+        request.setMasterDriverBackendAddress(masterDriverBackendAddress);
         return request;
     }
 
@@ -38,5 +42,21 @@ public class SubmitJobRequest implements Serializable {
 
     public void setAllocateStrategy(String allocateStrategy) {
         this.allocateStrategy = allocateStrategy;
+    }
+
+    public String getExecutorDriverBackendAddress() {
+        return executorDriverBackendAddress;
+    }
+
+    public void setExecutorDriverBackendAddress(String executorDriverBackendAddress) {
+        this.executorDriverBackendAddress = executorDriverBackendAddress;
+    }
+
+    public String getMasterDriverBackendAddress() {
+        return masterDriverBackendAddress;
+    }
+
+    public void setMasterDriverBackendAddress(String masterDriverBackendAddress) {
+        this.masterDriverBackendAddress = masterDriverBackendAddress;
     }
 }

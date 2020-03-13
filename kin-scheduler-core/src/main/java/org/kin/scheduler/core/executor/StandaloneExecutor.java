@@ -1,7 +1,13 @@
 package org.kin.scheduler.core.executor;
 
+import org.kin.framework.utils.NetUtils;
+import org.kin.kinrpc.config.ReferenceConfig;
+import org.kin.kinrpc.config.References;
 import org.kin.kinrpc.config.ServiceConfig;
 import org.kin.kinrpc.config.Services;
+import org.kin.scheduler.core.domain.RPCResult;
+import org.kin.scheduler.core.driver.ExecutorDriverBackend;
+import org.kin.scheduler.core.driver.domain.ExecutorRegisterInfo;
 
 import java.util.Objects;
 
@@ -18,17 +24,22 @@ public class StandaloneExecutor extends Executor {
     private int backendPort;
     /** rpc服务配置 */
     private ServiceConfig serviceConfig;
+    private String driverAddress;
+    /** driver服务配置 */
+    private ReferenceConfig<ExecutorDriverBackend> executorDriverBackendReferenceConfig;
 
-    public StandaloneExecutor(String workerId, String executorId, String backendHost, int backendPort) {
+    public StandaloneExecutor(String workerId, String executorId, String backendHost, int backendPort, String driverAddress) {
         super(workerId, executorId);
         this.backendHost = backendHost;
         this.backendPort = backendPort;
+        this.driverAddress = driverAddress;
     }
 
-    public StandaloneExecutor(String workerId, String executorId, String logPath, String backendHost, int backendPort) {
+    public StandaloneExecutor(String workerId, String executorId, String logPath, String backendHost, int backendPort, String driverAddress) {
         super(workerId, executorId, logPath);
         this.backendHost = backendHost;
         this.backendPort = backendPort;
+        this.driverAddress = driverAddress;
     }
 
     @Override
@@ -41,16 +52,29 @@ public class StandaloneExecutor extends Executor {
                     .bind(backendHost, backendPort);
             serviceConfig.export();
         } catch (Exception e) {
-            //TODO
-            System.exit(-1);
+            log.error(e.getMessage(), e);
         }
+        executorDriverBackendReferenceConfig = References.reference(ExecutorDriverBackend.class)
+                .appName(getName().concat("-ExecutorDriverBackendReference"))
+                .urls(driverAddress);
+        executorDriverBackend = executorDriverBackendReferenceConfig.get();
     }
 
     @Override
-    public void close() {
+    public void start() {
+        RPCResult result = executorDriverBackend.registerExecutor(new ExecutorRegisterInfo(executorId, NetUtils.getIpPort(backendHost, backendPort)));
+        if (!result.isSuccess()) {
+            log.error("executor register driver error >>> {}", result.getDesc());
+        }
+        super.start();
+    }
+
+    @Override
+    public void stop() {
         if (Objects.nonNull(serviceConfig)) {
             serviceConfig.disable();
         }
-        super.close();
+        executorDriverBackendReferenceConfig.disable();
+        super.stop();
     }
 }

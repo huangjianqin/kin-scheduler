@@ -1,7 +1,8 @@
 package org.kin.scheduler.core.driver;
 
 import org.kin.framework.utils.CollectionUtils;
-import org.kin.scheduler.core.driver.impl.JobTaskScheduler;
+import org.kin.scheduler.core.executor.ExecutorBackend;
+import org.kin.scheduler.core.executor.domain.TaskExecResult;
 import org.kin.scheduler.core.task.Task;
 
 import java.util.ArrayList;
@@ -13,7 +14,7 @@ import java.util.List;
  */
 public class TaskContext {
     private static final int TASK_FINISH = 1;
-    private static final int MAX_RETRY_TIMES = 3;
+    private static final int TASK_CANCELED = 2;
 
     private Task task;
     private int status;
@@ -23,39 +24,43 @@ public class TaskContext {
      * 最后一个item表示正执行该task的ExecutorId
      */
     private List<String> execedExecutorIds = new ArrayList<>();
-    private int retryTimes;
-    private TaskSubmitFuture future;
-    private JobTaskScheduler.TaskExecRunnable execRunnable;
+    /**
+     * 正在执行该task的executor
+     */
+    private ExecutorBackend executorBackend;
+    private TaskExecFuture future;
 
     public TaskContext(Task task) {
         this.task = task;
     }
 
-    public void submitTask(TaskSubmitFuture future, JobTaskScheduler.TaskExecRunnable execRunnable) {
+    public void submitTask(TaskExecFuture future) {
         this.future = future;
-        this.execRunnable = execRunnable;
     }
 
-    public void exec(String executorId) {
+    public void exec(String executorId, ExecutorBackend executorBackend) {
         execedExecutorIds.add(executorId);
+        this.executorBackend = executorBackend;
+    }
+
+    public void execFail() {
+        this.executorBackend = null;
     }
 
     public boolean isFinish() {
-        return status == TASK_FINISH;
+        return status == TASK_FINISH || status == TASK_CANCELED;
     }
 
-    public void finish(Object result) {
-        if (isUnFinish()) {
-            this.result = result;
+    public void finish(TaskExecResult execResult) {
+        if (isNotFinish()) {
+            this.result = execResult.getExecResult();
             this.status = TASK_FINISH;
-            synchronized (future) {
-                future.notifyAll();
-            }
+            future.done(execResult);
         }
     }
 
-    public boolean isUnFinish() {
-        return status != TASK_FINISH;
+    public boolean isNotFinish() {
+        return !isFinish();
     }
 
     /**
@@ -69,12 +74,13 @@ public class TaskContext {
         return null;
     }
 
-    public boolean retry() {
-        retryTimes++;
-        return retryTimes <= MAX_RETRY_TIMES;
+    public void cancel() {
+        if (isNotFinish()) {
+            this.status = TASK_CANCELED;
+            future.done(null);
+        }
     }
 
-    //getter
 
     public Task getTask() {
         return task;
@@ -88,15 +94,11 @@ public class TaskContext {
         return execedExecutorIds;
     }
 
-    public int getRetryTimes() {
-        return retryTimes;
-    }
-
-    public TaskSubmitFuture getFuture() {
+    public TaskExecFuture getFuture() {
         return future;
     }
 
-    public JobTaskScheduler.TaskExecRunnable getExecRunnable() {
-        return execRunnable;
+    public ExecutorBackend getExecutorBackend() {
+        return executorBackend;
     }
 }

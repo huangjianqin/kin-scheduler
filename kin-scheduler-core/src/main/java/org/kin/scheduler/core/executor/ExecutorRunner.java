@@ -8,14 +8,15 @@ package org.kin.scheduler.core.executor;
  */
 public class ExecutorRunner {
     public static void main(String[] args) {
-        if (args.length >= 3) {
+        if (args.length >= 6) {
             String workerid = args[0];
             String executorId = args[1];
             String backendHost = args[2];
             int backendPort = Integer.valueOf(args[3]);
             String logBasePath = args[4];
+            String driverAddress = args[5];
 
-            runExecutor(workerid, executorId, backendHost, backendPort, logBasePath);
+            runExecutor(workerid, executorId, backendHost, backendPort, logBasePath, driverAddress);
         }
     }
 
@@ -23,13 +24,20 @@ public class ExecutorRunner {
         try {
             executor.init();
             executor.start();
+            synchronized (executor) {
+                try {
+                    executor.wait();
+                } catch (InterruptedException e) {
+
+                }
+            }
         } finally {
             executor.close();
         }
     }
 
-    public static void runExecutor(String workerId, String executorId, String backendHost, int backendPort, String logBasePath) {
-        Executor executor = new StandaloneExecutor(workerId, executorId, logBasePath, backendHost, backendPort);
+    public static void runExecutor(String workerId, String executorId, String backendHost, int backendPort, String logBasePath, String driverAddress) {
+        Executor executor = new StandaloneExecutor(workerId, executorId, logBasePath, backendHost, backendPort, driverAddress);
         runExecutor0(executor);
     }
 
