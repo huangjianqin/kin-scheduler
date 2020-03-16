@@ -2,7 +2,6 @@ package org.kin.scheduler.core.executor;
 
 import ch.qos.logback.classic.Logger;
 import com.google.common.base.Preconditions;
-import org.kin.framework.concurrent.SimpleThreadFactory;
 import org.kin.framework.concurrent.ThreadManager;
 import org.kin.framework.service.AbstractService;
 import org.kin.framework.utils.*;
@@ -76,8 +75,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
     @Override
     public void init() {
         super.init();
-        this.threads = new ThreadManager(new ThreadPoolExecutor(SysUtils.CPU_NUM, SysUtils.CPU_NUM, 60, TimeUnit.SECONDS,
-                new LinkedBlockingQueue<>(), new SimpleThreadFactory("executor-".concat(executorId).concat("-"))));
+        this.threads = ThreadManager.fix(SysUtils.CPU_NUM, "executor-".concat(executorId).concat("-"));
         logContext = new LogContext(executorId);
         log = LogUtils.getExecutorLogger(logPath, workerId, executorId);
     }

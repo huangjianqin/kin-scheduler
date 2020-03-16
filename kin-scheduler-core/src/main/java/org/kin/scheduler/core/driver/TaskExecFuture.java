@@ -1,7 +1,6 @@
 package org.kin.scheduler.core.driver;
 
 import org.kin.framework.JvmCloseCleaner;
-import org.kin.framework.concurrent.SimpleThreadFactory;
 import org.kin.framework.concurrent.ThreadManager;
 import org.kin.framework.utils.SysUtils;
 import org.kin.scheduler.core.executor.domain.TaskExecResult;
@@ -9,7 +8,10 @@ import org.kin.scheduler.core.executor.domain.TaskSubmitResult;
 
 import java.util.Collection;
 import java.util.Objects;
-import java.util.concurrent.*;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author huangjianqin
@@ -18,9 +20,7 @@ import java.util.concurrent.*;
  * 等待task执行的future
  */
 public class TaskExecFuture<R> implements Future<R> {
-    private static ThreadManager CALLBACK_THREADS = new ThreadManager(
-            new ThreadPoolExecutor(SysUtils.CPU_NUM, SysUtils.CPU_NUM, 60L, TimeUnit.SECONDS,
-                    new LinkedBlockingQueue<>(), new SimpleThreadFactory("TaskSubmitFuture-Callback-Thread-")));
+    private static ThreadManager CALLBACK_THREADS = ThreadManager.fix(SysUtils.CPU_NUM, "TaskSubmitFuture-Callback-Thread-");
 
     static {
         JvmCloseCleaner.DEFAULT().add(CALLBACK_THREADS::shutdown);
