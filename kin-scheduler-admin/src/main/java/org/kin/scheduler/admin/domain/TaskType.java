@@ -1,6 +1,6 @@
 package org.kin.scheduler.admin.domain;
 
-import org.kin.scheduler.admin.utils.JacksonUtils;
+import org.kin.framework.utils.JSON;
 import org.kin.scheduler.core.task.handler.params.ScriptParam;
 
 import java.io.Serializable;
@@ -58,8 +58,8 @@ public enum TaskType {
 
     public abstract boolean validParam(String paramJson);
 
-    public <P> P parseParam(String paramJson) {
-        return (P) JacksonUtils.readValue(paramJson, getParamClass());
+    public <P extends Serializable> P parseParam(String paramJson) {
+        return (P) JSON.read(paramJson, getParamClass());
     }
 
 }

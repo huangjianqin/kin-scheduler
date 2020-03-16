@@ -3,6 +3,7 @@ package org.kin.scheduler.admin.controller;
 import org.kin.framework.utils.CollectionUtils;
 import org.kin.framework.utils.ExceptionUtils;
 import org.kin.framework.utils.StringUtils;
+import org.kin.framework.utils.TimeUtils;
 import org.kin.scheduler.admin.core.KinSchedulerContext;
 import org.kin.scheduler.admin.dao.TaskLogDao;
 import org.kin.scheduler.admin.domain.Permission;
@@ -10,7 +11,6 @@ import org.kin.scheduler.admin.domain.WebResponse;
 import org.kin.scheduler.admin.entity.TaskLog;
 import org.kin.scheduler.admin.entity.User;
 import org.kin.scheduler.admin.service.UserService;
-import org.kin.scheduler.admin.utils.DateUtils;
 import org.kin.scheduler.core.executor.domain.TaskExecLog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +39,7 @@ public class TaskLogController {
 
     @InitBinder
     public void initBinder(WebDataBinder binder) {
-        binder.registerCustomEditor(Date.class, new CustomDateEditor(DateUtils.DATETIME_FORMAT, true));
+        binder.registerCustomEditor(Date.class, new CustomDateEditor(TimeUtils.getDatetimeFormat(), true));
     }
 
     @RequestMapping("/chartInfo")
@@ -73,7 +73,7 @@ public class TaskLogController {
             }
         } else {
             for (int i = 4; i > -1; i--) {
-                dayList.add(DateUtils.formatDate(DateUtils.addDays(new Date(), -i)));
+                dayList.add(TimeUtils.formatDate(TimeUtils.addDays(new Date(), -i)));
                 runningList.add(0);
                 sucList.add(0);
                 failList.add(0);
@@ -107,8 +107,8 @@ public class TaskLogController {
         if (filterTime != null && filterTime.trim().length() > 0) {
             String[] temp = filterTime.split(" - ");
             if (temp != null && temp.length == 2) {
-                triggerTimeStart = DateUtils.parseDateTime(temp[0]);
-                triggerTimeEnd = DateUtils.parseDateTime(temp[1]);
+                triggerTimeStart = TimeUtils.parseDateTime(temp[0]);
+                triggerTimeEnd = TimeUtils.parseDateTime(temp[1]);
             }
         }
 
@@ -159,16 +159,16 @@ public class TaskLogController {
         int clearBeforeNum = 0;
         if (type == 1) {
             // 清理一个月之前日志数据
-            clearBeforeTime = DateUtils.addMonths(new Date(), -1);
+            clearBeforeTime = TimeUtils.addMonths(new Date(), -1);
         } else if (type == 2) {
             // 清理三个月之前日志数据
-            clearBeforeTime = DateUtils.addMonths(new Date(), -3);
+            clearBeforeTime = TimeUtils.addMonths(new Date(), -3);
         } else if (type == 3) {
             // 清理六个月之前日志数据
-            clearBeforeTime = DateUtils.addMonths(new Date(), -6);
+            clearBeforeTime = TimeUtils.addMonths(new Date(), -6);
         } else if (type == 4) {
             // 清理一年之前日志数据
-            clearBeforeTime = DateUtils.addYears(new Date(), -1);
+            clearBeforeTime = TimeUtils.addYears(new Date(), -1);
         } else if (type == 5) {
             // 清理一千条以前日志数据
             clearBeforeNum = 1000;

@@ -1,5 +1,6 @@
 package org.kin.scheduler.admin.service.impl;
 
+import org.kin.framework.utils.JSON;
 import org.kin.framework.utils.StringUtils;
 import org.kin.scheduler.admin.dao.UserDao;
 import org.kin.scheduler.admin.domain.CookieKeies;
@@ -7,7 +8,6 @@ import org.kin.scheduler.admin.domain.WebResponse;
 import org.kin.scheduler.admin.entity.User;
 import org.kin.scheduler.admin.service.UserService;
 import org.kin.scheduler.admin.utils.CookieUtils;
-import org.kin.scheduler.admin.utils.JacksonUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
@@ -26,7 +26,7 @@ public class UserServiceImpl implements UserService {
     private UserDao userDao;
 
     private String makeToken(User user) {
-        String tokenJson = JacksonUtils.writeValueAsString(user);
+        String tokenJson = JSON.write(user);
         String tokenHex = new BigInteger(tokenJson.getBytes()).toString(16);
         return tokenHex;
     }
@@ -35,7 +35,7 @@ public class UserServiceImpl implements UserService {
         User user = null;
         if (tokenHex != null) {
             String tokenJson = new String(new BigInteger(tokenHex, 16).toByteArray());
-            user = JacksonUtils.readValue(tokenJson, User.class);
+            user = JSON.read(tokenJson, User.class);
         }
         return user;
     }

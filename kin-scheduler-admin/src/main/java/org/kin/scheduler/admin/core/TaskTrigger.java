@@ -1,13 +1,13 @@
 package org.kin.scheduler.admin.core;
 
 import org.kin.framework.utils.StringUtils;
+import org.kin.framework.utils.TimeUtils;
 import org.kin.scheduler.admin.core.route.RouteStrategyType;
 import org.kin.scheduler.admin.domain.Constants;
 import org.kin.scheduler.admin.domain.TaskType;
 import org.kin.scheduler.admin.entity.JobInfo;
 import org.kin.scheduler.admin.entity.TaskInfo;
 import org.kin.scheduler.admin.entity.TaskLog;
-import org.kin.scheduler.admin.utils.DateUtils;
 import org.kin.scheduler.core.driver.TaskExecCallback;
 import org.kin.scheduler.core.driver.TaskExecFuture;
 import org.kin.scheduler.core.executor.domain.TaskExecResult;
@@ -122,7 +122,7 @@ public class TaskTrigger {
                 JobInfo jobInfo = KinSchedulerContext.instance().getJobInfoDao().load(taskLog.getJobId());
 
                 StringBuffer triggerMsg = new StringBuffer();
-                triggerMsg.append("<br>调度时间: ").append(DateUtils.formatDateTime(taskLog.getTriggerTime()));
+                triggerMsg.append("<br>调度时间: ").append(TimeUtils.formatDateTime(taskLog.getTriggerTime()));
                 triggerMsg.append("<br>调度结果: ").append(taskLog.getTriggerCode() == Constants.SUCCESS_CODE ? "成功" : "失败");
                 triggerMsg.append("<br>Executor地址: ").append(taskLog.getExecutorAddress());
                 triggerMsg.append("<br>Task类型: ").append(TaskType.getByName(taskLog.getType()).getDesc());
@@ -134,7 +134,7 @@ public class TaskTrigger {
                 triggerMsg.append("<br>Task log地址: ").append(taskLog.getLogPath());
 
                 StringBuffer handlerMsg = new StringBuffer();
-                handlerMsg.append("<br>任务执行完成时间: ").append(DateUtils.formatDateTime(taskLog.getHandleTime()));
+                handlerMsg.append("<br>任务执行完成时间: ").append(TimeUtils.formatDateTime(taskLog.getHandleTime()));
                 handlerMsg.append("<br>任务执行结果: ").append(taskLog.getHandleCode() == Constants.SUCCESS_CODE ? "成功" : "失败");
                 handlerMsg.append("<br>任务执行结果描述: ").append(execResult.getDesc());
 

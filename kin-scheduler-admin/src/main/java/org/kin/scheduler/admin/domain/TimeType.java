@@ -1,7 +1,7 @@
 package org.kin.scheduler.admin.domain;
 
+import org.kin.framework.utils.TimeUtils;
 import org.kin.scheduler.admin.core.TaskScheduleKeeper;
-import org.kin.scheduler.admin.utils.DateUtils;
 
 import java.text.ParseException;
 import java.util.Date;
@@ -18,13 +18,13 @@ public enum TimeType {
     ABSOLUTE {
         @Override
         public long parseTime(String timeStr) throws Exception {
-            return DateUtils.parseDateTime(timeStr).getTime();
+            return TimeUtils.parseDateTime(timeStr).getTime();
         }
 
         @Override
         public boolean validTimeFormat(String timeStr) {
             try {
-                return Objects.nonNull(DateUtils.DATETIME_FORMAT.parse(timeStr));
+                return Objects.nonNull(TimeUtils.getDatetimeFormat().parse(timeStr));
             } catch (ParseException e) {
 
             }
