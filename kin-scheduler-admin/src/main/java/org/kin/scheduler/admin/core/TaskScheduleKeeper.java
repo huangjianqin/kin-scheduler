@@ -2,7 +2,6 @@ package org.kin.scheduler.admin.core;
 
 import org.kin.framework.concurrent.Keeper;
 import org.kin.framework.concurrent.PartitionTaskExecutor;
-import org.kin.framework.concurrent.SimpleThreadFactory;
 import org.kin.framework.concurrent.impl.EfficientHashPartitioner;
 import org.kin.framework.utils.CollectionUtils;
 import org.kin.scheduler.admin.dao.TaskInfoDao;
@@ -51,7 +50,7 @@ public class TaskScheduleKeeper {
                 new PartitionTaskExecutor(
                         KinSchedulerContext.instance().getSchedulerParallism(),
                         EfficientHashPartitioner.INSTANCE,
-                        new SimpleThreadFactory("admin-scheduler-thread-"));
+                        "admin-scheduler-thread-");
         scheduleKeeper = Keeper.keep(this::schedule);
         ringScheduleKeeper = Keeper.keep(this::ringSchedule);
     }
