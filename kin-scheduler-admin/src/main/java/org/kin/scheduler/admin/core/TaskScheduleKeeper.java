@@ -2,6 +2,7 @@ package org.kin.scheduler.admin.core;
 
 import org.kin.framework.concurrent.Keeper;
 import org.kin.framework.concurrent.PartitionTaskExecutor;
+import org.kin.framework.concurrent.TimeRing;
 import org.kin.framework.concurrent.impl.EfficientHashPartitioner;
 import org.kin.framework.utils.CollectionUtils;
 import org.kin.scheduler.admin.dao.TaskInfoDao;
@@ -13,7 +14,9 @@ import org.slf4j.LoggerFactory;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -41,7 +44,7 @@ public class TaskScheduleKeeper {
 
     private PartitionTaskExecutor<Integer> triggerThreads;
     private Keeper.KeeperStopper scheduleKeeper;
-    private Keeper.KeeperStopper ringScheduleKeeper;
+    private TimeRing<Integer> timeRing;
     private Map<Integer, List<Integer>> ringData = new ConcurrentHashMap<>();
     private Connection conn = null;
 
@@ -52,7 +55,8 @@ public class TaskScheduleKeeper {
                         EfficientHashPartitioner.INSTANCE,
                         "admin-scheduler-thread-");
         scheduleKeeper = Keeper.keep(this::schedule);
-        ringScheduleKeeper = Keeper.keep(this::ringSchedule);
+        timeRing = TimeRing.second(2, this::trigger);
+        timeRing.start();
     }
 
     public void trigger(int taskId) {
@@ -177,10 +181,8 @@ public class TaskScheduleKeeper {
 
     private void pushRing(TaskInfo taskInfo) {
         // 1、make ring second
-        int ringSecond = (int) ((taskInfo.getTriggerNextTime() / 1000) % 60);
-
         // 2、push time ring
-        pushTimeRing(ringSecond, taskInfo.getId());
+        timeRing.push(taskInfo.getTriggerNextTime(), taskInfo.getId());
 
         // 3、fresh next
         taskInfo.setTriggerLastTime(taskInfo.getTriggerNextTime());
@@ -191,56 +193,9 @@ public class TaskScheduleKeeper {
         }
     }
 
-    private void pushTimeRing(int ringSecond, int jobId) {
-        // push async ring
-        List<Integer> ringItemData = ringData.computeIfAbsent(ringSecond, k -> new ArrayList<>());
-        ringItemData.add(jobId);
-    }
-
-    public void ringSchedule() {
-        // align second
-        try {
-            TimeUnit.MILLISECONDS.sleep(1000 - System.currentTimeMillis() % 1000);
-        } catch (InterruptedException e) {
-
-        }
-
-        try {
-            // second data
-            List<Integer> ringItemData = new ArrayList<>();
-            int nowSecond = Calendar.getInstance().get(Calendar.SECOND);   // 避免处理耗时太长，跨过刻度，向前校验一个刻度；
-            for (int i = 0; i < 2; i++) {
-                List<Integer> tmpData = ringData.remove((nowSecond + 60 - i) % 60);
-                if (tmpData != null) {
-                    ringItemData.addAll(tmpData);
-                }
-            }
-
-            // ring trigger
-            if (CollectionUtils.isNonEmpty(ringItemData)) {
-                // do trigger
-                for (int jobId : ringItemData) {
-                    // do trigger
-                    trigger(jobId);
-                }
-                // clear
-                ringItemData.clear();
-            }
-        } catch (Exception e) {
-            log.error("时钟调度遇到异常 >>>> ", e);
-        }
-
-        // next second, align second
-        try {
-            TimeUnit.MILLISECONDS.sleep(1000 - System.currentTimeMillis() % 1000);
-        } catch (InterruptedException e) {
-        }
-
-    }
-
     public void stop() {
         scheduleKeeper.stop();
-        ringScheduleKeeper.stop();
+        timeRing.stop();
         triggerThreads.shutdown();
     }
 }
