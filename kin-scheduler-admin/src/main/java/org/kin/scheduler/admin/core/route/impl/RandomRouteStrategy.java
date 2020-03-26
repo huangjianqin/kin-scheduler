@@ -7,7 +7,7 @@ import org.kin.scheduler.core.worker.ExecutorContext;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * @author huangjianqin
@@ -20,8 +20,7 @@ public class RandomRouteStrategy implements RouteStrategy {
         if (CollectionUtils.isNonEmpty(availableExecutorContexts)) {
             List<ExecutorContext> availableExecutorContextList = new ArrayList<>(availableExecutorContexts);
 
-            Random random = new Random();
-            return availableExecutorContextList.get(random.nextInt(availableExecutorContextList.size()));
+            return availableExecutorContextList.get(ThreadLocalRandom.current().nextInt(availableExecutorContextList.size()));
         }
 
         return null;

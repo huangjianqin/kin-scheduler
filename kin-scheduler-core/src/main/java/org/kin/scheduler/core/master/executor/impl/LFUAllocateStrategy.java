@@ -9,6 +9,7 @@ import org.kin.scheduler.core.master.domain.SubmitJobRequest;
 import org.kin.scheduler.core.master.executor.AllocateStrategy;
 
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -38,7 +39,7 @@ public class LFUAllocateStrategy implements AllocateStrategy {
                     workerId2Context.put(workerId, workerContext);
                     if (!lfuMap.containsKey(workerId) || lfuMap.get(workerId) > 1000000) {
                         //缓解首次的压力
-                        lfuMap.put(workerId, new Random().nextInt(workerContexts.size()));
+                        lfuMap.put(workerId, ThreadLocalRandom.current().nextInt(workerContexts.size()));
                     }
                 }
 

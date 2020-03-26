@@ -7,7 +7,11 @@ import org.kin.scheduler.core.master.WorkerRes;
 import org.kin.scheduler.core.master.domain.SubmitJobRequest;
 import org.kin.scheduler.core.master.executor.AllocateStrategy;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * @author huangjianqin
@@ -20,8 +24,7 @@ public class RandomAllocateStrategy implements AllocateStrategy {
         if (CollectionUtils.isNonEmpty(workerContexts) && CollectionUtils.isEmpty(usedExecutorReses)) {
             List<WorkerContext> workerContextList = new ArrayList<>(workerContexts);
 
-            Random random = new Random();
-            return Collections.singletonList(new WorkerRes(workerContextList.get(random.nextInt(workerContextList.size())).getWorkerInfo().getWorkerId()));
+            return Collections.singletonList(new WorkerRes(workerContextList.get(ThreadLocalRandom.current().nextInt(workerContextList.size())).getWorkerInfo().getWorkerId()));
         }
 
         return null;

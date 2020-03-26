@@ -5,6 +5,7 @@ import org.kin.scheduler.admin.core.route.RouteStrategy;
 import org.kin.scheduler.core.worker.ExecutorContext;
 
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -33,7 +34,7 @@ public class LFURouteStrategy implements RouteStrategy {
                 executorId2Context.put(executorId, executorContext);
                 if (!lfuMap.containsKey(executorId) || lfuMap.get(executorId) > 1000000) {
                     //缓解首次的压力
-                    lfuMap.put(executorId, new Random().nextInt(availableExecutorContexts.size()));
+                    lfuMap.put(executorId, ThreadLocalRandom.current().nextInt(availableExecutorContexts.size()));
                 }
             }
 

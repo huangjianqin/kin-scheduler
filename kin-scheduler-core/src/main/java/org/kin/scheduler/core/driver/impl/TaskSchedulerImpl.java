@@ -9,6 +9,7 @@ import org.kin.scheduler.core.task.Task;
 import org.kin.scheduler.core.worker.ExecutorContext;
 
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -18,7 +19,6 @@ import java.util.stream.Collectors;
  */
 public class TaskSchedulerImpl extends TaskScheduler {
     private AtomicInteger taskIdCounter = new AtomicInteger(1);
-    private Random random = new Random();
 
     public TaskSchedulerImpl(Job job) {
         super(job);
@@ -32,7 +32,7 @@ public class TaskSchedulerImpl extends TaskScheduler {
     private ExecutorContext getSuitableExecutorBackend(Collection<ExecutorContext> availableExecutorContexts) {
         if (CollectionUtils.isNonEmpty(availableExecutorContexts)) {
             List<ExecutorContext> availableExecutorContextList = new ArrayList<>(availableExecutorContexts);
-            return availableExecutorContextList.get(random.nextInt(availableExecutorContextList.size()));
+            return availableExecutorContextList.get(ThreadLocalRandom.current().nextInt(availableExecutorContextList.size()));
         }
         return null;
     }
