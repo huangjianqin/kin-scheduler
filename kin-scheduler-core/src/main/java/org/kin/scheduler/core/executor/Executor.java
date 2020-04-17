@@ -2,7 +2,7 @@ package org.kin.scheduler.core.executor;
 
 import ch.qos.logback.classic.Logger;
 import com.google.common.base.Preconditions;
-import org.kin.framework.concurrent.ThreadManager;
+import org.kin.framework.concurrent.ExecutionContext;
 import org.kin.framework.service.AbstractService;
 import org.kin.framework.utils.*;
 import org.kin.scheduler.core.domain.RPCResult;
@@ -37,7 +37,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
     protected String workerId;
     protected String executorId;
     /** Executor的线程池, task执行线程池 */
-    protected ThreadManager threads;
+    protected ExecutionContext executionContext;
     /** log路径 */
     protected String logPath;
     /** 日志信息 */
@@ -75,7 +75,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
     @Override
     public void init() {
         super.init();
-        this.threads = ThreadManager.fix(SysUtils.CPU_NUM, "executor-".concat(executorId).concat("-"));
+        this.executionContext = ExecutionContext.fix(SysUtils.CPU_NUM, "executor-".concat(executorId).concat("-"));
         logContext = new LogContext(executorId);
         log = LogUtils.getExecutorLogger(logPath, workerId, executorId);
     }
@@ -116,7 +116,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
                         break;
                 }
 
-                threads.execute(newTaskRunner);
+                executionContext.execute(newTaskRunner);
 
                 //保存newTaskRunner
                 exTaskRunners = taskId2TaskRunners.get(task.getTaskId());
@@ -212,7 +212,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
     @Override
     public void stop() {
         super.stop();
-        threads.shutdown();
+        executionContext.shutdown();
         logContext.stop();
         //清理job占用的脚本资源
         for (String execedJobId : execedJobIds) {
@@ -254,7 +254,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
                 if (task.getTimeout() > 0) {
                     Future<TaskExecResult> future = null;
                     try {
-                        future = threads.submit(() -> runTask());
+                        future = executionContext.submit(() -> runTask());
                         execResult = future.get(task.getTimeout(), TimeUnit.SECONDS);
                     } catch (TimeoutException e) {
                         execResult = TaskExecResult.failure(task.getTaskId(), task.getLogFileName(), "task execute time out");

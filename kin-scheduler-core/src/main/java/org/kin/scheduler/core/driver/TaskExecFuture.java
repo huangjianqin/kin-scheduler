@@ -1,7 +1,7 @@
 package org.kin.scheduler.core.driver;
 
 import org.kin.framework.JvmCloseCleaner;
-import org.kin.framework.concurrent.ThreadManager;
+import org.kin.framework.concurrent.ExecutionContext;
 import org.kin.framework.utils.SysUtils;
 import org.kin.scheduler.core.executor.domain.TaskExecResult;
 import org.kin.scheduler.core.executor.domain.TaskSubmitResult;
@@ -20,10 +20,10 @@ import java.util.concurrent.TimeUnit;
  * 等待task执行的future
  */
 public class TaskExecFuture<R> implements Future<R> {
-    private static ThreadManager CALLBACK_THREADS = ThreadManager.fix(SysUtils.CPU_NUM, "TaskSubmitFuture-Callback-Thread-");
+    private static ExecutionContext CALLBACK_EXECUTORS = ExecutionContext.fix(SysUtils.CPU_NUM, "TaskSubmitFuture-Callback-Thread-");
 
     static {
-        JvmCloseCleaner.DEFAULT().add(CALLBACK_THREADS::shutdown);
+        JvmCloseCleaner.DEFAULT().add(CALLBACK_EXECUTORS::shutdown);
     }
 
     private TaskSubmitResult taskSubmitResult;
@@ -88,7 +88,7 @@ public class TaskExecFuture<R> implements Future<R> {
     public void done(TaskExecResult execResult) {
         done = true;
         if (Objects.nonNull(execResult)) {
-            CALLBACK_THREADS.execute(() -> {
+            CALLBACK_EXECUTORS.execute(() -> {
                 for (TaskExecCallback callback : callbacks) {
                     callback.execFinish(execResult);
                 }
