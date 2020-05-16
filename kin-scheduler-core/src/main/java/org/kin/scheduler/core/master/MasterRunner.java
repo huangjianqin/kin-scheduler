@@ -1,29 +1,30 @@
 package org.kin.scheduler.core.master;
 
-import org.kin.scheduler.core.cfg.Config;
-import org.kin.scheduler.core.cfg.Configs;
-
 /**
  * @author huangjianqin
  * @date 2020-02-06
  */
 public class MasterRunner {
     public static void main(String[] args) {
-        //读取scheduler.yml来获取配置
-        Config config = Configs.getCfg();
-        Master master = new Master(config.getMasterBackendHost(), config.getMasterBackendPort(), config.getLogPath());
-        try {
-            master.init();
-            master.start();
-            synchronized (master) {
-                try {
-                    master.wait();
-                } catch (InterruptedException e) {
+        if (args.length == 3) {
+            String masterBackendHost = args[0];
+            int masterBackendPort = Integer.parseInt(args[1]);
+            String logPath = args[2];
 
+            Master master = new Master(masterBackendHost, masterBackendPort, logPath);
+            try {
+                master.init();
+                master.start();
+                synchronized (master) {
+                    try {
+                        master.wait();
+                    } catch (InterruptedException e) {
+
+                    }
                 }
+            } finally {
+                master.stop();
             }
-        } finally {
-            master.stop();
         }
     }
 }

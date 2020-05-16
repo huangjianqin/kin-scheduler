@@ -1,7 +1,7 @@
 package org.kin.scheduler.core.task.handler;
 
 import org.kin.scheduler.core.task.Task;
-import org.kin.scheduler.core.task.TaskLoggers;
+import org.kin.scheduler.core.task.log.TaskLoggers;
 
 import java.io.Serializable;
 

@@ -1,9 +1,9 @@
 package org.kin.scheduler.core.master.executor.allocate;
 
-import org.kin.scheduler.core.master.ExecutorRes;
-import org.kin.scheduler.core.master.WorkerContext;
-import org.kin.scheduler.core.master.WorkerRes;
-import org.kin.scheduler.core.master.domain.SubmitJobRequest;
+import org.kin.scheduler.core.domain.WorkerRes;
+import org.kin.scheduler.core.master.domain.ExecutorRes;
+import org.kin.scheduler.core.master.domain.WorkerContext;
+import org.kin.scheduler.core.master.transport.SubmitJobRequest;
 
 import java.util.Collection;
 import java.util.List;

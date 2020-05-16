@@ -1,12 +1,12 @@
 package org.kin.scheduler.core.worker;
 
 import org.kin.kinrpc.config.ReferenceConfig;
-import org.kin.scheduler.core.domain.RPCResult;
 import org.kin.scheduler.core.executor.Executor;
 import org.kin.scheduler.core.executor.ExecutorBackend;
-import org.kin.scheduler.core.executor.domain.TaskExecLog;
-import org.kin.scheduler.core.executor.domain.TaskSubmitResult;
+import org.kin.scheduler.core.executor.log.TaskExecLog;
+import org.kin.scheduler.core.executor.transport.TaskSubmitResult;
 import org.kin.scheduler.core.task.Task;
+import org.kin.scheduler.core.transport.RPCResult;
 
 import java.util.Objects;
 

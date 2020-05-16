@@ -1,8 +1,8 @@
 package org.kin.scheduler.core.utils;
 
 import org.apache.commons.exec.*;
-import org.kin.scheduler.core.task.TaskLoggers;
 import org.kin.scheduler.core.task.handler.exception.WorkingDirectoryNotExistsException;
+import org.kin.scheduler.core.task.log.TaskLoggers;
 
 import java.io.File;
 import java.io.FileOutputStream;

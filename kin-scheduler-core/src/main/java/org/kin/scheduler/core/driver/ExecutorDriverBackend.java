@@ -1,8 +1,8 @@
 package org.kin.scheduler.core.driver;
 
-import org.kin.scheduler.core.domain.RPCResult;
 import org.kin.scheduler.core.driver.domain.ExecutorRegisterInfo;
-import org.kin.scheduler.core.executor.domain.TaskExecResult;
+import org.kin.scheduler.core.executor.transport.TaskExecResult;
+import org.kin.scheduler.core.transport.RPCResult;
 
 /**
  * @author huangjianqin

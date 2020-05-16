@@ -1,7 +1,7 @@
 package org.kin.scheduler.core.master;
 
-import org.kin.scheduler.core.master.domain.SubmitJobRequest;
-import org.kin.scheduler.core.master.domain.SubmitJobResponse;
+import org.kin.scheduler.core.master.transport.SubmitJobRequest;
+import org.kin.scheduler.core.master.transport.SubmitJobResponse;
 
 /**
  * @author huangjianqin

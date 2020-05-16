@@ -1,9 +1,0 @@
-kin:
-  scheduler:
-    #    workerBackendHost:
-    workerBackendPort: 50000
-    #    masterBackendHost:
-    masterBackendPort: 46668
-    allowEmbeddedExecutor: true
-    executorBackendPort: 51000
-    logPath: /logs

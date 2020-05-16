@@ -4,12 +4,12 @@ import org.kin.scheduler.admin.domain.Constants;
 import org.kin.scheduler.admin.domain.TaskType;
 import org.kin.scheduler.admin.entity.TaskLog;
 import org.kin.scheduler.core.driver.Job;
-import org.kin.scheduler.core.driver.TaskContext;
-import org.kin.scheduler.core.driver.TaskExecFuture;
-import org.kin.scheduler.core.driver.TaskScheduler;
 import org.kin.scheduler.core.driver.route.RouteStrategies;
 import org.kin.scheduler.core.driver.route.RouteStrategy;
-import org.kin.scheduler.core.executor.domain.TaskExecLog;
+import org.kin.scheduler.core.driver.schedule.TaskContext;
+import org.kin.scheduler.core.driver.schedule.TaskExecFuture;
+import org.kin.scheduler.core.driver.schedule.TaskScheduler;
+import org.kin.scheduler.core.executor.log.TaskExecLog;
 import org.kin.scheduler.core.task.Task;
 import org.kin.scheduler.core.task.TaskExecStrategy;
 import org.kin.scheduler.core.worker.ExecutorContext;
@@ -24,11 +24,12 @@ import java.util.stream.Collectors;
  * @author huangjianqin
  * @date 2020-03-10
  */
-public class KinTaskSchedulerImpl extends TaskScheduler {
+public class KinTaskSchedulerImpl extends TaskScheduler<TaskInfoDTO> {
     public KinTaskSchedulerImpl(Job job) {
         super(job);
     }
 
+    @Override
     public <R> TaskExecFuture<R> submitTask(TaskInfoDTO dto) {
         TaskLog taskLog = new TaskLog();
         taskLog.setTaskId(dto.getTaskId());
@@ -81,10 +82,6 @@ public class KinTaskSchedulerImpl extends TaskScheduler {
         //任务提交失败
         TaskTrigger.instance().submitTaskFail(taskLog);
         return null;
-    }
-
-    public boolean cancelTask(String taskId) {
-        return taskSetManager.cancelTask(taskId);
     }
 
     public TaskExecLog readLog(int logId, int fromLineNum) {

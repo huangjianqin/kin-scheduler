@@ -1,9 +1,9 @@
 package org.kin.scheduler.core.executor;
 
-import org.kin.scheduler.core.domain.RPCResult;
-import org.kin.scheduler.core.executor.domain.TaskExecLog;
-import org.kin.scheduler.core.executor.domain.TaskSubmitResult;
+import org.kin.scheduler.core.executor.log.TaskExecLog;
+import org.kin.scheduler.core.executor.transport.TaskSubmitResult;
 import org.kin.scheduler.core.task.Task;
+import org.kin.scheduler.core.transport.RPCResult;
 
 /**
  * @author huangjianqin

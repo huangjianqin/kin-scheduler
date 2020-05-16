@@ -2,12 +2,12 @@ package org.kin.scheduler.core.task.handler.impl;
 
 import ch.qos.logback.classic.Logger;
 import org.kin.scheduler.core.task.Task;
-import org.kin.scheduler.core.task.TaskLoggers;
 import org.kin.scheduler.core.task.handler.TaskHandler;
+import org.kin.scheduler.core.task.handler.domain.GlueResult;
 import org.kin.scheduler.core.task.handler.domain.GlueType;
 import org.kin.scheduler.core.task.handler.domain.ScriptResourcesStore;
 import org.kin.scheduler.core.task.handler.params.ScriptParam;
-import org.kin.scheduler.core.task.handler.results.GlueResult;
+import org.kin.scheduler.core.task.log.TaskLoggers;
 import org.kin.scheduler.core.utils.ScriptUtils;
 
 import java.io.File;

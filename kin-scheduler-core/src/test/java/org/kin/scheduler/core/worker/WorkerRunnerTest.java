@@ -3,12 +3,14 @@ package org.kin.scheduler.core.worker;
 import org.kin.framework.JvmCloseCleaner;
 import org.kin.framework.utils.CollectionUtils;
 import org.kin.framework.utils.NetUtils;
-import org.kin.framework.utils.YamlUtils;
-import org.kin.scheduler.core.cfg.ConfigKeys;
-import org.kin.scheduler.core.utils.CfgUtils;
+import org.kin.scheduler.core.cfg.Config;
+import org.kin.scheduler.core.cfg.Configs;
 
 import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -19,8 +21,8 @@ import java.util.concurrent.Executors;
 public class WorkerRunnerTest {
     public static void main(String[] args) {
         //读取scheduler.yml来获取worker起始端口
-        Properties workerCfgProperties = YamlUtils.loadYaml2Properties("scheduler.yml");
-        int workerBackendPort = CfgUtils.getValue(workerCfgProperties, ConfigKeys.WorkerBackendPort);
+        Config config = Configs.getCfg();
+        int workerBackendPort = config.getWorkerBackendPort();
 
         ExecutorService executors = Executors.newCachedThreadPool();
         List<Thread> threads = new ArrayList<>();

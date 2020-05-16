@@ -6,13 +6,14 @@ import org.kin.kinrpc.config.ReferenceConfig;
 import org.kin.kinrpc.config.References;
 import org.kin.kinrpc.config.ServiceConfig;
 import org.kin.kinrpc.config.Services;
-import org.kin.scheduler.core.domain.RPCResult;
 import org.kin.scheduler.core.driver.domain.ExecutorRegisterInfo;
 import org.kin.scheduler.core.driver.exception.SubmitJobFailureException;
-import org.kin.scheduler.core.executor.domain.TaskExecResult;
+import org.kin.scheduler.core.driver.schedule.TaskScheduler;
+import org.kin.scheduler.core.executor.transport.TaskExecResult;
 import org.kin.scheduler.core.master.DriverMasterBackend;
-import org.kin.scheduler.core.master.domain.SubmitJobRequest;
-import org.kin.scheduler.core.master.domain.SubmitJobResponse;
+import org.kin.scheduler.core.master.transport.SubmitJobRequest;
+import org.kin.scheduler.core.master.transport.SubmitJobResponse;
+import org.kin.scheduler.core.transport.RPCResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,7 +25,7 @@ import java.util.function.Function;
  * @author huangjianqin
  * @date 2020-02-09
  */
-public abstract class Driver<TS extends TaskScheduler> extends AbstractService implements ExecutorDriverBackend, MasterDriverBackend {
+public abstract class Driver extends AbstractService implements ExecutorDriverBackend, MasterDriverBackend {
     private static final Logger log = LoggerFactory.getLogger(Driver.class);
 
     private ReferenceConfig<DriverMasterBackend> driverMasterBackendReferenceConfig;
@@ -32,11 +33,11 @@ public abstract class Driver<TS extends TaskScheduler> extends AbstractService i
     private ServiceConfig executorDriverServiceConfig;
     private ServiceConfig masterDriverServiceConfig;
     protected SchedulerContext jobContext;
-    protected TS taskScheduler;
+    protected TaskScheduler taskScheduler;
     protected volatile Job job;
-    protected Function<Job, TS> taskSchedulerCreator;
+    protected Function<Job, TaskScheduler> taskSchedulerCreator;
 
-    public Driver(SchedulerContext jobContext, Function<Job, TS> taskSchedulerCreator) {
+    public Driver(SchedulerContext jobContext, Function<Job, TaskScheduler> taskSchedulerCreator) {
         super(jobContext.getAppName());
         this.jobContext = jobContext;
         this.taskSchedulerCreator = taskSchedulerCreator;

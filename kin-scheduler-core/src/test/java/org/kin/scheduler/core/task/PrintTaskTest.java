@@ -1,7 +1,7 @@
 package org.kin.scheduler.core.task;
 
-import org.kin.scheduler.core.driver.impl.SchedulerContextImpl;
-import org.kin.scheduler.core.impl.SimpleDriver;
+import org.kin.scheduler.core.driver.impl.SimpleDriver;
+import org.kin.scheduler.core.driver.schedule.impl.SchedulerContextImpl;
 import org.kin.scheduler.core.master.executor.allocate.AllocateStrategyType;
 
 /**

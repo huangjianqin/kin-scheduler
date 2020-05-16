@@ -1,8 +1,8 @@
 package org.kin.scheduler.core.master;
 
-import org.kin.scheduler.core.worker.domain.WorkerRegisterInfo;
-import org.kin.scheduler.core.worker.domain.WorkerRegisterResult;
-import org.kin.scheduler.core.worker.domain.WorkerUnregisterResult;
+import org.kin.scheduler.core.worker.transport.WorkerRegisterInfo;
+import org.kin.scheduler.core.worker.transport.WorkerRegisterResult;
+import org.kin.scheduler.core.worker.transport.WorkerUnregisterResult;
 
 /**
  * @author huangjianqin
