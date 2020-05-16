@@ -1,4 +1,4 @@
-package org.kin.scheduler.core.master.executor;
+package org.kin.scheduler.core.master.executor.allocate;
 
 import ch.qos.logback.classic.Logger;
 import org.kin.framework.utils.ClassUtils;

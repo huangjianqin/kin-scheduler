@@ -10,8 +10,8 @@ import org.kin.scheduler.core.driver.Job;
 import org.kin.scheduler.core.log.StaticLogger;
 import org.kin.scheduler.core.master.domain.SubmitJobRequest;
 import org.kin.scheduler.core.master.domain.SubmitJobResponse;
-import org.kin.scheduler.core.master.executor.AllocateStrategies;
-import org.kin.scheduler.core.master.executor.AllocateStrategy;
+import org.kin.scheduler.core.master.executor.allocate.AllocateStrategies;
+import org.kin.scheduler.core.master.executor.allocate.AllocateStrategy;
 import org.kin.scheduler.core.worker.domain.*;
 
 import java.text.DateFormat;

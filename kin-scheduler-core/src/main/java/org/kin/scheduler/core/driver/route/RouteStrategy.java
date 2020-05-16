@@ -1,4 +1,4 @@
-package org.kin.scheduler.admin.core.route;
+package org.kin.scheduler.core.driver.route;
 
 import org.kin.scheduler.core.worker.ExecutorContext;
 

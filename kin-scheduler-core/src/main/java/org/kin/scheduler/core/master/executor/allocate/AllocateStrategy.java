@@ -1,4 +1,4 @@
-package org.kin.scheduler.core.master.executor;
+package org.kin.scheduler.core.master.executor.allocate;
 
 import org.kin.scheduler.core.master.ExecutorRes;
 import org.kin.scheduler.core.master.WorkerContext;

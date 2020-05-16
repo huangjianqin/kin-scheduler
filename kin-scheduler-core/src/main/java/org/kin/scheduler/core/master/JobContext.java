@@ -3,7 +3,7 @@ package org.kin.scheduler.core.master;
 import org.kin.kinrpc.config.ReferenceConfig;
 import org.kin.kinrpc.config.References;
 import org.kin.scheduler.core.driver.MasterDriverBackend;
-import org.kin.scheduler.core.master.executor.AllocateStrategy;
+import org.kin.scheduler.core.master.executor.allocate.AllocateStrategy;
 
 import java.util.List;
 

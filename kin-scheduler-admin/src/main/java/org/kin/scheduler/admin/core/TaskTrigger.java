@@ -2,7 +2,6 @@ package org.kin.scheduler.admin.core;
 
 import org.kin.framework.utils.StringUtils;
 import org.kin.framework.utils.TimeUtils;
-import org.kin.scheduler.admin.core.route.RouteStrategyType;
 import org.kin.scheduler.admin.domain.Constants;
 import org.kin.scheduler.admin.domain.TaskType;
 import org.kin.scheduler.admin.entity.JobInfo;
@@ -10,6 +9,7 @@ import org.kin.scheduler.admin.entity.TaskInfo;
 import org.kin.scheduler.admin.entity.TaskLog;
 import org.kin.scheduler.core.driver.TaskExecCallback;
 import org.kin.scheduler.core.driver.TaskExecFuture;
+import org.kin.scheduler.core.driver.route.RouteStrategyType;
 import org.kin.scheduler.core.executor.domain.TaskExecResult;
 import org.kin.scheduler.core.task.TaskExecStrategy;
 import org.slf4j.Logger;

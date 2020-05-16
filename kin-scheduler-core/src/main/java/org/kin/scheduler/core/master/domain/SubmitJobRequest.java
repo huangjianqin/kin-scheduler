@@ -1,6 +1,6 @@
 package org.kin.scheduler.core.master.domain;
 
-import org.kin.scheduler.core.master.executor.AllocateStrategyType;
+import org.kin.scheduler.core.master.executor.allocate.AllocateStrategyType;
 
 import java.io.Serializable;
 

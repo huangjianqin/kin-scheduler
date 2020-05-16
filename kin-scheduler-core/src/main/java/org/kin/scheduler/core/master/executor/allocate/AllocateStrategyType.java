@@ -1,4 +1,4 @@
-package org.kin.scheduler.core.master.executor;
+package org.kin.scheduler.core.master.executor.allocate;
 
 /**
  * @author huangjianqin

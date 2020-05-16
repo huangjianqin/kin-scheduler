@@ -1,4 +1,4 @@
-package org.kin.scheduler.core.master.executor.impl;
+package org.kin.scheduler.core.master.executor.allocate.impl;
 
 import org.kin.framework.utils.CollectionUtils;
 import org.kin.framework.utils.HashUtils;
@@ -6,7 +6,7 @@ import org.kin.scheduler.core.master.ExecutorRes;
 import org.kin.scheduler.core.master.WorkerContext;
 import org.kin.scheduler.core.master.WorkerRes;
 import org.kin.scheduler.core.master.domain.SubmitJobRequest;
-import org.kin.scheduler.core.master.executor.AllocateStrategy;
+import org.kin.scheduler.core.master.executor.allocate.AllocateStrategy;
 
 import java.util.*;
 
