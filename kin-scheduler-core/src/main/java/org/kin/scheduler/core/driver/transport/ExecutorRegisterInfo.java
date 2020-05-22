@@ -1,4 +1,4 @@
-package org.kin.scheduler.core.driver.domain;
+package org.kin.scheduler.core.driver.transport;
 
 import java.io.Serializable;
 

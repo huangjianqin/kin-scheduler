@@ -6,10 +6,10 @@ import org.kin.kinrpc.config.ReferenceConfig;
 import org.kin.kinrpc.config.References;
 import org.kin.kinrpc.config.ServiceConfig;
 import org.kin.kinrpc.config.Services;
-import org.kin.scheduler.core.driver.domain.ExecutorRegisterInfo;
 import org.kin.scheduler.core.driver.exception.SubmitJobFailureException;
-import org.kin.scheduler.core.driver.schedule.TaskScheduler;
-import org.kin.scheduler.core.executor.transport.TaskExecResult;
+import org.kin.scheduler.core.driver.scheduler.TaskScheduler;
+import org.kin.scheduler.core.driver.transport.ExecutorRegisterInfo;
+import org.kin.scheduler.core.driver.transport.TaskExecResult;
 import org.kin.scheduler.core.master.DriverMasterBackend;
 import org.kin.scheduler.core.master.transport.SubmitJobRequest;
 import org.kin.scheduler.core.master.transport.SubmitJobResponse;
@@ -101,7 +101,9 @@ public abstract class Driver extends AbstractService implements ExecutorDriverBa
     @Override
     public void stop() {
         super.stop();
-        taskScheduler.stop();
+        if (Objects.nonNull(taskScheduler)) {
+            taskScheduler.stop();
+        }
         if (Objects.nonNull(driverMasterBackend) && Objects.nonNull(job)) {
             driverMasterBackend.jonFinish(job.getJobId());
         }

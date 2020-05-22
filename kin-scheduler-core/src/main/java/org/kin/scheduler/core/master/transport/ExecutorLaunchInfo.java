@@ -1,4 +1,4 @@
-package org.kin.scheduler.core.worker.transport;
+package org.kin.scheduler.core.master.transport;
 
 import java.io.Serializable;
 
@@ -7,6 +7,8 @@ import java.io.Serializable;
  * @date 2020-02-09
  */
 public class ExecutorLaunchInfo implements Serializable {
+    private static final long serialVersionUID = 1093338883206802042L;
+
     private String executorDriverBackendAddress;
 
     public ExecutorLaunchInfo() {

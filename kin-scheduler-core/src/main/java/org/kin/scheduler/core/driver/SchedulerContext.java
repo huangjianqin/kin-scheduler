@@ -9,11 +9,11 @@ import org.kin.scheduler.core.master.executor.allocate.AllocateStrategyType;
 public abstract class SchedulerContext {
     private String appName;
     /** master rpc接口 */
-    private String masterAddress;
+    private String masterAddress = "0.0.0.0:46668";
     /** executor分配策略 */
     private AllocateStrategyType allocateStrategyType = AllocateStrategyType.Hash;
     /** driver rpc服务端口 */
-    private int driverPort = 50000;
+    private int driverPort = 46000;
 
     public SchedulerContext() {
     }

@@ -2,7 +2,7 @@ package org.kin.scheduler.admin.core;
 
 import org.kin.scheduler.core.driver.Driver;
 import org.kin.scheduler.core.driver.SchedulerContext;
-import org.kin.scheduler.core.driver.schedule.TaskExecFuture;
+import org.kin.scheduler.core.driver.scheduler.TaskExecFuture;
 import org.kin.scheduler.core.executor.log.TaskExecLog;
 import org.kin.scheduler.core.master.DriverMasterBackend;
 

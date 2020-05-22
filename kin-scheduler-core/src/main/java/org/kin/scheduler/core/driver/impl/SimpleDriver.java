@@ -2,8 +2,8 @@ package org.kin.scheduler.core.driver.impl;
 
 import org.kin.scheduler.core.driver.Driver;
 import org.kin.scheduler.core.driver.SchedulerContext;
-import org.kin.scheduler.core.driver.schedule.TaskExecFuture;
-import org.kin.scheduler.core.driver.schedule.impl.SimpleTaskSchedulerImpl;
+import org.kin.scheduler.core.driver.scheduler.TaskExecFuture;
+import org.kin.scheduler.core.driver.scheduler.impl.SimpleTaskSchedulerImpl;
 import org.kin.scheduler.core.task.Task;
 
 import java.io.Serializable;

@@ -1,4 +1,4 @@
-package org.kin.scheduler.core.worker.transport;
+package org.kin.scheduler.core.master.transport;
 
 import org.kin.scheduler.core.transport.RPCResult;
 

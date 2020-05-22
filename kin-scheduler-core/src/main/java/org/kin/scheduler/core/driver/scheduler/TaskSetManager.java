@@ -1,6 +1,6 @@
-package org.kin.scheduler.core.driver.schedule;
+package org.kin.scheduler.core.driver.scheduler;
 
-import org.kin.scheduler.core.executor.transport.TaskExecResult;
+import org.kin.scheduler.core.driver.transport.TaskExecResult;
 import org.kin.scheduler.core.task.Task;
 import org.kin.scheduler.core.transport.RPCResult;
 

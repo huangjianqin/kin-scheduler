@@ -6,7 +6,7 @@ import org.kin.kinrpc.config.References;
 import org.kin.kinrpc.config.ServiceConfig;
 import org.kin.kinrpc.config.Services;
 import org.kin.scheduler.core.driver.ExecutorDriverBackend;
-import org.kin.scheduler.core.driver.domain.ExecutorRegisterInfo;
+import org.kin.scheduler.core.driver.transport.ExecutorRegisterInfo;
 import org.kin.scheduler.core.transport.RPCResult;
 
 import java.util.Objects;

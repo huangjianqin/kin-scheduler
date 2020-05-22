@@ -4,9 +4,9 @@ import org.kin.framework.service.AbstractService;
 import org.kin.kinrpc.config.ReferenceConfig;
 import org.kin.kinrpc.config.References;
 import org.kin.scheduler.core.domain.WorkerRes;
+import org.kin.scheduler.core.master.transport.ExecutorLaunchInfo;
 import org.kin.scheduler.core.transport.RPCResult;
 import org.kin.scheduler.core.worker.WorkerBackend;
-import org.kin.scheduler.core.worker.transport.ExecutorLaunchInfo;
 import org.kin.scheduler.core.worker.transport.ExecutorLaunchResult;
 import org.kin.scheduler.core.worker.transport.WorkerInfo;
 

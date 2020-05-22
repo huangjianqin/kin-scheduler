@@ -1,7 +1,7 @@
 package org.kin.scheduler.core.worker;
 
+import org.kin.scheduler.core.master.transport.ExecutorLaunchInfo;
 import org.kin.scheduler.core.transport.RPCResult;
-import org.kin.scheduler.core.worker.transport.ExecutorLaunchInfo;
 import org.kin.scheduler.core.worker.transport.ExecutorLaunchResult;
 
 /**

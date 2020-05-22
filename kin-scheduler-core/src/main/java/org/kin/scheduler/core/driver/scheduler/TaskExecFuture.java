@@ -1,9 +1,9 @@
-package org.kin.scheduler.core.driver.schedule;
+package org.kin.scheduler.core.driver.scheduler;
 
 import org.kin.framework.JvmCloseCleaner;
 import org.kin.framework.concurrent.ExecutionContext;
 import org.kin.framework.utils.SysUtils;
-import org.kin.scheduler.core.executor.transport.TaskExecResult;
+import org.kin.scheduler.core.driver.transport.TaskExecResult;
 import org.kin.scheduler.core.executor.transport.TaskSubmitResult;
 
 import java.util.Collection;

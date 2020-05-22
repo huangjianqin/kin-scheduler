@@ -4,7 +4,7 @@ import org.kin.scheduler.admin.dao.JobInfoDao;
 import org.kin.scheduler.admin.dao.TaskInfoDao;
 import org.kin.scheduler.admin.dao.TaskLogDao;
 import org.kin.scheduler.admin.service.JobService;
-import org.kin.scheduler.core.driver.schedule.impl.SchedulerContextImpl;
+import org.kin.scheduler.core.driver.scheduler.impl.SchedulerContextImpl;
 import org.kin.scheduler.core.master.Master;
 import org.kin.scheduler.core.master.executor.allocate.AllocateStrategyType;
 import org.springframework.beans.factory.InitializingBean;

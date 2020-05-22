@@ -1,4 +1,4 @@
-package org.kin.scheduler.core.driver.schedule.impl;
+package org.kin.scheduler.core.driver.scheduler.impl;
 
 import org.kin.scheduler.core.driver.SchedulerContext;
 

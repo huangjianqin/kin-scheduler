@@ -15,10 +15,15 @@ import org.kin.scheduler.core.executor.ExecutorBackend;
 import org.kin.scheduler.core.executor.StandaloneExecutor;
 import org.kin.scheduler.core.log.StaticLogger;
 import org.kin.scheduler.core.master.MasterBackend;
+import org.kin.scheduler.core.master.transport.ExecutorLaunchInfo;
+import org.kin.scheduler.core.master.transport.WorkerRegisterResult;
+import org.kin.scheduler.core.master.transport.WorkerUnregisterResult;
 import org.kin.scheduler.core.transport.RPCResult;
 import org.kin.scheduler.core.utils.LogUtils;
 import org.kin.scheduler.core.utils.ScriptUtils;
-import org.kin.scheduler.core.worker.transport.*;
+import org.kin.scheduler.core.worker.transport.ExecutorLaunchResult;
+import org.kin.scheduler.core.worker.transport.WorkerInfo;
+import org.kin.scheduler.core.worker.transport.WorkerRegisterInfo;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -167,7 +172,10 @@ public class Worker extends AbstractService implements WorkerBackend {
                             executorBackendPort, launchInfo.getExecutorDriverBackendAddress());
                     //启动内置Executor
                     Executor finalEmbeddedExecutor = embeddedExecutor;
-                    Thread thread = new Thread(finalEmbeddedExecutor::start, getName().concat("-EmbeddedExecutorThread"));
+                    Thread thread = new Thread(() -> {
+                        finalEmbeddedExecutor.init();
+                        finalEmbeddedExecutor.start();
+                    }, getName().concat("-EmbeddedExecutorThread"));
                     thread.start();
                     try {
                         Thread.sleep(200);
