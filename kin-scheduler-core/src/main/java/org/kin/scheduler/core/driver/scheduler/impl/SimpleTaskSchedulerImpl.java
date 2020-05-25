@@ -1,6 +1,5 @@
 package org.kin.scheduler.core.driver.scheduler.impl;
 
-import org.kin.scheduler.core.driver.Job;
 import org.kin.scheduler.core.driver.route.RouteStrategies;
 import org.kin.scheduler.core.driver.route.RouteStrategyType;
 import org.kin.scheduler.core.driver.scheduler.TaskContext;
@@ -20,12 +19,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class SimpleTaskSchedulerImpl extends TaskScheduler<Task> {
     private AtomicInteger taskIdCounter = new AtomicInteger(1);
 
-    public SimpleTaskSchedulerImpl(Job job) {
-        super(job);
+    public SimpleTaskSchedulerImpl(String appName) {
+        super(appName);
     }
 
     private void assignTaskId(Task task) {
-        task.setJobId(job.getJobId());
+        task.setJobId(task.getJobId());
         task.setTaskId(task.getJobId().concat("-Task").concat(String.valueOf(taskIdCounter.getAndIncrement())));
     }
 

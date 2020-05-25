@@ -7,6 +7,8 @@ import java.io.Serializable;
  * @date 2020-02-06
  */
 public class RPCResult implements Serializable {
+    private static final long serialVersionUID = 5197954993271710582L;
+
     /** 执行结果 */
     protected boolean success;
     /** 结果描述 */

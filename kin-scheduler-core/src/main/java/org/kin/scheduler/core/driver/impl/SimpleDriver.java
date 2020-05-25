@@ -14,7 +14,7 @@ import java.io.Serializable;
  */
 public class SimpleDriver extends Driver {
     public SimpleDriver(SchedulerContext jobContext) {
-        super(jobContext, SimpleTaskSchedulerImpl::new);
+        super(jobContext, new SimpleTaskSchedulerImpl(jobContext.getAppName()));
     }
 
     public <R, PARAM extends Serializable> TaskExecFuture<R> submitTask(Task<PARAM> task) {

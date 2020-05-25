@@ -9,13 +9,23 @@ import java.io.Serializable;
 public class ExecutorLaunchInfo implements Serializable {
     private static final long serialVersionUID = 1093338883206802042L;
 
+    private String appName;
     private String executorDriverBackendAddress;
 
     public ExecutorLaunchInfo() {
     }
 
-    public ExecutorLaunchInfo(String executorDriverBackendAddress) {
+    public ExecutorLaunchInfo(String appName, String executorDriverBackendAddress) {
+        this.appName = appName;
         this.executorDriverBackendAddress = executorDriverBackendAddress;
+    }
+
+    public String getAppName() {
+        return appName;
+    }
+
+    public void setAppName(String appName) {
+        this.appName = appName;
     }
 
     public String getExecutorDriverBackendAddress() {

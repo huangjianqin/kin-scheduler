@@ -1,14 +1,11 @@
 package org.kin.scheduler.core.worker;
 
 import org.kin.kinrpc.config.ReferenceConfig;
-import org.kin.scheduler.core.executor.Executor;
 import org.kin.scheduler.core.executor.ExecutorBackend;
 import org.kin.scheduler.core.executor.log.TaskExecLog;
 import org.kin.scheduler.core.executor.transport.TaskSubmitResult;
 import org.kin.scheduler.core.task.Task;
 import org.kin.scheduler.core.transport.RPCResult;
-
-import java.util.Objects;
 
 /**
  * @author huangjianqin
@@ -18,38 +15,18 @@ public class ExecutorContext implements ExecutorBackend {
     private String executorId;
     private ReferenceConfig<ExecutorBackend> executorBackendReferenceConfig;
     private ExecutorBackend executorBackend;
-    /** 内嵌在worker的Executor */
-    private Executor embeddedExecutor;
 
     public ExecutorContext(String executorId) {
-        this(executorId, null);
-    }
-
-    public ExecutorContext(String executorId, Executor embeddedExecutor) {
         this.executorId = executorId;
-        this.embeddedExecutor = embeddedExecutor;
     }
 
     public void start(ReferenceConfig<ExecutorBackend> referenceConfig) {
-        if (!isEmbedded()) {
-            this.executorBackendReferenceConfig = referenceConfig;
-            executorBackend = executorBackendReferenceConfig.get();
-        }
-    }
-
-    /**
-     * worker end时调用
-     */
-    public void endStop() {
-        getExecutorBackend().destroy();
+        this.executorBackendReferenceConfig = referenceConfig;
+        executorBackend = executorBackendReferenceConfig.get();
     }
 
     private ExecutorBackend getExecutorBackend() {
-        if (isEmbedded()) {
-            return embeddedExecutor;
-        } else {
-            return executorBackend;
-        }
+        return executorBackend;
     }
 
     @Override
@@ -69,23 +46,8 @@ public class ExecutorContext implements ExecutorBackend {
 
     @Override
     public void destroy() {
-        destroy(true);
-    }
-
-    public void destroy(boolean killExecutor) {
-        //仅仅处理standalone executor
-        if (Objects.nonNull(executorBackendReferenceConfig)) {
-            if (!isEmbedded()) {
-                if (killExecutor) {
-                    executorBackend.destroy();
-                }
-                executorBackendReferenceConfig.disable();
-            }
-        }
-    }
-
-    public boolean isEmbedded() {
-        return embeddedExecutor != null;
+        getExecutorBackend().destroy();
+        executorBackendReferenceConfig.disable();
     }
 
     public String getExecutorId() {
@@ -93,6 +55,6 @@ public class ExecutorContext implements ExecutorBackend {
     }
 
     public String getExecutorAddress() {
-        return isEmbedded() ? "embedded" : executorBackendReferenceConfig.getRegistryConfig().getAddress();
+        return executorBackendReferenceConfig.getRegistryConfig().getAddress();
     }
 }

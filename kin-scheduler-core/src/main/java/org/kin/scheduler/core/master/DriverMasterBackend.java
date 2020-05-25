@@ -1,7 +1,7 @@
 package org.kin.scheduler.core.master;
 
-import org.kin.scheduler.core.master.transport.SubmitJobRequest;
-import org.kin.scheduler.core.master.transport.SubmitJobResponse;
+import org.kin.scheduler.core.driver.transport.ApplicationRegisterInfo;
+import org.kin.scheduler.core.master.transport.ApplicationRegisterResponse;
 
 /**
  * @author huangjianqin
@@ -9,17 +9,26 @@ import org.kin.scheduler.core.master.transport.SubmitJobResponse;
  */
 public interface DriverMasterBackend {
     /**
-     * 往master提交job, 申请资源
+     * 往master注册app
      *
      * @param request 请求
      * @return 返回结果
      */
-    SubmitJobResponse submitJob(SubmitJobRequest request);
+    ApplicationRegisterResponse registerApplication(ApplicationRegisterInfo request);
 
     /**
-     * 告诉masterjob完成, 释放资源
+     * 请求master分配资源
      *
-     * @param jobId jobId
+     * @param request 请求
+     * @return 返回结果
      */
-    void jonFinish(String jobId);
+    void scheduleResource(String appName);
+
+    /**
+     * 告诉master application完成, 释放资源
+     *
+     * @param appName appName
+     */
+    void applicationEnd(String appName);
+
 }

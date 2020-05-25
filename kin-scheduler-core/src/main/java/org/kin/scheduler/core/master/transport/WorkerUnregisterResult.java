@@ -7,6 +7,8 @@ import org.kin.scheduler.core.transport.RPCResult;
  * @date 2020-02-08
  */
 public class WorkerUnregisterResult extends RPCResult {
+    private static final long serialVersionUID = 7137951714669691528L;
+
     public WorkerUnregisterResult() {
     }
 

@@ -12,7 +12,7 @@ import org.kin.scheduler.core.master.DriverMasterBackend;
  */
 public class KinDriver extends Driver {
     public KinDriver(SchedulerContext jobContext, DriverMasterBackend driverMasterBackend) {
-        super(jobContext, KinTaskSchedulerImpl::new);
+        super(jobContext, new KinTaskSchedulerImpl(jobContext.getAppName()));
         super.driverMasterBackend = driverMasterBackend;
     }
 

@@ -7,6 +7,8 @@ import org.kin.scheduler.core.transport.RPCResult;
  * @date 2020-02-08
  */
 public class ExecutorLaunchResult extends RPCResult {
+    private static final long serialVersionUID = -4359993770222676944L;
+
     private String executorId;
     private String address;
 

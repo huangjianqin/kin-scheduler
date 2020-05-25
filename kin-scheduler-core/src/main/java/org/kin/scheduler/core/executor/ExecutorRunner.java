@@ -8,15 +8,17 @@ package org.kin.scheduler.core.executor;
  */
 public class ExecutorRunner {
     public static void main(String[] args) {
-        if (args.length >= 6) {
-            String workerid = args[0];
-            String executorId = args[1];
-            String backendHost = args[2];
-            int backendPort = Integer.valueOf(args[3]);
-            String logBasePath = args[4];
-            String driverAddress = args[5];
+        if (args.length >= 8) {
+            String appName = args[0];
+            String workerid = args[1];
+            String executorId = args[2];
+            String backendHost = args[3];
+            int backendPort = Integer.valueOf(args[4]);
+            String logBasePath = args[5];
+            String driverAddress = args[6];
+            String workerAddress = args[7];
 
-            runExecutor(workerid, executorId, backendHost, backendPort, logBasePath, driverAddress);
+            runExecutor(appName, workerid, executorId, backendHost, backendPort, logBasePath, driverAddress, workerAddress);
         }
     }
 
@@ -28,21 +30,20 @@ public class ExecutorRunner {
                 try {
                     executor.wait();
                 } catch (InterruptedException e) {
-
+                    throw e;
                 }
             }
+            //TODO 更新状态executor
+        } catch (Exception e) {
+            //TODO 更新状态executor
         } finally {
             executor.close();
         }
     }
 
-    public static void runExecutor(String workerId, String executorId, String backendHost, int backendPort, String logBasePath, String driverAddress) {
-        Executor executor = new StandaloneExecutor(workerId, executorId, logBasePath, backendHost, backendPort, driverAddress);
-        runExecutor0(executor);
-    }
-
-    public static void runLocalExecutor(String workerId, String executorId, String logBasePath) {
-        Executor executor = new Executor(workerId, executorId, logBasePath);
+    public static void runExecutor(String appName, String workerId, String executorId, String backendHost, int backendPort,
+                                   String logBasePath, String driverAddress, String workerAddress) {
+        Executor executor = new Executor(appName, workerId, executorId, backendHost, backendPort, logBasePath, driverAddress, workerAddress);
         runExecutor0(executor);
     }
 }

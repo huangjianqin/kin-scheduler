@@ -8,18 +8,17 @@ import org.kin.kinrpc.config.ServiceConfig;
 import org.kin.kinrpc.config.Services;
 import org.kin.scheduler.core.driver.exception.SubmitJobFailureException;
 import org.kin.scheduler.core.driver.scheduler.TaskScheduler;
+import org.kin.scheduler.core.driver.transport.ApplicationRegisterInfo;
 import org.kin.scheduler.core.driver.transport.ExecutorRegisterInfo;
 import org.kin.scheduler.core.driver.transport.TaskExecResult;
 import org.kin.scheduler.core.master.DriverMasterBackend;
-import org.kin.scheduler.core.master.transport.SubmitJobRequest;
-import org.kin.scheduler.core.master.transport.SubmitJobResponse;
+import org.kin.scheduler.core.master.transport.ApplicationRegisterResponse;
 import org.kin.scheduler.core.transport.RPCResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Function;
 
 /**
  * @author huangjianqin
@@ -35,12 +34,11 @@ public abstract class Driver extends AbstractService implements ExecutorDriverBa
     protected SchedulerContext jobContext;
     protected TaskScheduler taskScheduler;
     protected volatile Job job;
-    protected Function<Job, TaskScheduler> taskSchedulerCreator;
 
-    public Driver(SchedulerContext jobContext, Function<Job, TaskScheduler> taskSchedulerCreator) {
+    public Driver(SchedulerContext jobContext, TaskScheduler taskScheduler) {
         super(jobContext.getAppName());
         this.jobContext = jobContext;
-        this.taskSchedulerCreator = taskSchedulerCreator;
+        this.taskScheduler = taskScheduler;
     }
 
     @Override
@@ -69,6 +67,9 @@ public abstract class Driver extends AbstractService implements ExecutorDriverBa
         } catch (Exception e) {
             log.error("master driver service encounter error >>> ", e);
         }
+
+        taskScheduler.init();
+        taskScheduler.start();
     }
 
     @Override
@@ -76,16 +77,11 @@ public abstract class Driver extends AbstractService implements ExecutorDriverBa
         //提交job
         super.start();
         try {
-            SubmitJobResponse response = driverMasterBackend.submitJob(
-                    SubmitJobRequest.create(jobContext.getAppName(), jobContext.getAllocateStrategyType(),
+            ApplicationRegisterResponse response = driverMasterBackend.registerApplication(
+                    ApplicationRegisterInfo.create(jobContext.getAppName(), jobContext.getAllocateStrategyType(),
                             NetUtils.getIpPort(jobContext.getDriverPort()), NetUtils.getIpPort(jobContext.getDriverPort())));
             if (Objects.nonNull(response)) {
-                if (response.isSuccess()) {
-                    job = response.getJob();
-                    taskScheduler = taskSchedulerCreator.apply(job);
-                    taskScheduler.init();
-                    taskScheduler.start();
-                } else {
+                if (!response.isSuccess()) {
                     throw new SubmitJobFailureException(response.getDesc());
                 }
             } else {
@@ -105,7 +101,7 @@ public abstract class Driver extends AbstractService implements ExecutorDriverBa
             taskScheduler.stop();
         }
         if (Objects.nonNull(driverMasterBackend) && Objects.nonNull(job)) {
-            driverMasterBackend.jonFinish(job.getJobId());
+            driverMasterBackend.applicationEnd(job.getJobId());
         }
         if (Objects.nonNull(driverMasterBackendReferenceConfig)) {
             driverMasterBackendReferenceConfig.disable();
@@ -127,7 +123,7 @@ public abstract class Driver extends AbstractService implements ExecutorDriverBa
     }
 
     @Override
-    public void executorStatusChange(List<String> unAvailableExecutorIds) {
-        taskScheduler.executorStatusChange(unAvailableExecutorIds);
+    public void executorStatusChange(List<String> newExecutorIds, List<String> unavailableExecutorIds) {
+        taskScheduler.executorStatusChange(unavailableExecutorIds);
     }
 }

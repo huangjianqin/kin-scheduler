@@ -4,7 +4,14 @@ import ch.qos.logback.classic.Logger;
 import com.google.common.base.Preconditions;
 import org.kin.framework.concurrent.ExecutionContext;
 import org.kin.framework.service.AbstractService;
-import org.kin.framework.utils.*;
+import org.kin.framework.utils.CollectionUtils;
+import org.kin.framework.utils.ExceptionUtils;
+import org.kin.framework.utils.StringUtils;
+import org.kin.framework.utils.SysUtils;
+import org.kin.kinrpc.config.ReferenceConfig;
+import org.kin.kinrpc.config.References;
+import org.kin.kinrpc.config.ServiceConfig;
+import org.kin.kinrpc.config.Services;
 import org.kin.scheduler.core.driver.ExecutorDriverBackend;
 import org.kin.scheduler.core.driver.transport.TaskExecResult;
 import org.kin.scheduler.core.executor.log.LogContext;
@@ -13,17 +20,15 @@ import org.kin.scheduler.core.executor.transport.TaskSubmitResult;
 import org.kin.scheduler.core.task.Task;
 import org.kin.scheduler.core.task.handler.TaskHandler;
 import org.kin.scheduler.core.task.handler.TaskHandlers;
-import org.kin.scheduler.core.task.handler.impl.ScriptHandler;
 import org.kin.scheduler.core.task.log.TaskLoggers;
 import org.kin.scheduler.core.transport.RPCResult;
 import org.kin.scheduler.core.utils.LogUtils;
+import org.kin.scheduler.core.worker.ExecutorWorkerBackend;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -33,43 +38,50 @@ import java.util.concurrent.locks.ReentrantLock;
  * @date 2020-02-06
  */
 public class Executor extends AbstractService implements ExecutorBackend {
+    protected final String appName;
     /** 所属的workerId */
-    protected String workerId;
-    protected String executorId;
+    protected final String workerId;
+    protected final String executorId;
+    protected final String backendHost;
+    protected final int backendPort;
     /** Executor的线程池, task执行线程池 */
     protected ExecutionContext executionContext;
     /** log路径 */
-    protected String logPath;
+    protected final String logPath;
     /** 日志信息 */
     protected LogContext logContext;
     /** logger */
     protected Logger log;
-    /** driver服务配置 */
+    private ServiceConfig executorBackendServiceConfig;
+    /** driver地址 */
+    protected final String executorDriverBackendAddress;
+    protected ReferenceConfig<ExecutorDriverBackend> executorDriverBackendReferenceConfig;
+    /** driver引用配置 */
     protected ExecutorDriverBackend executorDriverBackend;
+    /** worker地址 */
+    protected final String executorWorkerBackendAddress;
+    protected ReferenceConfig<ExecutorWorkerBackend> executorWorkerBackendReferenceConfig;
+    /** worker引用配置 */
+    protected ExecutorWorkerBackend executorWorkerBackend;
 
     //--------------------------------------------------------------------
     /** 存储task执行runnable, 用于中断task执行 */
     private ConcurrentMap<String, List<TaskRunner>> taskId2TaskRunners = new ConcurrentHashMap<>();
-    /** 存储执行过的jobId, 用于shutdown executor时, 清理job占用的脚本资源 */
-    private Set<String> execedJobIds = new HashSet<>();
 
-    public Executor(String workerId, String executorId) {
-        this(workerId, executorId, LogUtils.BASE_PATH);
+    public Executor(String appName, String workerId, String executorId, String backendHost, int backendPort, String executorDriverBackendAddress, String executorWorkerBackendAddress) {
+        this(appName, workerId, executorId, backendHost, backendPort, LogUtils.BASE_PATH, executorDriverBackendAddress, executorWorkerBackendAddress);
     }
 
-    public Executor(String workerId, String executorId, String logPath) {
+    public Executor(String appName, String workerId, String executorId, String backendHost, int backendPort, String logPath, String executorDriverBackendAddress, String executorWorkerBackendAddress) {
         super(executorId);
+        this.appName = appName;
         this.workerId = workerId;
         this.executorId = executorId;
+        this.backendHost = backendHost;
+        this.backendPort = backendPort;
         this.logPath = logPath;
-    }
-
-    public Executor(String workerId, String executorId, String logPath, ExecutorDriverBackend executorDriverBackend) {
-        super(executorId);
-        this.workerId = workerId;
-        this.executorId = executorId;
-        this.logPath = logPath;
-        this.executorDriverBackend = executorDriverBackend;
+        this.executorDriverBackendAddress = executorDriverBackendAddress;
+        this.executorWorkerBackendAddress = executorWorkerBackendAddress;
     }
 
     @Override
@@ -78,6 +90,26 @@ public class Executor extends AbstractService implements ExecutorBackend {
         this.executionContext = ExecutionContext.fix(SysUtils.CPU_NUM, "executor-".concat(executorId).concat("-"));
         logContext = new LogContext(executorId);
         log = LogUtils.getExecutorLogger(logPath, workerId, executorId);
+
+        executorBackendServiceConfig = Services.service(this, ExecutorBackend.class)
+                .appName(getName())
+                .bind(backendHost, backendPort)
+                .actorLike();
+        try {
+            executorBackendServiceConfig.export();
+        } catch (Exception e) {
+            log.error("executor(" + executorId + ") init error", e);
+        }
+
+        executorWorkerBackendReferenceConfig = References.reference(ExecutorWorkerBackend.class)
+                .appName(getName().concat("-ExecutorWorkerBackend"))
+                .urls(executorWorkerBackendAddress);
+        executorWorkerBackend = executorWorkerBackendReferenceConfig.get();
+
+        executorDriverBackendReferenceConfig = References.reference(ExecutorDriverBackend.class)
+                .appName(getName().concat("-ExecutorDriverBackend"))
+                .urls(executorDriverBackendAddress);
+        executorDriverBackend = executorDriverBackendReferenceConfig.get();
     }
 
     @Override
@@ -206,7 +238,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
      */
     private void cleanFinishedTask(Task task) {
         List<TaskRunner> exTaskRunners = taskId2TaskRunners.get(task.getTaskId());
-        exTaskRunners.remove(task);
+        exTaskRunners.removeIf(tr -> tr.task.getTaskId().equals(task.getTaskId()));
     }
 
     @Override
@@ -214,13 +246,10 @@ public class Executor extends AbstractService implements ExecutorBackend {
         super.stop();
         executionContext.shutdown();
         logContext.stop();
-        //清理job占用的脚本资源
-        for (String execedJobId : execedJobIds) {
-            File file = new File(ScriptHandler.getOrCreateRealRunEnvPath(execedJobId));
-            if (file.exists()) {
-                FileUtils.delete(file);
-            }
-        }
+
+        executorWorkerBackendReferenceConfig.disable();
+        executorDriverBackendReferenceConfig.disable();
+
         log.info("executor({}) closed", executorId);
     }
 
@@ -254,7 +283,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
                 if (task.getTimeout() > 0) {
                     Future<TaskExecResult> future = null;
                     try {
-                        future = executionContext.submit(() -> runTask());
+                        future = executionContext.submit(this::runTask);
                         execResult = future.get(task.getTimeout(), TimeUnit.SECONDS);
                     } catch (TimeoutException e) {
                         execResult = TaskExecResult.failure(task.getTaskId(), task.getLogFileName(), "task execute time out");
@@ -287,7 +316,6 @@ public class Executor extends AbstractService implements ExecutorBackend {
             TaskHandler taskHandler = TaskHandlers.getTaskHandler(task);
             Preconditions.checkNotNull(taskHandler, "task handler is null");
 
-            execedJobIds.add(task.getJobId());
             //更新上下文日志
             TaskLoggers.updateLogger(logContext.getTaskLogger(logPath, task.getJobId(), task.getTaskId(), task.getLogFileName()));
             TaskLoggers.updateLoggerFile(LogUtils.getTaskLogFileAbsoluteName(logPath, task.getJobId(), task.getTaskId(), task.getLogFileName()));

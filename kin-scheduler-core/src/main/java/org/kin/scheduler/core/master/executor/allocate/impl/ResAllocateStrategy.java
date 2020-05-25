@@ -4,7 +4,6 @@ import org.kin.scheduler.core.domain.WorkerRes;
 import org.kin.scheduler.core.master.domain.ExecutorRes;
 import org.kin.scheduler.core.master.domain.WorkerContext;
 import org.kin.scheduler.core.master.executor.allocate.AllocateStrategy;
-import org.kin.scheduler.core.master.transport.SubmitJobRequest;
 
 import java.util.Collection;
 import java.util.List;
@@ -16,7 +15,7 @@ import java.util.List;
 public class ResAllocateStrategy implements AllocateStrategy {
 
     @Override
-    public List<WorkerRes> allocate(SubmitJobRequest request, Collection<WorkerContext> workerContexts, Collection<ExecutorRes> usedExecutorReses) {
+    public List<WorkerRes> allocate(Collection<WorkerContext> workerContexts, Collection<ExecutorRes> usedExecutorReses) {
         //TODO
         return null;
     }

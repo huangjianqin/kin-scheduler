@@ -1,4 +1,4 @@
-package org.kin.scheduler.core.master.transport;
+package org.kin.scheduler.core.driver.transport;
 
 import org.kin.scheduler.core.master.executor.allocate.AllocateStrategyType;
 
@@ -8,17 +8,19 @@ import java.io.Serializable;
  * @author huangjianqin
  * @date 2020-02-11
  */
-public class SubmitJobRequest implements Serializable {
+public class ApplicationRegisterInfo implements Serializable {
+    private static final long serialVersionUID = 8669073559392601217L;
+
     private String appName;
     private String allocateStrategy;
     private String executorDriverBackendAddress;
     private String masterDriverBackendAddress;
 
-    public SubmitJobRequest() {
+    public ApplicationRegisterInfo() {
     }
 
-    public static SubmitJobRequest create(String appName, AllocateStrategyType allocateStrategy, String executorDriverBackendAddress, String masterDriverBackendAddress) {
-        SubmitJobRequest request = new SubmitJobRequest();
+    public static ApplicationRegisterInfo create(String appName, AllocateStrategyType allocateStrategy, String executorDriverBackendAddress, String masterDriverBackendAddress) {
+        ApplicationRegisterInfo request = new ApplicationRegisterInfo();
         request.setAppName(appName);
         request.setAllocateStrategy(allocateStrategy.name());
         request.setExecutorDriverBackendAddress(executorDriverBackendAddress);

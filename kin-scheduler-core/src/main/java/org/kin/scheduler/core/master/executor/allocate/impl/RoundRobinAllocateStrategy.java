@@ -5,7 +5,6 @@ import org.kin.scheduler.core.domain.WorkerRes;
 import org.kin.scheduler.core.master.domain.ExecutorRes;
 import org.kin.scheduler.core.master.domain.WorkerContext;
 import org.kin.scheduler.core.master.executor.allocate.AllocateStrategy;
-import org.kin.scheduler.core.master.transport.SubmitJobRequest;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -21,7 +20,7 @@ public class RoundRobinAllocateStrategy implements AllocateStrategy {
     private AtomicInteger round = new AtomicInteger(0);
 
     @Override
-    public List<WorkerRes> allocate(SubmitJobRequest request, Collection<WorkerContext> workerContexts, Collection<ExecutorRes> usedExecutorReses) {
+    public List<WorkerRes> allocate(Collection<WorkerContext> workerContexts, Collection<ExecutorRes> usedExecutorReses) {
         if (CollectionUtils.isNonEmpty(workerContexts) && CollectionUtils.isEmpty(usedExecutorReses)) {
             List<WorkerContext> workerContextList = new ArrayList<>(workerContexts);
             WorkerContext selected = workerContextList.get(next(workerContextList.size()));

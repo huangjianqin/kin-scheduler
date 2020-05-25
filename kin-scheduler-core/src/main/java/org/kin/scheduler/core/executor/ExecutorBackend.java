@@ -30,6 +30,7 @@ public interface ExecutorBackend {
     RPCResult cancelTask(String taskId);
 
     /**
+     * TODO 待定
      * 从executor机器读取文件
      *
      * @param logPath log文件路径

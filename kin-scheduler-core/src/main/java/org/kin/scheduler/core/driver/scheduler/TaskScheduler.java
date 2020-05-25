@@ -1,10 +1,8 @@
 package org.kin.scheduler.core.driver.scheduler;
 
 import org.kin.framework.service.AbstractService;
-import org.kin.framework.utils.CollectionUtils;
 import org.kin.kinrpc.config.ReferenceConfig;
 import org.kin.kinrpc.config.References;
-import org.kin.scheduler.core.driver.Job;
 import org.kin.scheduler.core.driver.route.RouteStrategy;
 import org.kin.scheduler.core.driver.transport.ExecutorRegisterInfo;
 import org.kin.scheduler.core.driver.transport.TaskExecResult;
@@ -27,14 +25,12 @@ import java.util.stream.Collectors;
 public abstract class TaskScheduler<T> extends AbstractService {
     private static final Logger log = LoggerFactory.getLogger(TaskScheduler.class);
 
-    protected Job job;
     private volatile Map<String, ExecutorContext> executorContexts;
     protected TaskSetManager taskSetManager;
     private short waiters;
 
-    public TaskScheduler(Job job) {
-        super(job.getJobId().concat("-TaskScheduler"));
-        this.job = job;
+    public TaskScheduler(String appName) {
+        super(appName.concat("-TaskScheduler"));
     }
 
     @Override
@@ -59,11 +55,6 @@ public abstract class TaskScheduler<T> extends AbstractService {
                 if (Objects.nonNull(executorBackend)) {
                     executorBackend.cancelTask(taskContext.getTask().getTaskId());
                 }
-            }
-        }
-        if (CollectionUtils.isNonEmpty(executorContexts)) {
-            for (ExecutorContext executorContext : executorContexts.values()) {
-                executorContext.destroy();
             }
         }
     }
@@ -142,7 +133,7 @@ public abstract class TaskScheduler<T> extends AbstractService {
             for (String unAvailableExecutorId : unAvailableExecutorIds) {
                 ExecutorContext executorContext = executorContexts.remove(unAvailableExecutorId);
                 if (Objects.nonNull(executorContext)) {
-                    executorContext.destroy(false);
+                    executorContext.destroy();
                 }
             }
             this.executorContexts = executorContexts;
