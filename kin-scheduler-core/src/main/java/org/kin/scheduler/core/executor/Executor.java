@@ -11,7 +11,7 @@ import org.kin.kinrpc.config.ReferenceConfig;
 import org.kin.kinrpc.config.References;
 import org.kin.kinrpc.config.ServiceConfig;
 import org.kin.kinrpc.config.Services;
-import org.kin.scheduler.core.driver.ExecutorDriverBackend;
+import org.kin.scheduler.core.driver.SchedulerBackend;
 import org.kin.scheduler.core.driver.transport.TaskExecResult;
 import org.kin.scheduler.core.executor.domain.ExecutorState;
 import org.kin.scheduler.core.executor.log.LogContext;
@@ -56,9 +56,9 @@ public class Executor extends AbstractService implements ExecutorBackend {
     private ServiceConfig executorBackendServiceConfig;
     /** driver地址 */
     protected final String executorDriverBackendAddress;
-    protected ReferenceConfig<ExecutorDriverBackend> executorDriverBackendReferenceConfig;
+    protected ReferenceConfig<SchedulerBackend> schedulerBackendReferenceConfig;
     /** driver引用配置 */
-    protected ExecutorDriverBackend executorDriverBackend;
+    protected SchedulerBackend schedulerBackend;
     /** worker地址 */
     protected final String executorWorkerBackendAddress;
     protected ReferenceConfig<ExecutorWorkerBackend> executorWorkerBackendReferenceConfig;
@@ -108,10 +108,10 @@ public class Executor extends AbstractService implements ExecutorBackend {
                 .urls(executorWorkerBackendAddress);
         executorWorkerBackend = executorWorkerBackendReferenceConfig.get();
 
-        executorDriverBackendReferenceConfig = References.reference(ExecutorDriverBackend.class)
+        schedulerBackendReferenceConfig = References.reference(SchedulerBackend.class)
                 .appName(getName().concat("-ExecutorDriverBackend"))
                 .urls(executorDriverBackendAddress);
-        executorDriverBackend = executorDriverBackendReferenceConfig.get();
+        schedulerBackend = schedulerBackendReferenceConfig.get();
 
         executorWorkerBackend.executorStateChanged(ExecutorStateChanged.launching(appName, executorId));
     }
@@ -258,7 +258,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
 
         executorBackendServiceConfig.disable();
         executorWorkerBackendReferenceConfig.disable();
-        executorDriverBackendReferenceConfig.disable();
+        schedulerBackendReferenceConfig.disable();
 
         log.info("executor({}) closed", executorId);
     }
@@ -327,7 +327,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
                     execResult = runTask();
                 }
 
-                executorDriverBackend.taskFinish(execResult);
+                schedulerBackend.taskFinish(execResult);
             } finally {
                 TaskLoggers.logger().detachAndStopAllAppenders();
                 TaskLoggers.removeAll();

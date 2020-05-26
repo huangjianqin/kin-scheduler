@@ -1,7 +1,7 @@
 package org.kin.scheduler.core.task;
 
+import org.kin.scheduler.core.driver.impl.SimpleApplication;
 import org.kin.scheduler.core.driver.impl.SimpleDriver;
-import org.kin.scheduler.core.driver.scheduler.impl.SchedulerContextImpl;
 import org.kin.scheduler.core.master.executor.allocate.AllocateStrategyType;
 
 /**
@@ -10,7 +10,7 @@ import org.kin.scheduler.core.master.executor.allocate.AllocateStrategyType;
  */
 public class PrintTaskTest {
     public static void main(String[] args) throws InterruptedException {
-        SimpleDriver driver = new SimpleDriver(SchedulerContextImpl.build().appName("test").allocateStrategy(AllocateStrategyType.All));
+        SimpleDriver driver = new SimpleDriver(SimpleApplication.build().appName("test").allocateStrategy(AllocateStrategyType.All));
         driver.init();
         driver.start();
 

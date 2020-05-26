@@ -25,20 +25,22 @@ import java.util.Objects;
  * @author huangjianqin
  * @date 2020-02-09
  */
-public abstract class Driver extends AbstractService implements ExecutorDriverBackend, MasterDriverBackend {
+public abstract class Driver extends AbstractService implements MasterDriverBackend, SchedulerBackend {
     private static final Logger log = LoggerFactory.getLogger(Driver.class);
-
+    /** driver -> master rpc引用 */
     private ReferenceConfig<DriverMasterBackend> driverMasterBackendReferenceConfig;
     protected DriverMasterBackend driverMasterBackend;
-    private ServiceConfig executorDriverServiceConfig;
+    /** master -> driver 服务配置 */
     private ServiceConfig masterDriverServiceConfig;
-    protected SchedulerContext jobContext;
+    /** application配置 */
+    protected Application app;
+    /** TaskScheduler实现 */
     protected TaskScheduler taskScheduler;
-    protected volatile Job job;
+    protected volatile boolean registered;
 
-    public Driver(SchedulerContext jobContext, TaskScheduler taskScheduler) {
-        super(jobContext.getAppName());
-        this.jobContext = jobContext;
+    public Driver(Application app, TaskScheduler taskScheduler) {
+        super(app.getAppName());
+        this.app = app;
         this.taskScheduler = taskScheduler;
     }
 
@@ -47,21 +49,12 @@ public abstract class Driver extends AbstractService implements ExecutorDriverBa
         super.init();
         driverMasterBackendReferenceConfig = References.reference(DriverMasterBackend.class)
                 .appName(getName().concat("-DriverMasterBackendReference"))
-                .urls(jobContext.getMasterAddress());
+                .urls(app.getMasterAddress());
         driverMasterBackend = driverMasterBackendReferenceConfig.get();
-        executorDriverServiceConfig = Services.service(this, ExecutorDriverBackend.class)
-                .appName(getName().concat("-ExecutorDriverService"))
-                .bind(jobContext.getDriverPort())
-                .actorLike();
-        try {
-            executorDriverServiceConfig.export();
-        } catch (Exception e) {
-            log.error("executor driver service encounter error >>> ", e);
-        }
 
         masterDriverServiceConfig = Services.service(this, MasterDriverBackend.class)
                 .appName(getName().concat("-MasterDriverService"))
-                .bind(jobContext.getDriverPort())
+                .bind(app.getDriverPort())
                 .actorLike();
         try {
             masterDriverServiceConfig.export();
@@ -78,12 +71,19 @@ public abstract class Driver extends AbstractService implements ExecutorDriverBa
         //提交job
         super.start();
         try {
+            ApplicationDescription appDesc = new ApplicationDescription();
+            appDesc.setAppName(app.getAppName());
+            appDesc.setAllocateStrategyType(app.getAllocateStrategyType());
+            appDesc.setCpuCoreNum(app.getCpuCoreNum());
+            appDesc.setMinCoresPerExecutor(app.getMinCoresPerExecutor());
+            appDesc.setOneExecutorPerWorker(app.isOneExecutorPerWorker());
+
             ApplicationRegisterResponse response = driverMasterBackend.registerApplication(
-                    //TODO 构建ApplicationDescription
-                    ApplicationRegisterInfo.create(new ApplicationDescription(),
-                            NetUtils.getIpPort(jobContext.getDriverPort()), NetUtils.getIpPort(jobContext.getDriverPort())));
+                    ApplicationRegisterInfo.create(appDesc, NetUtils.getIpPort(app.getDriverPort()), NetUtils.getIpPort(app.getDriverPort())));
             if (Objects.nonNull(response)) {
-                if (!response.isSuccess()) {
+                if (response.isSuccess()) {
+                    registered = true;
+                } else {
                     throw new SubmitJobFailureException(response.getDesc());
                 }
             } else {
@@ -93,7 +93,7 @@ public abstract class Driver extends AbstractService implements ExecutorDriverBa
             close();
             throw new SubmitJobFailureException(e.getMessage());
         }
-        log.info("driver(appName={}, master={}) started", jobContext.getAppName(), jobContext.getMasterAddress());
+        log.info("driver(appName={}, master={}) started", app.getAppName(), app.getMasterAddress());
     }
 
     @Override
@@ -102,30 +102,29 @@ public abstract class Driver extends AbstractService implements ExecutorDriverBa
         if (Objects.nonNull(taskScheduler)) {
             taskScheduler.stop();
         }
-        if (Objects.nonNull(driverMasterBackend) && Objects.nonNull(job)) {
-            driverMasterBackend.applicationEnd(job.getJobId());
+        if (Objects.nonNull(driverMasterBackend)) {
+            driverMasterBackend.applicationEnd(app.getAppName());
         }
         if (Objects.nonNull(driverMasterBackendReferenceConfig)) {
             driverMasterBackendReferenceConfig.disable();
         }
-        executorDriverServiceConfig.disable();
+
         masterDriverServiceConfig.disable();
-        log.info("driver(appName={}, master={}) closed", jobContext.getAppName(), jobContext.getMasterAddress());
-    }
-
-    @Override
-    public RPCResult registerExecutor(ExecutorRegisterInfo executorRegisterInfo) {
-        boolean result = taskScheduler.registerExecutor(executorRegisterInfo);
-        return result ? RPCResult.success() : RPCResult.failure("");
-    }
-
-    @Override
-    public void taskFinish(TaskExecResult execResult) {
-        taskScheduler.taskFinish(execResult);
+        log.info("driver(appName={}, master={}) closed", app.getAppName(), app.getMasterAddress());
     }
 
     @Override
     public void executorStatusChange(List<String> newExecutorIds, List<String> unavailableExecutorIds) {
         taskScheduler.executorStatusChange(unavailableExecutorIds);
+    }
+
+    @Override
+    public RPCResult registerExecutor(ExecutorRegisterInfo executorRegisterInfo) {
+        return taskScheduler.registerExecutor(executorRegisterInfo);
+    }
+
+    @Override
+    public void taskFinish(TaskExecResult execResult) {
+        taskScheduler.taskFinish(execResult);
     }
 }

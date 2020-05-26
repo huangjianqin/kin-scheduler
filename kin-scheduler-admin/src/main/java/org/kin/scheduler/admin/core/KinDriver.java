@@ -1,7 +1,7 @@
 package org.kin.scheduler.admin.core;
 
+import org.kin.scheduler.core.driver.Application;
 import org.kin.scheduler.core.driver.Driver;
-import org.kin.scheduler.core.driver.SchedulerContext;
 import org.kin.scheduler.core.driver.scheduler.TaskExecFuture;
 import org.kin.scheduler.core.executor.log.TaskExecLog;
 import org.kin.scheduler.core.master.DriverMasterBackend;
@@ -11,8 +11,8 @@ import org.kin.scheduler.core.master.DriverMasterBackend;
  * @date 2020-03-10
  */
 public class KinDriver extends Driver {
-    public KinDriver(SchedulerContext jobContext, DriverMasterBackend driverMasterBackend) {
-        super(jobContext, new KinTaskSchedulerImpl(jobContext.getAppName()));
+    public KinDriver(Application app, DriverMasterBackend driverMasterBackend) {
+        super(app, new KinTaskScheduler(app));
         super.driverMasterBackend = driverMasterBackend;
     }
 
@@ -25,6 +25,6 @@ public class KinDriver extends Driver {
     }
 
     public TaskExecLog readLog(int logId, int fromLineNum) {
-        return ((KinTaskSchedulerImpl) taskScheduler).readLog(logId, fromLineNum);
+        return ((KinTaskScheduler) taskScheduler).readLog(logId, fromLineNum);
     }
 }

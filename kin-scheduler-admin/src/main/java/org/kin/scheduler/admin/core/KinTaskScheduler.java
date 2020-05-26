@@ -3,6 +3,7 @@ package org.kin.scheduler.admin.core;
 import org.kin.scheduler.admin.domain.Constants;
 import org.kin.scheduler.admin.domain.TaskType;
 import org.kin.scheduler.admin.entity.TaskLog;
+import org.kin.scheduler.core.driver.Application;
 import org.kin.scheduler.core.driver.route.RouteStrategies;
 import org.kin.scheduler.core.driver.route.RouteStrategy;
 import org.kin.scheduler.core.driver.scheduler.TaskContext;
@@ -23,9 +24,9 @@ import java.util.stream.Collectors;
  * @author huangjianqin
  * @date 2020-03-10
  */
-public class KinTaskSchedulerImpl extends TaskScheduler<TaskInfoDTO> {
-    public KinTaskSchedulerImpl(String appName) {
-        super(appName);
+public class KinTaskScheduler extends TaskScheduler<TaskInfoDTO> {
+    public KinTaskScheduler(Application app) {
+        super(app);
     }
 
     @Override

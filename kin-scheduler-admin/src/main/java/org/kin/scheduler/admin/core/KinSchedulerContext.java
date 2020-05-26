@@ -4,7 +4,7 @@ import org.kin.scheduler.admin.dao.JobInfoDao;
 import org.kin.scheduler.admin.dao.TaskInfoDao;
 import org.kin.scheduler.admin.dao.TaskLogDao;
 import org.kin.scheduler.admin.service.JobService;
-import org.kin.scheduler.core.driver.scheduler.impl.SchedulerContextImpl;
+import org.kin.scheduler.core.driver.impl.SimpleApplication;
 import org.kin.scheduler.core.master.Master;
 import org.kin.scheduler.core.master.executor.allocate.AllocateStrategyType;
 import org.springframework.beans.factory.InitializingBean;
@@ -104,7 +104,7 @@ public class KinSchedulerContext implements InitializingBean, ApplicationListene
         if (Objects.isNull(driver)) {
             synchronized (this) {
                 if (Objects.isNull(driver)) {
-                    driver = new KinDriver(SchedulerContextImpl.build().appName(KinSchedulerContext.instance().getAppName()).allocateStrategy(AllocateStrategyType.All), master);
+                    driver = new KinDriver(SimpleApplication.build().appName(KinSchedulerContext.instance().getAppName()).allocateStrategy(AllocateStrategyType.All), master);
                     driver.init();
                     driver.start();
                 }

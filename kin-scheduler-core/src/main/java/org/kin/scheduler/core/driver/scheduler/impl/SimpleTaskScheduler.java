@@ -1,5 +1,6 @@
 package org.kin.scheduler.core.driver.scheduler.impl;
 
+import org.kin.scheduler.core.driver.Application;
 import org.kin.scheduler.core.driver.route.RouteStrategies;
 import org.kin.scheduler.core.driver.route.RouteStrategyType;
 import org.kin.scheduler.core.driver.scheduler.TaskContext;
@@ -16,11 +17,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author huangjianqin
  * @date 2020-03-09
  */
-public class SimpleTaskSchedulerImpl extends TaskScheduler<Task> {
+public class SimpleTaskScheduler extends TaskScheduler<Task> {
     private AtomicInteger taskIdCounter = new AtomicInteger(1);
 
-    public SimpleTaskSchedulerImpl(String appName) {
-        super(appName);
+    public SimpleTaskScheduler(Application app) {
+        super(app);
     }
 
     private void assignTaskId(Task task) {
