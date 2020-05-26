@@ -1,5 +1,7 @@
 package org.kin.scheduler.core.cfg;
 
+import org.kin.framework.utils.SysUtils;
+
 /**
  * @author huangjianqin
  * @date 2020-02-08
@@ -16,6 +18,10 @@ public class Config {
     private int executorBackendPort;
     /** 日志路径 */
     private String logPath;
+    /** 心跳间隔, 默认3s */
+    private int heartbeatTime = 3000;
+    /** CPU核心数, 默认等于 */
+    private int cpuCore = SysUtils.CPU_NUM;
 
     public void check() {
     }
@@ -76,5 +82,21 @@ public class Config {
 
     public void setLogPath(String logPath) {
         this.logPath = logPath;
+    }
+
+    public int getHeartbeatTime() {
+        return heartbeatTime;
+    }
+
+    public void setHeartbeatTime(int heartbeatTime) {
+        this.heartbeatTime = heartbeatTime;
+    }
+
+    public int getCpuCore() {
+        return cpuCore;
+    }
+
+    public void setCpuCore(int cpuCore) {
+        this.cpuCore = cpuCore;
     }
 }

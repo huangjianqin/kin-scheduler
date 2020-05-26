@@ -1,8 +1,8 @@
 package org.kin.scheduler.core.master.executor.allocate.impl;
 
 import org.kin.framework.utils.CollectionUtils;
-import org.kin.scheduler.core.domain.WorkerRes;
-import org.kin.scheduler.core.master.domain.ExecutorRes;
+import org.kin.scheduler.core.domain.WorkerResource;
+import org.kin.scheduler.core.master.domain.ExecutorResource;
 import org.kin.scheduler.core.master.domain.WorkerContext;
 import org.kin.scheduler.core.master.executor.allocate.AllocateStrategy;
 
@@ -19,11 +19,14 @@ import java.util.concurrent.ThreadLocalRandom;
 public class RandomAllocateStrategy implements AllocateStrategy {
 
     @Override
-    public List<WorkerRes> allocate(Collection<WorkerContext> workerContexts, Collection<ExecutorRes> usedExecutorReses) {
-        if (CollectionUtils.isNonEmpty(workerContexts) && CollectionUtils.isEmpty(usedExecutorReses)) {
+    public List<WorkerResource> allocate(Collection<WorkerContext> workerContexts, Collection<ExecutorResource> usedExecutorRese) {
+        if (CollectionUtils.isNonEmpty(workerContexts) && CollectionUtils.isEmpty(usedExecutorRese)) {
             List<WorkerContext> workerContextList = new ArrayList<>(workerContexts);
 
-            return Collections.singletonList(new WorkerRes(workerContextList.get(ThreadLocalRandom.current().nextInt(workerContextList.size())).getWorkerInfo().getWorkerId()));
+            //TODO 目前选择占用全部CPU
+            WorkerContext workerContext = workerContextList.get(ThreadLocalRandom.current().nextInt(workerContextList.size()));
+            return Collections.singletonList(
+                    new WorkerResource(workerContext.getWorkerInfo().getWorkerId(), workerContext.getWorkerInfo().getMaxCpuCore()));
         }
 
         return null;

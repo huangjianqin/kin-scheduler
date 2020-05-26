@@ -40,5 +40,5 @@ public interface MasterBackend {
      *
      * @param executorState executor状态信息
      */
-    void executorStateChanged(ExecutorStateChanged executorState);
+    void executorStateChanged(ExecutorStateChanged executorStateChanged);
 }

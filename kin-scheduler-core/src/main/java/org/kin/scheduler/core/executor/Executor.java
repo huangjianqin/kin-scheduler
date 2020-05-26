@@ -7,15 +7,16 @@ import org.kin.framework.service.AbstractService;
 import org.kin.framework.utils.CollectionUtils;
 import org.kin.framework.utils.ExceptionUtils;
 import org.kin.framework.utils.StringUtils;
-import org.kin.framework.utils.SysUtils;
 import org.kin.kinrpc.config.ReferenceConfig;
 import org.kin.kinrpc.config.References;
 import org.kin.kinrpc.config.ServiceConfig;
 import org.kin.kinrpc.config.Services;
 import org.kin.scheduler.core.driver.ExecutorDriverBackend;
 import org.kin.scheduler.core.driver.transport.TaskExecResult;
+import org.kin.scheduler.core.executor.domain.ExecutorState;
 import org.kin.scheduler.core.executor.log.LogContext;
 import org.kin.scheduler.core.executor.log.TaskExecLog;
+import org.kin.scheduler.core.executor.transport.ExecutorStateChanged;
 import org.kin.scheduler.core.executor.transport.TaskSubmitResult;
 import org.kin.scheduler.core.task.Task;
 import org.kin.scheduler.core.task.handler.TaskHandler;
@@ -63,16 +64,16 @@ public class Executor extends AbstractService implements ExecutorBackend {
     protected ReferenceConfig<ExecutorWorkerBackend> executorWorkerBackendReferenceConfig;
     /** worker引用配置 */
     protected ExecutorWorkerBackend executorWorkerBackend;
+    /** 是否内嵌在worker中 */
+    protected boolean isLocal;
 
     //--------------------------------------------------------------------
     /** 存储task执行runnable, 用于中断task执行 */
     private ConcurrentMap<String, List<TaskRunner>> taskId2TaskRunners = new ConcurrentHashMap<>();
 
-    public Executor(String appName, String workerId, String executorId, String backendHost, int backendPort, String executorDriverBackendAddress, String executorWorkerBackendAddress) {
-        this(appName, workerId, executorId, backendHost, backendPort, LogUtils.BASE_PATH, executorDriverBackendAddress, executorWorkerBackendAddress);
-    }
-
-    public Executor(String appName, String workerId, String executorId, String backendHost, int backendPort, String logPath, String executorDriverBackendAddress, String executorWorkerBackendAddress) {
+    public Executor(String appName, String workerId, String executorId,
+                    String backendHost, int backendPort, String logPath,
+                    String executorDriverBackendAddress, String executorWorkerBackendAddress, boolean isLocal) {
         super(executorId);
         this.appName = appName;
         this.workerId = workerId;
@@ -82,12 +83,13 @@ public class Executor extends AbstractService implements ExecutorBackend {
         this.logPath = logPath;
         this.executorDriverBackendAddress = executorDriverBackendAddress;
         this.executorWorkerBackendAddress = executorWorkerBackendAddress;
+        this.isLocal = isLocal;
     }
 
     @Override
     public void init() {
         super.init();
-        this.executionContext = ExecutionContext.fix(SysUtils.CPU_NUM, "executor-".concat(executorId).concat("-"));
+        this.executionContext = ExecutionContext.cache("executor-".concat(executorId).concat("-"));
         logContext = new LogContext(executorId);
         log = LogUtils.getExecutorLogger(logPath, workerId, executorId);
 
@@ -110,11 +112,14 @@ public class Executor extends AbstractService implements ExecutorBackend {
                 .appName(getName().concat("-ExecutorDriverBackend"))
                 .urls(executorDriverBackendAddress);
         executorDriverBackend = executorDriverBackendReferenceConfig.get();
+
+        executorWorkerBackend.executorStateChanged(ExecutorStateChanged.launching(appName, executorId));
     }
 
     @Override
     public void start() {
         super.start();
+        executorWorkerBackend.executorStateChanged(ExecutorStateChanged.running(appName, executorId));
         log.info("executor({}) started", executorId);
     }
 
@@ -247,10 +252,30 @@ public class Executor extends AbstractService implements ExecutorBackend {
         executionContext.shutdown();
         logContext.stop();
 
+        if (isLocal) {
+            executorWorkerBackend.executorStateChanged(ExecutorStateChanged.exit(appName, executorId));
+        }
+
+        executorBackendServiceConfig.disable();
         executorWorkerBackendReferenceConfig.disable();
         executorDriverBackendReferenceConfig.disable();
 
         log.info("executor({}) closed", executorId);
+    }
+
+    public void executorStateChanged(ExecutorState state) {
+        switch (state) {
+            case KILLED:
+                executorWorkerBackend.executorStateChanged(ExecutorStateChanged.kill(appName, executorId));
+                break;
+            case FAIL:
+                executorWorkerBackend.executorStateChanged(ExecutorStateChanged.fail(appName, executorId));
+                break;
+            case EXIT:
+                executorWorkerBackend.executorStateChanged(ExecutorStateChanged.exit(appName, executorId));
+                break;
+            default:
+        }
     }
 
     //-----------------------------------------------------------------------------------------------------------------

@@ -8,7 +8,7 @@ import java.util.Properties;
  * @author huangjianqin
  * @date 2020-02-12
  */
-public class CfgUtils {
+public class ConfigUtils {
     private static final String PREFIX = "kin.scheduler.";
 
     public static <V> V getValue(Properties properties, Enum e) {
@@ -18,5 +18,11 @@ public class CfgUtils {
         }
 
         return (V) "";
+    }
+
+    public static boolean containsKey(Properties properties, Enum e) {
+        String key = PREFIX.concat(StringUtils.firstLowerCase(e.name()));
+
+        return properties.containsKey(key);
     }
 }

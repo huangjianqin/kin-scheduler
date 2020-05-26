@@ -75,7 +75,8 @@ public class KinSchedulerContext implements InitializingBean, ApplicationListene
                 int masterBackendPort = KinSchedulerContext.instance().getMasterBackendPort();
                 String logPath = KinSchedulerContext.instance().getLogPath();
 
-                master = new Master(masterBackendHost, masterBackendPort, logPath);
+                //TODO 定心跳间隔
+                master = new Master(masterBackendHost, masterBackendPort, logPath, 3);
                 try {
                     master.init();
                     master.start();

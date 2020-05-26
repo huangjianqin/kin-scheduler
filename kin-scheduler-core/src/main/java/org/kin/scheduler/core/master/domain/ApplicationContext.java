@@ -2,13 +2,14 @@ package org.kin.scheduler.core.master.domain;
 
 import org.kin.kinrpc.config.ReferenceConfig;
 import org.kin.kinrpc.config.References;
+import org.kin.scheduler.core.domain.WorkerResource;
 import org.kin.scheduler.core.driver.MasterDriverBackend;
 import org.kin.scheduler.core.master.executor.allocate.AllocateStrategy;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.stream.Collectors;
 
 /**
  * @author huangjianqin
@@ -17,8 +18,9 @@ import java.util.stream.Collectors;
 public class ApplicationContext {
     private String appName;
     private AllocateStrategy allocateStrategy;
-    private List<ExecutorRes> usedExecutorReses;
+    private List<ExecutorResource> usedExecutorResources;
     private String executorDriverBackendAddress;
+    /** master -> driver 引用 */
     private String masterDriverBackendAddress;
     private ReferenceConfig<MasterDriverBackend> referenceConfig;
     private MasterDriverBackend masterDriverBackend;
@@ -26,7 +28,7 @@ public class ApplicationContext {
     public ApplicationContext(String appName, AllocateStrategy allocateStrategy, String executorDriverBackendAddress, String masterDriverBackendAddress) {
         this.appName = appName;
         this.allocateStrategy = allocateStrategy;
-        this.usedExecutorReses = new CopyOnWriteArrayList<>();
+        this.usedExecutorResources = new CopyOnWriteArrayList<>();
         this.executorDriverBackendAddress = executorDriverBackendAddress;
         this.masterDriverBackendAddress = masterDriverBackendAddress;
     }
@@ -44,13 +46,32 @@ public class ApplicationContext {
     }
 
 
-    public void executorStatusChange(List<ExecutorRes> newExecutorReses, List<String> unavailableExecutorIds) {
-        usedExecutorReses.removeIf(item -> unavailableExecutorIds.contains(item.getExecutorId()));
-        usedExecutorReses.addAll(newExecutorReses);
-
-        List<String> newExecutorIds = newExecutorReses.stream().map(ExecutorRes::getExecutorId).collect(Collectors.toList());
+    public void executorStatusChange(List<String> newExecutorIds, List<String> unavailableExecutorIds) {
         masterDriverBackend.executorStatusChange(newExecutorIds, unavailableExecutorIds);
     }
+
+    //------------------------------------------------------------------------------------------------------------------
+
+    public void useExecutorResource(String executorId, WorkerResource resource) {
+        usedExecutorResources.add(new ExecutorResource(executorId, resource));
+    }
+
+    public boolean containsExecutorResource(String executorId) {
+        return usedExecutorResources.stream().anyMatch(r -> r.getExecutorId().equals(executorId));
+    }
+
+    public ExecutorResource removeExecutorResource(String executorId) {
+        Iterator<ExecutorResource> iterator = usedExecutorResources.iterator();
+        while (iterator.hasNext()) {
+            ExecutorResource executorResource = iterator.next();
+            if (executorResource.getExecutorId().equals(executorId)) {
+                iterator.remove();
+                return executorResource;
+            }
+        }
+        return null;
+    }
+
 
     //getter
     public String getAppName() {
@@ -65,12 +86,8 @@ public class ApplicationContext {
         return executorDriverBackendAddress;
     }
 
-    public List<ExecutorRes> getUsedExecutorReses() {
-        return usedExecutorReses;
-    }
-
-    public void setUsedExecutorReses(List<ExecutorRes> usedExecutorReses) {
-        this.usedExecutorReses = usedExecutorReses;
+    public List<ExecutorResource> getUsedExecutorResources() {
+        return usedExecutorResources;
     }
 
     @Override

@@ -1,7 +1,12 @@
 package org.kin.scheduler.core.master.domain;
 
 import org.kin.framework.service.AbstractService;
-import org.kin.scheduler.core.domain.WorkerRes;
+import org.kin.kinrpc.config.ReferenceConfig;
+import org.kin.kinrpc.config.References;
+import org.kin.scheduler.core.domain.WorkerResource;
+import org.kin.scheduler.core.master.transport.ExecutorLaunchInfo;
+import org.kin.scheduler.core.worker.WorkerBackend;
+import org.kin.scheduler.core.worker.transport.ExecutorLaunchResult;
 import org.kin.scheduler.core.worker.transport.WorkerInfo;
 
 import java.util.Objects;
@@ -10,33 +15,50 @@ import java.util.Objects;
  * @author huangjianqin
  * @date 2020-02-09
  */
-public class WorkerContext extends AbstractService {
+public class WorkerContext extends AbstractService implements WorkerBackend {
     private WorkerInfo workerInfo;
-    private WorkerRes res;
+    private ReferenceConfig<WorkerBackend> workerBackendReferenceConfig;
+    private WorkerBackend workerBackend;
+    private WorkerResource resource;
     private volatile long lastHeartbeatTime;
 
     public WorkerContext(WorkerInfo workerInfo) {
         super(workerInfo.getWorkerId());
         this.workerInfo = workerInfo;
-        this.res = new WorkerRes(workerInfo.getWorkerId());
+        this.resource = new WorkerResource(workerInfo.getWorkerId(), workerInfo.getMaxCpuCore());
     }
 
     @Override
     public void start() {
         super.start();
+        workerBackendReferenceConfig = References.reference(WorkerBackend.class)
+                .appName(getName())
+                .urls(workerInfo.getAddress());
+        workerBackend = workerBackendReferenceConfig.get();
     }
 
     @Override
     public void stop() {
         super.stop();
+        workerBackendReferenceConfig.disable();
+    }
+
+    @Override
+    public void reconnect2Master() {
+        throw new IllegalStateException();
+    }
+
+    @Override
+    public ExecutorLaunchResult launchExecutor(ExecutorLaunchInfo launchInfo) {
+        return workerBackend.launchExecutor(launchInfo);
     }
 
     public WorkerInfo getWorkerInfo() {
         return workerInfo;
     }
 
-    public WorkerRes getRes() {
-        return res;
+    public WorkerResource getResource() {
+        return resource;
     }
 
     public long getLastHeartbeatTime() {

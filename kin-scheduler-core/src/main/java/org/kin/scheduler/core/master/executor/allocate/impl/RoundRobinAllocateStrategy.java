@@ -1,8 +1,8 @@
 package org.kin.scheduler.core.master.executor.allocate.impl;
 
 import org.kin.framework.utils.CollectionUtils;
-import org.kin.scheduler.core.domain.WorkerRes;
-import org.kin.scheduler.core.master.domain.ExecutorRes;
+import org.kin.scheduler.core.domain.WorkerResource;
+import org.kin.scheduler.core.master.domain.ExecutorResource;
 import org.kin.scheduler.core.master.domain.WorkerContext;
 import org.kin.scheduler.core.master.executor.allocate.AllocateStrategy;
 
@@ -20,11 +20,12 @@ public class RoundRobinAllocateStrategy implements AllocateStrategy {
     private AtomicInteger round = new AtomicInteger(0);
 
     @Override
-    public List<WorkerRes> allocate(Collection<WorkerContext> workerContexts, Collection<ExecutorRes> usedExecutorReses) {
-        if (CollectionUtils.isNonEmpty(workerContexts) && CollectionUtils.isEmpty(usedExecutorReses)) {
+    public List<WorkerResource> allocate(Collection<WorkerContext> workerContexts, Collection<ExecutorResource> usedExecutorRese) {
+        if (CollectionUtils.isNonEmpty(workerContexts) && CollectionUtils.isEmpty(usedExecutorRese)) {
             List<WorkerContext> workerContextList = new ArrayList<>(workerContexts);
             WorkerContext selected = workerContextList.get(next(workerContextList.size()));
-            return Collections.singletonList(new WorkerRes(selected.getWorkerInfo().getWorkerId()));
+            //TODO 目前选择占用全部CPU
+            return Collections.singletonList(new WorkerResource(selected.getWorkerInfo().getWorkerId(), selected.getWorkerInfo().getMaxCpuCore()));
         }
 
         return null;

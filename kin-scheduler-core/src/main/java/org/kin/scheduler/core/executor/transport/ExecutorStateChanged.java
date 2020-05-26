@@ -24,6 +24,26 @@ public class ExecutorStateChanged implements Serializable {
         this.state = state;
     }
 
+    public static ExecutorStateChanged launching(String appName, String executorId) {
+        return new ExecutorStateChanged(appName, executorId, ExecutorState.LAUNCHING);
+    }
+
+    public static ExecutorStateChanged running(String appName, String executorId) {
+        return new ExecutorStateChanged(appName, executorId, ExecutorState.RUNNING);
+    }
+
+    public static ExecutorStateChanged fail(String appName, String executorId) {
+        return new ExecutorStateChanged(appName, executorId, ExecutorState.FAIL);
+    }
+
+    public static ExecutorStateChanged kill(String appName, String executorId) {
+        return new ExecutorStateChanged(appName, executorId, ExecutorState.KILLED);
+    }
+
+    public static ExecutorStateChanged exit(String appName, String executorId) {
+        return new ExecutorStateChanged(appName, executorId, ExecutorState.EXIT);
+    }
+
 
     public String getAppName() {
         return appName;

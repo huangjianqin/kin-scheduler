@@ -1,6 +1,6 @@
 package org.kin.scheduler.core.cfg;
 
-import org.kin.scheduler.core.utils.CfgUtils;
+import org.kin.scheduler.core.utils.ConfigUtils;
 
 import java.util.Properties;
 
@@ -15,8 +15,8 @@ public enum ConfigKeys {
      */
     WorkerBackendHost("WorkerBackendHost") {
         @Override
-        public void set(Config config, Properties properties) {
-            config.setWorkerBackendHost(CfgUtils.getValue(properties, this));
+        void updateConfig(Config config, Properties properties) {
+            config.setWorkerBackendHost(ConfigUtils.getValue(properties, this));
         }
     },
     /**
@@ -24,8 +24,8 @@ public enum ConfigKeys {
      */
     WorkerBackendPort("WorkerBackendPort") {
         @Override
-        public void set(Config config, Properties properties) {
-            config.setWorkerBackendPort(CfgUtils.getValue(properties, this));
+        void updateConfig(Config config, Properties properties) {
+            config.setWorkerBackendPort(ConfigUtils.getValue(properties, this));
         }
     },
     /**
@@ -33,8 +33,8 @@ public enum ConfigKeys {
      */
     MasterBackendHost("MasterBackendHost") {
         @Override
-        public void set(Config config, Properties properties) {
-            config.setMasterBackendHost(CfgUtils.getValue(properties, this));
+        void updateConfig(Config config, Properties properties) {
+            config.setMasterBackendHost(ConfigUtils.getValue(properties, this));
         }
     },
     /**
@@ -42,8 +42,8 @@ public enum ConfigKeys {
      */
     MasterBackendPort("MasterBackendPort") {
         @Override
-        public void set(Config config, Properties properties) {
-            config.setMasterBackendPort(CfgUtils.getValue(properties, this));
+        void updateConfig(Config config, Properties properties) {
+            config.setMasterBackendPort(ConfigUtils.getValue(properties, this));
         }
     },
     /**
@@ -51,8 +51,8 @@ public enum ConfigKeys {
      */
     AllowEmbeddedExecutor("是否允许worker内置Executor(与Worker共享资源)") {
         @Override
-        public void set(Config config, Properties properties) {
-            config.setAllowEmbeddedExecutor(CfgUtils.getValue(properties, this));
+        void updateConfig(Config config, Properties properties) {
+            config.setAllowEmbeddedExecutor(ConfigUtils.getValue(properties, this));
         }
     },
     /**
@@ -60,8 +60,8 @@ public enum ConfigKeys {
      */
     ExecutorBackendPort("Executor rpc端口") {
         @Override
-        public void set(Config config, Properties properties) {
-            config.setExecutorBackendPort(CfgUtils.getValue(properties, this));
+        void updateConfig(Config config, Properties properties) {
+            config.setExecutorBackendPort(ConfigUtils.getValue(properties, this));
         }
     },
     /**
@@ -69,10 +69,28 @@ public enum ConfigKeys {
      */
     LogPath("日志路径") {
         @Override
-        public void set(Config config, Properties properties) {
-            config.setLogPath(CfgUtils.getValue(properties, this));
+        void updateConfig(Config config, Properties properties) {
+            config.setLogPath(ConfigUtils.getValue(properties, this));
         }
     },
+    /**
+     * 心跳间隔
+     */
+    Heartbeat("心跳间隔") {
+        @Override
+        void updateConfig(Config config, Properties properties) {
+            config.setHeartbeatTime(ConfigUtils.getValue(properties, this));
+        }
+    },
+    /**
+     * CPU core
+     */
+    CPU("CPU核心数") {
+        @Override
+        void updateConfig(Config config, Properties properties) {
+            config.setCpuCore(ConfigUtils.getValue(properties, this));
+        }
+    }
     ;
 
     public static ConfigKeys[] KEYS = values();
@@ -84,5 +102,11 @@ public enum ConfigKeys {
         this.desc = desc;
     }
 
-    public abstract void set(Config config, Properties properties);
+    abstract void updateConfig(Config config, Properties properties);
+
+    public void set(Config config, Properties properties) {
+        if (ConfigUtils.containsKey(properties, this)) {
+            set(config, properties);
+        }
+    }
 }

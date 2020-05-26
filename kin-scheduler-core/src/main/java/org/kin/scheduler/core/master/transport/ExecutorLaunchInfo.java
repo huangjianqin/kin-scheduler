@@ -11,13 +11,15 @@ public class ExecutorLaunchInfo implements Serializable {
 
     private String appName;
     private String executorDriverBackendAddress;
+    private int cpuCore;
 
     public ExecutorLaunchInfo() {
     }
 
-    public ExecutorLaunchInfo(String appName, String executorDriverBackendAddress) {
+    public ExecutorLaunchInfo(String appName, String executorDriverBackendAddress, int cpuCore) {
         this.appName = appName;
         this.executorDriverBackendAddress = executorDriverBackendAddress;
+        this.cpuCore = cpuCore;
     }
 
     public String getAppName() {
@@ -34,5 +36,13 @@ public class ExecutorLaunchInfo implements Serializable {
 
     public void setExecutorDriverBackendAddress(String executorDriverBackendAddress) {
         this.executorDriverBackendAddress = executorDriverBackendAddress;
+    }
+
+    public int getCpuCore() {
+        return cpuCore;
+    }
+
+    public void setCpuCore(int cpuCore) {
+        this.cpuCore = cpuCore;
     }
 }

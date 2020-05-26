@@ -10,7 +10,6 @@ import org.kin.kinrpc.config.References;
 import org.kin.kinrpc.config.ServiceConfig;
 import org.kin.kinrpc.config.Services;
 import org.kin.scheduler.core.cfg.Config;
-import org.kin.scheduler.core.domain.WorkerRes;
 import org.kin.scheduler.core.executor.Executor;
 import org.kin.scheduler.core.executor.transport.ExecutorStateChanged;
 import org.kin.scheduler.core.log.StaticLogger;
@@ -54,12 +53,8 @@ public class Worker extends AbstractService implements WorkerBackend, ExecutorWo
      * 类actor执行, 所有rpc请求都是同一线程处理, 不需要用原子类
      */
     private int executorIdCounter = 1;
-    /** 已使用资源 */
-    private WorkerRes res;
     //定时发送心跳
     private Keeper.KeeperStopper heartbeatKeeper;
-    //心跳时间(秒)
-    private int heartbeatTime = 3;
 
     public Worker(String workerId, Config config) {
         super("Worker-".concat(workerId));
@@ -94,8 +89,6 @@ public class Worker extends AbstractService implements WorkerBackend, ExecutorWo
         } catch (Exception e) {
             StaticLogger.log.error(e.getMessage(), e);
         }
-
-        res = new WorkerRes(workerId);
     }
 
     private WorkerRegisterInfo generateWorkerRegisterInfo() {
@@ -104,7 +97,7 @@ public class Worker extends AbstractService implements WorkerBackend, ExecutorWo
 
     private WorkerInfo generateWorkerInfo() {
         return new WorkerInfo(workerId, NetUtils.getIpPort(config.getWorkerBackendHost(), config.getWorkerBackendPort()),
-                0, 0);
+                config.getCpuCore(), 0);
     }
 
     private void registerWorker() {
@@ -159,6 +152,7 @@ public class Worker extends AbstractService implements WorkerBackend, ExecutorWo
     }
 
     private void sendHeartbeat() {
+        long heartbeatTime = config.getHeartbeatTime();
         try {
             long sleepTime = heartbeatTime - TimeUtils.timestamp() % heartbeatTime;
             if (sleepTime > 0 && sleepTime < heartbeatTime) {
@@ -203,7 +197,7 @@ public class Worker extends AbstractService implements WorkerBackend, ExecutorWo
             String executorId = workerId.concat("-Executor-").concat(String.valueOf(executorIdCounter++));
             if (config.isAllowEmbeddedExecutor()) {
                 Executor executor = new Executor(appName, workerId, executorId, config.getWorkerBackendHost(), executorBackendPort, config.getLogPath(),
-                        launchInfo.getExecutorDriverBackendAddress(), executorWorkerBackendAddress);
+                        launchInfo.getExecutorDriverBackendAddress(), executorWorkerBackendAddress, true);
                 executor.init();
                 executor.start();
 
@@ -212,6 +206,7 @@ public class Worker extends AbstractService implements WorkerBackend, ExecutorWo
                 result = ExecutorLaunchResult.success(executorId, NetUtils.getIpPort(config.getWorkerBackendHost(), executorBackendPort));
             } else {
                 //启动新jvm来启动Executor
+                //TODO 通过启动进程控制CPU使用数
                 int commandExecResult = ScriptUtils.execCommand("java -jar kin-scheduler-admin.jar ExecutorRunner",
                         LogUtils.getExecutorLogFileName(config.getLogPath(), workerId, executorId), "/",
                         appName, workerId, executorId, config.getWorkerBackendHost(), String.valueOf(executorBackendPort),
@@ -249,14 +244,12 @@ public class Worker extends AbstractService implements WorkerBackend, ExecutorWo
     }
 
     @Override
-    public void executorStateChanged(ExecutorStateChanged executorState) {
+    public void executorStateChanged(ExecutorStateChanged executorStateChanged) {
         if (!isInState(State.STARTED)) {
             return;
         }
 
-        //TODO 恢复已使用资源
-
-        embeddedExecutors.remove(executorState.getExecutorId());
-        masterBackend.executorStateChanged(executorState);
+        embeddedExecutors.remove(executorStateChanged.getExecutorId());
+        masterBackend.executorStateChanged(executorStateChanged);
     }
 }

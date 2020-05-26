@@ -9,19 +9,18 @@ import org.kin.framework.utils.StringUtils;
 import org.kin.framework.utils.TimeUtils;
 import org.kin.kinrpc.config.ServiceConfig;
 import org.kin.kinrpc.config.Services;
-import org.kin.scheduler.core.domain.WorkerRes;
+import org.kin.scheduler.core.domain.WorkerResource;
 import org.kin.scheduler.core.driver.transport.ApplicationRegisterInfo;
+import org.kin.scheduler.core.executor.domain.ExecutorState;
 import org.kin.scheduler.core.executor.transport.ExecutorStateChanged;
 import org.kin.scheduler.core.log.StaticLogger;
 import org.kin.scheduler.core.master.domain.ApplicationContext;
-import org.kin.scheduler.core.master.domain.ExecutorRes;
+import org.kin.scheduler.core.master.domain.ExecutorResource;
 import org.kin.scheduler.core.master.domain.WorkerContext;
 import org.kin.scheduler.core.master.executor.allocate.AllocateStrategies;
 import org.kin.scheduler.core.master.executor.allocate.AllocateStrategy;
-import org.kin.scheduler.core.master.transport.ApplicationRegisterResponse;
-import org.kin.scheduler.core.master.transport.WorkerHeartbeatResp;
-import org.kin.scheduler.core.master.transport.WorkerRegisterResult;
-import org.kin.scheduler.core.master.transport.WorkerUnregisterResult;
+import org.kin.scheduler.core.master.transport.*;
+import org.kin.scheduler.core.worker.transport.ExecutorLaunchResult;
 import org.kin.scheduler.core.worker.transport.WorkerHeartbeat;
 import org.kin.scheduler.core.worker.transport.WorkerInfo;
 import org.kin.scheduler.core.worker.transport.WorkerRegisterInfo;
@@ -48,17 +47,19 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
     private ServiceConfig masterBackendServiceConfig;
     private ServiceConfig driverMasterBackendServiceConfig;
     private Map<String, ApplicationContext> applicationContexts = new ConcurrentHashMap<>();
+    private List<ApplicationContext> waitingDrivers = new ArrayList<>();
     //心跳时间(秒)
-    private int heartbeatTime = 3;
+    private int heartbeatTime;
     //心跳检测间隔(秒)
     private int heartbeatCheckInterval = heartbeatTime + 2;
     private PinnedThreadSafeHandler<?> threadSafeHandler =
             new PinnedThreadSafeHandler<>(ExecutionContext.fix(1, "Master", 1, "Master-schedule"));
 
-    public Master(String masterBackendHost, int masterBackendPort, String logPath) {
+    public Master(String masterBackendHost, int masterBackendPort, String logPath, int heartbeatTime) {
         super("Master");
         this.masterBackendHost = masterBackendHost;
         this.masterBackendPort = masterBackendPort;
+        this.heartbeatTime = heartbeatTime;
         StaticLogger.init(logPath);
     }
 
@@ -174,23 +175,51 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
     }
 
     @Override
-    public void executorStateChanged(ExecutorStateChanged executorState) {
-        //TODO 恢复已使用资源
-        //TODO 移除状态
+    public void executorStateChanged(ExecutorStateChanged executorStateChanged) {
+        //TODO 考虑主动为资源分配不足的Driver分配资源
+        String appName = executorStateChanged.getAppName();
+        String executorId = executorStateChanged.getExecutorId();
+        ApplicationContext driver = applicationContexts.get(appName);
+        if (Objects.nonNull(driver) && driver.containsExecutorResource(executorId)) {
+            ExecutorState executorState = executorStateChanged.getState();
+            if (!executorState.isFinished()) {
+                if (ExecutorState.RUNNING.equals(executorState)) {
+                    //已在启动executor时预占用资源
+                    driver.executorStatusChange(Collections.singletonList(executorId), Collections.emptyList());
+                }
+                //TODO 启动状态暂时不处理
+            } else {
+                //
+                ExecutorResource executorResource = driver.removeExecutorResource(executorId);
+                if (Objects.nonNull(executorResource)) {
+                    WorkerResource workerResource = executorResource.getWorkerResource();
+                    WorkerContext workerContext = workers.get(workerResource.getWorkerId());
+                    if (Objects.nonNull(workerContext)) {
+                        workerContext.getResource().recoverCpuCore(workerResource.getCpuCore());
+                    }
+                    driver.executorStatusChange(Collections.emptyList(), Collections.singletonList(executorId));
+                    //TODO 需要判断资源不够
+//                    waitingDrivers.add(driver);
+                    scheduleResource();
+                }
+            }
+        }
     }
 
     private void executorStateChanged(String unAvailableWorkerId) {
         for (ApplicationContext driver : applicationContexts.values()) {
             //无用Executor
             List<String> unAvailableExecutorIds =
-                    driver.getUsedExecutorReses().stream()
-                            .filter(er -> er.getWorkerRes().getWorkerId().equals(unAvailableWorkerId))
-                            .map(ExecutorRes::getExecutorId)
+                    driver.getUsedExecutorResources().stream()
+                            .filter(er -> er.getWorkerResource().getWorkerId().equals(unAvailableWorkerId))
+                            .map(ExecutorResource::getExecutorId)
                             .collect(Collectors.toList());
             driver.executorStatusChange(Collections.emptyList(), unAvailableExecutorIds);
 
-            scheduleResource(driver);
+            //TODO 需要判断资源不够
+//            waitingDrivers.add(driver);
         }
+        scheduleResource();
     }
 
     //-------------------------------------------------------------------------------------------------
@@ -228,16 +257,33 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
     private void scheduleResource(ApplicationContext driver) {
         AllocateStrategy allocateStrategy = driver.getAllocateStrategy();
         //寻找可用executor
-        List<WorkerRes> usedWorkerReses = allocateStrategy.allocate(workers.values(), driver.getUsedExecutorReses());
-        if (CollectionUtils.isNonEmpty(usedWorkerReses)) {
-            List<ExecutorRes> executorReses = new ArrayList<>();
-            for (WorkerRes usedWorkerRes : usedWorkerReses) {
-                WorkerContext worker = workers.get(usedWorkerRes.getWorkerId());
-                //TODO 暂时workerId=ExecutorId
-                ExecutorRes executorRes = new ExecutorRes(worker.getWorkerInfo().getWorkerId(), usedWorkerRes);
-                executorReses.add(executorRes);
+        List<WorkerResource> usedWorkerResources = allocateStrategy.allocate(workers.values(), driver.getUsedExecutorResources());
+        if (CollectionUtils.isNonEmpty(usedWorkerResources)) {
+            for (WorkerResource usedWorkerResource : usedWorkerResources) {
+                WorkerContext worker = workers.get(usedWorkerResource.getWorkerId());
+
+                int usedCpuCore = usedWorkerResource.getCpuCore();
+                ExecutorLaunchResult launchResult = worker.launchExecutor(new ExecutorLaunchInfo(driver.getAppName(), driver.getExecutorDriverBackendAddress(), usedCpuCore));
+                if (launchResult.isSuccess()) {
+                    String executorId = launchResult.getExecutorId();
+                    //启动Executor成功
+                    //修改worker已使用资源
+                    worker.getResource().useCpuCore(usedCpuCore);
+                    //修改driver已使用资源
+                    driver.useExecutorResource(executorId, usedWorkerResource);
+                }
             }
-            driver.executorStatusChange(executorReses, Collections.emptyList());
+        } else {
+            //TODO 资源分配不足, 资源分配不足仍然需要更细粒度判断
+            waitingDrivers.add(driver);
+        }
+    }
+
+    private void scheduleResource() {
+        List<ApplicationContext> waitingDrivers = new ArrayList<>(this.waitingDrivers);
+        this.waitingDrivers = new ArrayList<>();
+        for (ApplicationContext waitingDriver : waitingDrivers) {
+            scheduleResource(waitingDriver);
         }
     }
 

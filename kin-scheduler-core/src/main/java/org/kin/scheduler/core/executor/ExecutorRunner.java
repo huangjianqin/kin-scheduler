@@ -1,5 +1,7 @@
 package org.kin.scheduler.core.executor;
 
+import org.kin.scheduler.core.executor.domain.ExecutorState;
+
 /**
  * @author huangjianqin
  * @date 2020-02-06
@@ -33,9 +35,14 @@ public class ExecutorRunner {
                     throw e;
                 }
             }
-            //TODO 更新状态executor
+            //更新状态executor
+            executor.executorStateChanged(ExecutorState.EXIT);
+        } catch (InterruptedException e) {
+            //更新状态executor
+            executor.executorStateChanged(ExecutorState.KILLED);
         } catch (Exception e) {
-            //TODO 更新状态executor
+            //更新状态executor
+            executor.executorStateChanged(ExecutorState.FAIL);
         } finally {
             executor.close();
         }
@@ -43,7 +50,7 @@ public class ExecutorRunner {
 
     public static void runExecutor(String appName, String workerId, String executorId, String backendHost, int backendPort,
                                    String logBasePath, String driverAddress, String workerAddress) {
-        Executor executor = new Executor(appName, workerId, executorId, backendHost, backendPort, logBasePath, driverAddress, workerAddress);
+        Executor executor = new Executor(appName, workerId, executorId, backendHost, backendPort, logBasePath, driverAddress, workerAddress, false);
         runExecutor0(executor);
     }
 }

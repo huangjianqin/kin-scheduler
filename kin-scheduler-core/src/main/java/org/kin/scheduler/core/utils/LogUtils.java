@@ -21,7 +21,6 @@ import java.util.Date;
  */
 public class LogUtils {
     private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
-    public static final String BASE_PATH = "/logs";
 
     public static Logger getMasterLogger(String basePath, String masterId) {
         String loggerName = masterId.concat("Logger");

@@ -1,7 +1,7 @@
 package org.kin.scheduler.core.master.executor.allocate;
 
-import org.kin.scheduler.core.domain.WorkerRes;
-import org.kin.scheduler.core.master.domain.ExecutorRes;
+import org.kin.scheduler.core.domain.WorkerResource;
+import org.kin.scheduler.core.master.domain.ExecutorResource;
 import org.kin.scheduler.core.master.domain.WorkerContext;
 
 import java.util.Collection;
@@ -19,5 +19,5 @@ public interface AllocateStrategy {
      * @param workerContexts 可用worker信息
      * @return 分配到的executor资源
      */
-    List<WorkerRes> allocate(Collection<WorkerContext> workerContexts, Collection<ExecutorRes> usedExecutorReses);
+    List<WorkerResource> allocate(Collection<WorkerContext> workerContexts, Collection<ExecutorResource> usedExecutorRese);
 }

@@ -13,7 +13,9 @@ public class MasterRunnerTest {
         String[] masterArgs = new String[]{
                 config.getMasterBackendHost(),
                 String.valueOf(config.getMasterBackendPort()),
-                config.getLogPath()};
+                config.getLogPath(),
+                String.valueOf(config.getHeartbeatTime())
+        };
         MasterRunner.main(masterArgs);
     }
 }

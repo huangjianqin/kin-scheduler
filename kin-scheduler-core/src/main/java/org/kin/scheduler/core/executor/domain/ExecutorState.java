@@ -16,5 +16,7 @@ public enum ExecutorState {
     /** 正常退出 */
     EXIT;
 
-
+    public boolean isFinished() {
+        return equals(ExecutorState.FAIL) || equals(ExecutorState.KILLED) || equals(ExecutorState.EXIT);
+    }
 }

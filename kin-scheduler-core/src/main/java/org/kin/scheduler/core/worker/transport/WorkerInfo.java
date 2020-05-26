@@ -1,25 +1,27 @@
 package org.kin.scheduler.core.worker.transport;
 
+import java.io.Serializable;
 import java.util.Objects;
 
 /**
  * @author huangjianqin
  * @date 2020-02-09
  */
-public class WorkerInfo {
+public class WorkerInfo implements Serializable {
+    private static final long serialVersionUID = -4507523138506740303L;
+
     private String workerId;
     private String address;
-
-    private long usedMemory;
+    private int maxCpuCore;
     private long maxMemory;
 
     public WorkerInfo() {
     }
 
-    public WorkerInfo(String workerId, String address, long usedMemory, long maxMemory) {
+    public WorkerInfo(String workerId, String address, int maxCpuCore, long maxMemory) {
         this.workerId = workerId;
         this.address = address;
-        this.usedMemory = usedMemory;
+        this.maxCpuCore = maxCpuCore;
         this.maxMemory = maxMemory;
     }
 
@@ -41,12 +43,12 @@ public class WorkerInfo {
         this.address = address;
     }
 
-    public long getUsedMemory() {
-        return usedMemory;
+    public int getMaxCpuCore() {
+        return maxCpuCore;
     }
 
-    public void setUsedMemory(long usedMemory) {
-        this.usedMemory = usedMemory;
+    public void setMaxCpuCore(int maxCpuCore) {
+        this.maxCpuCore = maxCpuCore;
     }
 
     public long getMaxMemory() {
