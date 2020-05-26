@@ -1,7 +1,5 @@
 package org.kin.scheduler.core.driver.transport;
 
-import org.kin.scheduler.core.master.executor.allocate.AllocateStrategyType;
-
 import java.io.Serializable;
 
 /**
@@ -11,18 +9,16 @@ import java.io.Serializable;
 public class ApplicationRegisterInfo implements Serializable {
     private static final long serialVersionUID = 8669073559392601217L;
 
-    private String appName;
-    private String allocateStrategy;
+    private ApplicationDescription appDesc;
     private String executorDriverBackendAddress;
     private String masterDriverBackendAddress;
 
     public ApplicationRegisterInfo() {
     }
 
-    public static ApplicationRegisterInfo create(String appName, AllocateStrategyType allocateStrategy, String executorDriverBackendAddress, String masterDriverBackendAddress) {
+    public static ApplicationRegisterInfo create(ApplicationDescription appDesc, String executorDriverBackendAddress, String masterDriverBackendAddress) {
         ApplicationRegisterInfo request = new ApplicationRegisterInfo();
-        request.setAppName(appName);
-        request.setAllocateStrategy(allocateStrategy.name());
+        request.setAppDesc(appDesc);
         request.setExecutorDriverBackendAddress(executorDriverBackendAddress);
         request.setMasterDriverBackendAddress(masterDriverBackendAddress);
         return request;
@@ -30,20 +26,12 @@ public class ApplicationRegisterInfo implements Serializable {
 
     //setter && getter
 
-    public String getAppName() {
-        return appName;
+    public ApplicationDescription getAppDesc() {
+        return appDesc;
     }
 
-    public void setAppName(String appName) {
-        this.appName = appName;
-    }
-
-    public String getAllocateStrategy() {
-        return allocateStrategy;
-    }
-
-    public void setAllocateStrategy(String allocateStrategy) {
-        this.allocateStrategy = allocateStrategy;
+    public void setAppDesc(ApplicationDescription appDesc) {
+        this.appDesc = appDesc;
     }
 
     public String getExecutorDriverBackendAddress() {

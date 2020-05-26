@@ -8,6 +8,7 @@ import org.kin.kinrpc.config.ServiceConfig;
 import org.kin.kinrpc.config.Services;
 import org.kin.scheduler.core.driver.exception.SubmitJobFailureException;
 import org.kin.scheduler.core.driver.scheduler.TaskScheduler;
+import org.kin.scheduler.core.driver.transport.ApplicationDescription;
 import org.kin.scheduler.core.driver.transport.ApplicationRegisterInfo;
 import org.kin.scheduler.core.driver.transport.ExecutorRegisterInfo;
 import org.kin.scheduler.core.driver.transport.TaskExecResult;
@@ -78,7 +79,8 @@ public abstract class Driver extends AbstractService implements ExecutorDriverBa
         super.start();
         try {
             ApplicationRegisterResponse response = driverMasterBackend.registerApplication(
-                    ApplicationRegisterInfo.create(jobContext.getAppName(), jobContext.getAllocateStrategyType(),
+                    //TODO 构建ApplicationDescription
+                    ApplicationRegisterInfo.create(new ApplicationDescription(),
                             NetUtils.getIpPort(jobContext.getDriverPort()), NetUtils.getIpPort(jobContext.getDriverPort())));
             if (Objects.nonNull(response)) {
                 if (!response.isSuccess()) {

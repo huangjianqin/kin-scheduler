@@ -10,6 +10,7 @@ import org.kin.framework.utils.TimeUtils;
 import org.kin.kinrpc.config.ServiceConfig;
 import org.kin.kinrpc.config.Services;
 import org.kin.scheduler.core.domain.WorkerResource;
+import org.kin.scheduler.core.driver.transport.ApplicationDescription;
 import org.kin.scheduler.core.driver.transport.ApplicationRegisterInfo;
 import org.kin.scheduler.core.executor.domain.ExecutorState;
 import org.kin.scheduler.core.executor.transport.ExecutorStateChanged;
@@ -17,7 +18,6 @@ import org.kin.scheduler.core.log.StaticLogger;
 import org.kin.scheduler.core.master.domain.ApplicationContext;
 import org.kin.scheduler.core.master.domain.ExecutorResource;
 import org.kin.scheduler.core.master.domain.WorkerContext;
-import org.kin.scheduler.core.master.executor.allocate.AllocateStrategies;
 import org.kin.scheduler.core.master.executor.allocate.AllocateStrategy;
 import org.kin.scheduler.core.master.transport.*;
 import org.kin.scheduler.core.worker.transport.ExecutorLaunchResult;
@@ -176,7 +176,6 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
 
     @Override
     public void executorStateChanged(ExecutorStateChanged executorStateChanged) {
-        //TODO 考虑主动为资源分配不足的Driver分配资源
         String appName = executorStateChanged.getAppName();
         String executorId = executorStateChanged.getExecutorId();
         ApplicationContext driver = applicationContexts.get(appName);
@@ -198,8 +197,7 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
                         workerContext.getResource().recoverCpuCore(workerResource.getCpuCore());
                     }
                     driver.executorStatusChange(Collections.emptyList(), Collections.singletonList(executorId));
-                    //TODO 需要判断资源不够
-//                    waitingDrivers.add(driver);
+                    tryWaitingResource(driver);
                     scheduleResource();
                 }
             }
@@ -216,8 +214,7 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
                             .collect(Collectors.toList());
             driver.executorStatusChange(Collections.emptyList(), unAvailableExecutorIds);
 
-            //TODO 需要判断资源不够
-//            waitingDrivers.add(driver);
+            tryWaitingResource(driver);
         }
         scheduleResource();
     }
@@ -230,17 +227,18 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
             return ApplicationRegisterResponse.failure("master not started");
         }
 
-        String appName = request.getAppName();
+        ApplicationDescription appDesc = request.getAppDesc();
+
+        String appName = appDesc.getAppName();
         if (!applicationContexts.containsKey(appName)) {
             return ApplicationRegisterResponse.failure(String.format("application '%s' has registered", appName));
         }
 
-        AllocateStrategy allocateStrategy = AllocateStrategies.getByName(request.getAllocateStrategy());
-        if (Objects.isNull(allocateStrategy)) {
-            return ApplicationRegisterResponse.failure(String.format("unknown allocate strategy type >>>> %s", request.getAllocateStrategy()));
+        if (Objects.isNull(request.getAppDesc().getAllocateStrategy())) {
+            return ApplicationRegisterResponse.failure("unknown allocate strategy type");
         }
 
-        ApplicationContext applicationContext = new ApplicationContext(appName, allocateStrategy, request.getExecutorDriverBackendAddress(), request.getMasterDriverBackendAddress());
+        ApplicationContext applicationContext = new ApplicationContext(appDesc, request.getExecutorDriverBackendAddress(), request.getMasterDriverBackendAddress());
         applicationContext.init();
         applicationContexts.put(appName, applicationContext);
         return ApplicationRegisterResponse.success();
@@ -255,28 +253,73 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
     }
 
     private void scheduleResource(ApplicationContext driver) {
-        AllocateStrategy allocateStrategy = driver.getAllocateStrategy();
+        ApplicationDescription appDesc = driver.getAppDesc();
+        AllocateStrategy allocateStrategy = appDesc.getAllocateStrategy();
         //寻找可用executor
-        List<WorkerResource> usedWorkerResources = allocateStrategy.allocate(workers.values(), driver.getUsedExecutorResources());
-        if (CollectionUtils.isNonEmpty(usedWorkerResources)) {
-            for (WorkerResource usedWorkerResource : usedWorkerResources) {
-                WorkerContext worker = workers.get(usedWorkerResource.getWorkerId());
+        //A.判断driver是否可以进行资源分配
+        boolean oneExecutorPerWorker = appDesc.isOneExecutorPerWorker();
+        int minCoresPerExecutor = appDesc.getMinCoresPerExecutor();
 
-                int usedCpuCore = usedWorkerResource.getCpuCore();
-                ExecutorLaunchResult launchResult = worker.launchExecutor(new ExecutorLaunchInfo(driver.getAppName(), driver.getExecutorDriverBackendAddress(), usedCpuCore));
-                if (launchResult.isSuccess()) {
-                    String executorId = launchResult.getExecutorId();
-                    //启动Executor成功
-                    //修改worker已使用资源
-                    worker.getResource().useCpuCore(usedCpuCore);
-                    //修改driver已使用资源
-                    driver.useExecutorResource(executorId, usedWorkerResource);
+        int cpuCoreLeft = driver.getCpuCoreLeft();
+        if (cpuCoreLeft <= 0 || cpuCoreLeft < minCoresPerExecutor) {
+            //1.不需要额外资源了
+            //2.资源不满足每个Executor最低要求
+            return;
+        }
+
+        //B.寻找可以分配资源的worker
+        List<WorkerContext> registeredWorkerContexts = new ArrayList<>(workers.values());
+        registeredWorkerContexts = registeredWorkerContexts.stream()
+                //worker资源满足minCoresPerExecutor
+                .filter(wc -> wc.getResource().getCpuCore() >= minCoresPerExecutor &&
+                        //1.每个worker可以多个executor
+                        //2.该worker还未分配executor
+                        (!oneExecutorPerWorker || driver.containsWorkerResource(wc.getWorkerInfo().getWorkerId())))
+                .collect(Collectors.toList());
+
+        //C.根据资源分配策略获取准备要分配资源的worker
+        List<WorkerContext> strategiedWorkerContexts = allocateStrategy.allocate(registeredWorkerContexts);
+        if (CollectionUtils.isNonEmpty(strategiedWorkerContexts)) {
+            for (WorkerContext availableWorkerContext : strategiedWorkerContexts) {
+                //D.executor源分配
+                try {
+                    cpuCoreLeft = driver.getCpuCoreLeft();
+                    if (cpuCoreLeft <= 0) {
+                        //不需要额外资源了
+                        break;
+                    }
+
+                    WorkerInfo availableWorkerInfo = availableWorkerContext.getWorkerInfo();
+                    String availableWorkerId = availableWorkerInfo.getWorkerId();
+
+                    //executor需要分配的cpu核心数
+                    int minAllocateCpuCore = Math.min(minCoresPerExecutor, cpuCoreLeft);
+
+                    if (minAllocateCpuCore <= 0) {
+                        //资源不足
+                        continue;
+                    }
+
+                    WorkerContext worker = workers.get(availableWorkerId);
+
+                    //启动Executor
+                    ExecutorLaunchResult launchResult = worker.launchExecutor(
+                            new ExecutorLaunchInfo(appDesc.getAppName(), driver.getExecutorDriverBackendAddress(), minAllocateCpuCore));
+                    if (launchResult.isSuccess()) {
+                        String executorId = launchResult.getExecutorId();
+                        //启动Executor成功
+                        //修改worker已使用资源
+                        worker.getResource().useCpuCore(minAllocateCpuCore);
+                        //修改driver已使用资源
+                        driver.useExecutorResource(executorId, new WorkerResource(availableWorkerId, minAllocateCpuCore));
+                    }
+                } catch (Exception e) {
+                    log.error("master '" + getName() + "' allocate executor error >>> ", e);
                 }
             }
-        } else {
-            //TODO 资源分配不足, 资源分配不足仍然需要更细粒度判断
-            waitingDrivers.add(driver);
         }
+        //E.如果driver资源还未分配足够, 进入等待队列继续等待足够资源
+        tryWaitingResource(driver);
     }
 
     private void scheduleResource() {
@@ -287,13 +330,20 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
         }
     }
 
+    private void tryWaitingResource(ApplicationContext driver) {
+        //资源分配不足仍然需要在队列等待有足够的资源分配
+        if (driver.getCpuCoreLeft() > 0) {
+            waitingDrivers.add(driver);
+        }
+    }
+
     @Override
     public void applicationEnd(String appName) {
         if (isInState(State.STARTED)) {
             ApplicationContext applicationContext = applicationContexts.remove(appName);
             if (Objects.nonNull(applicationContext)) {
                 applicationContext.stop();
-                StaticLogger.log.error("applicaton '{}' shutdown", applicationContext.getAppName());
+                StaticLogger.log.error("applicaton '{}' shutdown", applicationContext.getAppDesc());
             }
         }
     }

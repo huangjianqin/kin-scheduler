@@ -4,7 +4,7 @@ import org.kin.kinrpc.config.ReferenceConfig;
 import org.kin.kinrpc.config.References;
 import org.kin.scheduler.core.domain.WorkerResource;
 import org.kin.scheduler.core.driver.MasterDriverBackend;
-import org.kin.scheduler.core.master.executor.allocate.AllocateStrategy;
+import org.kin.scheduler.core.driver.transport.ApplicationDescription;
 
 import java.util.Iterator;
 import java.util.List;
@@ -16,18 +16,20 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * @date 2020-02-13
  */
 public class ApplicationContext {
-    private String appName;
-    private AllocateStrategy allocateStrategy;
+    /** 应用配置 */
+    private ApplicationDescription appDesc;
+    /** 已用的 executor资源 */
     private List<ExecutorResource> usedExecutorResources;
+    /** executorDriverBackend url地址 */
     private String executorDriverBackendAddress;
+
     /** master -> driver 引用 */
     private String masterDriverBackendAddress;
     private ReferenceConfig<MasterDriverBackend> referenceConfig;
     private MasterDriverBackend masterDriverBackend;
 
-    public ApplicationContext(String appName, AllocateStrategy allocateStrategy, String executorDriverBackendAddress, String masterDriverBackendAddress) {
-        this.appName = appName;
-        this.allocateStrategy = allocateStrategy;
+    public ApplicationContext(ApplicationDescription appDesc, String executorDriverBackendAddress, String masterDriverBackendAddress) {
+        this.appDesc = appDesc;
         this.usedExecutorResources = new CopyOnWriteArrayList<>();
         this.executorDriverBackendAddress = executorDriverBackendAddress;
         this.masterDriverBackendAddress = masterDriverBackendAddress;
@@ -36,7 +38,7 @@ public class ApplicationContext {
     public void init() {
         referenceConfig = References
                 .reference(MasterDriverBackend.class)
-                .appName("Master".concat("-").concat(appName).concat("-").concat("MasterDriverBackend"))
+                .appName("Master".concat("-").concat(appDesc.getAppName()).concat("-").concat("MasterDriverBackend"))
                 .urls(masterDriverBackendAddress);
         masterDriverBackend = referenceConfig.get();
     }
@@ -52,14 +54,23 @@ public class ApplicationContext {
 
     //------------------------------------------------------------------------------------------------------------------
 
+    /**
+     * 占用Executor资源
+     */
     public void useExecutorResource(String executorId, WorkerResource resource) {
         usedExecutorResources.add(new ExecutorResource(executorId, resource));
     }
 
+    /**
+     * 是否占用Executor资源
+     */
     public boolean containsExecutorResource(String executorId) {
         return usedExecutorResources.stream().anyMatch(r -> r.getExecutorId().equals(executorId));
     }
 
+    /**
+     * 释放Executor资源
+     */
     public ExecutorResource removeExecutorResource(String executorId) {
         Iterator<ExecutorResource> iterator = usedExecutorResources.iterator();
         while (iterator.hasNext()) {
@@ -72,14 +83,23 @@ public class ApplicationContext {
         return null;
     }
 
-
-    //getter
-    public String getAppName() {
-        return appName;
+    /**
+     * @return 需要的cpu核心数
+     */
+    public int getCpuCoreLeft() {
+        return appDesc.getCpuCoreNum() - usedExecutorResources.stream().mapToInt(r -> r.getWorkerResource().getCpuCore()).sum();
     }
 
-    public AllocateStrategy getAllocateStrategy() {
-        return allocateStrategy;
+    /**
+     * 是否占用Worker资源
+     */
+    public boolean containsWorkerResource(String workerId) {
+        return usedExecutorResources.stream().anyMatch(r -> r.getWorkerResource().getWorkerId().equals(workerId));
+    }
+
+    //getter
+    public ApplicationDescription getAppDesc() {
+        return appDesc;
     }
 
     public String getExecutorDriverBackendAddress() {
@@ -99,11 +119,11 @@ public class ApplicationContext {
             return false;
         }
         ApplicationContext that = (ApplicationContext) o;
-        return Objects.equals(appName, that.appName);
+        return appDesc.equals(that.appDesc);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(appName);
+        return Objects.hash(appDesc);
     }
 }
