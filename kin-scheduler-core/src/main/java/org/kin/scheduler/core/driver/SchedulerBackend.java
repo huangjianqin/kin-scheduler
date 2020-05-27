@@ -11,12 +11,14 @@ import org.kin.scheduler.core.transport.RPCResult;
 public interface SchedulerBackend {
     /**
      * 注册executor
-     * @param  executorRegisterInfo executor注册信息
+     *
+     * @param executorRegisterInfo executor注册信息
      */
     RPCResult registerExecutor(ExecutorRegisterInfo executorRegisterInfo);
 
     /**
      * task 状态变化
+     *
      * @param taskStatusChanged task状态信息
      */
     void taskStatusChange(TaskStatusChanged taskStatusChanged);

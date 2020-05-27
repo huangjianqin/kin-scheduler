@@ -90,8 +90,7 @@ public enum ConfigKeys {
         void updateConfig(Config config, Properties properties) {
             config.setCpuCore(ConfigUtils.getValue(properties, this));
         }
-    }
-    ;
+    };
 
     public static ConfigKeys[] KEYS = values();
 
