@@ -1,24 +1,26 @@
 package org.kin.scheduler.core.driver.scheduler;
 
 import org.kin.framework.utils.CollectionUtils;
-import org.kin.scheduler.core.driver.transport.TaskExecResult;
 import org.kin.scheduler.core.executor.ExecutorBackend;
 import org.kin.scheduler.core.task.Task;
+import org.kin.scheduler.core.task.domain.TaskStatus;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * task 上下文
  * @author huangjianqin
  * @date 2020-02-10
  */
 public class TaskContext {
-    private static final int TASK_FINISH = 1;
-    private static final int TASK_CANCELED = 2;
-
+    /** task描述 */
     private Task task;
-    private int status;
-    private Object result;
+    /** task状态 */
+    private TaskStatus state;
+    /** task执行结果 */
+    private Serializable result;
     /**
      * 执行过该task的ExecutorId
      * 最后一个item表示正执行该task的ExecutorId
@@ -48,14 +50,14 @@ public class TaskContext {
     }
 
     public boolean isFinish() {
-        return status == TASK_FINISH || status == TASK_CANCELED;
+        return state.isFinished();
     }
 
-    public void finish(TaskExecResult execResult) {
+    public void finish(String taskId, TaskStatus taskStatus, Serializable result, String logFileName, String reason) {
         if (isNotFinish()) {
-            this.result = execResult.getExecResult();
-            this.status = TASK_FINISH;
-            future.done(execResult);
+            this.result = result;
+            this.state = taskStatus;
+            future.done(taskId, taskStatus, result, logFileName, reason);
         }
     }
 
@@ -76,8 +78,8 @@ public class TaskContext {
 
     public void cancel() {
         if (isNotFinish()) {
-            this.status = TASK_CANCELED;
-            future.done(null);
+            this.state = TaskStatus.CANCELLED;
+            future.done(task.getTaskId(), this.state, null, "", "task cancelled");
         }
     }
 
@@ -86,7 +88,7 @@ public class TaskContext {
         return task;
     }
 
-    public Object getResult() {
+    public Serializable getResult() {
         return result;
     }
 

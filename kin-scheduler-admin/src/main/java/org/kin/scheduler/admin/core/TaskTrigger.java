@@ -10,13 +10,14 @@ import org.kin.scheduler.admin.entity.TaskLog;
 import org.kin.scheduler.core.driver.route.RouteStrategyType;
 import org.kin.scheduler.core.driver.scheduler.TaskExecCallback;
 import org.kin.scheduler.core.driver.scheduler.TaskExecFuture;
-import org.kin.scheduler.core.driver.transport.TaskExecResult;
 import org.kin.scheduler.core.task.TaskExecStrategy;
+import org.kin.scheduler.core.task.domain.TaskStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.mail.javamail.MimeMessageHelper;
 
 import javax.mail.internet.MimeMessage;
+import java.io.Serializable;
 import java.text.MessageFormat;
 import java.util.*;
 
@@ -66,7 +67,7 @@ public class TaskTrigger {
 
     public void trigger(TaskInfo taskInfo) {
         //调度job
-        TaskExecFuture<Object> f = KinSchedulerContext.instance().getDriver().submitTask(taskInfo.convert());
+        TaskExecFuture<Serializable> f = KinSchedulerContext.instance().getDriver().submitTask(taskInfo.convert());
         if (Objects.nonNull(f)) {
             f.addCallback(taskSubmitCallback);
         }
@@ -74,7 +75,7 @@ public class TaskTrigger {
 
     public void trigger(TaskInfoDTO taskInfoDTO) {
         //调度job
-        TaskExecFuture<Object> f = KinSchedulerContext.instance().getDriver().submitTask(taskInfoDTO);
+        TaskExecFuture<Serializable> f = KinSchedulerContext.instance().getDriver().submitTask(taskInfoDTO);
         if (Objects.nonNull(f)) {
             f.addCallback(taskSubmitCallback);
         }
@@ -85,21 +86,21 @@ public class TaskTrigger {
         }
 
         @Override
-        public void execFinish(TaskExecResult execResult) {
-            TaskLog taskLog = KinSchedulerContext.instance().getTaskLogDao().load(Integer.valueOf(execResult.getLogFileName()));
+        public void execFinish(String taskId, TaskStatus taskStatus, Serializable result, String logFileName, String reason) {
+            TaskLog taskLog = KinSchedulerContext.instance().getTaskLogDao().load(Integer.valueOf(logFileName));
             if (Objects.isNull(taskLog)) {
-                log.error("task({}) log not found", execResult.getTaskId());
+                log.error("task({}) log not found", taskId);
             }
             if (taskLog.getHandleCode() > 0) {
-                log.warn("task({}) log repeate", execResult.getTaskId());
+                log.warn("task({}) log repeate", taskId);
             }
             taskLog.setHandleTime(new Date());
-            taskLog.setHandleCode(execResult.isSuccess() ? Constants.SUCCESS_CODE : Constants.FAIL_CODE);
+            taskLog.setHandleCode(taskStatus == TaskStatus.FINISHED ? Constants.SUCCESS_CODE : Constants.FAIL_CODE);
 
             boolean isRaiseAlarm = false;
-            TaskInfo taskInfo = KinSchedulerContext.instance().getTaskInfoDao().load(Integer.parseInt(execResult.getTaskId()));
+            TaskInfo taskInfo = KinSchedulerContext.instance().getTaskInfoDao().load(Integer.parseInt(taskId));
             if (Objects.nonNull(taskInfo)) {
-                if (execResult.isSuccess()) {
+                if (taskStatus == TaskStatus.FINISHED) {
                     if (StringUtils.isNotBlank(taskInfo.getChildTaskIds())) {
                         String[] childTaskIdStrs = taskInfo.getChildTaskIds().split(",");
                         for (String childTaskIdStr : childTaskIdStrs) {
@@ -136,7 +137,7 @@ public class TaskTrigger {
                 StringBuffer handlerMsg = new StringBuffer();
                 handlerMsg.append("<br>任务执行完成时间: ").append(TimeUtils.formatDateTime(taskLog.getHandleTime()));
                 handlerMsg.append("<br>任务执行结果: ").append(taskLog.getHandleCode() == Constants.SUCCESS_CODE ? "成功" : "失败");
-                handlerMsg.append("<br>任务执行结果描述: ").append(execResult.getDesc());
+                handlerMsg.append("<br>任务执行结果描述: ").append(reason);
 
                 StringBuffer contentSB = new StringBuffer();
                 contentSB.append("Alarm Task LogId=" + taskLog.getId());

@@ -1,9 +1,10 @@
 package org.kin.scheduler.core.driver.scheduler;
 
-import org.kin.scheduler.core.driver.transport.TaskExecResult;
 import org.kin.scheduler.core.task.Task;
+import org.kin.scheduler.core.task.domain.TaskStatus;
 import org.kin.scheduler.core.transport.RPCResult;
 
+import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -47,17 +48,17 @@ public class TaskSetManager {
         TaskContext taskContext = taskContexts.remove(taskId);
         if (Objects.nonNull(taskContext) && taskContext.isNotFinish()) {
             RPCResult result = taskContext.getExecutorBackend().cancelTask(taskContext.getTask().getTaskId());
+            taskFinish(taskId, TaskStatus.CANCELLED, null, "", "task cancelled");
             return result.isSuccess();
         }
 
         return false;
     }
 
-    public void taskFinish(TaskExecResult execResult) {
-        String taskId = execResult.getTaskId();
+    public void taskFinish(String taskId, TaskStatus taskStatus, Serializable result, String logFileName, String reason) {
         TaskContext taskContext = taskContexts.remove(taskId);
         if (Objects.nonNull(taskContext) && taskContext.isNotFinish()) {
-            taskContext.finish(execResult);
+            taskContext.finish(taskId, taskStatus, result, logFileName, reason);
         }
     }
 }

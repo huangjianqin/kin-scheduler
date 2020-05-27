@@ -3,11 +3,11 @@ package org.kin.scheduler.core.driver.scheduler;
 import org.kin.framework.JvmCloseCleaner;
 import org.kin.framework.concurrent.ExecutionContext;
 import org.kin.framework.utils.SysUtils;
-import org.kin.scheduler.core.driver.transport.TaskExecResult;
 import org.kin.scheduler.core.executor.transport.TaskSubmitResult;
+import org.kin.scheduler.core.task.domain.TaskStatus;
 
+import java.io.Serializable;
 import java.util.Collection;
-import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit;
  * <p>
  * 等待task执行的future
  */
-public class TaskExecFuture<R> implements Future<R> {
+public class TaskExecFuture<R extends Serializable> implements Future<R> {
     private static ExecutionContext CALLBACK_EXECUTORS = ExecutionContext.fix(SysUtils.CPU_NUM, "TaskSubmitFuture-Callback-Thread-");
 
     static {
@@ -31,7 +31,7 @@ public class TaskExecFuture<R> implements Future<R> {
     private TaskContext taskContext;
     private volatile boolean done;
     private boolean canneled;
-    private Collection<TaskExecCallback> callbacks = new CopyOnWriteArrayList<>();
+    private Collection<TaskExecCallback<R>> callbacks = new CopyOnWriteArrayList<>();
     private short waiters;
 
     public TaskExecFuture(TaskSubmitResult taskSubmitResult, TaskSetManager taskSetManager, TaskContext taskContext) {
@@ -85,23 +85,19 @@ public class TaskExecFuture<R> implements Future<R> {
         return (R) taskContext.getResult();
     }
 
-    public void done(TaskExecResult execResult) {
+    public void done(String taskId, TaskStatus taskStatus, Serializable result, String logFileName, String reason) {
         done = true;
-        if (Objects.nonNull(execResult)) {
-            CALLBACK_EXECUTORS.execute(() -> {
-                for (TaskExecCallback callback : callbacks) {
-                    callback.execFinish(execResult);
-                }
-            });
-        } else {
-            canneled = true;
-        }
+        CALLBACK_EXECUTORS.execute(() -> {
+            for (TaskExecCallback<R> callback : callbacks) {
+                callback.execFinish(taskId, taskStatus, (R) result, logFileName, reason);
+            }
+        });
         if (waiters > 0) {
             notifyAll();
         }
     }
 
-    public TaskExecFuture addCallback(TaskExecCallback callback) {
+    public TaskExecFuture<R> addCallback(TaskExecCallback<R> callback) {
         callbacks.add(callback);
         return this;
     }

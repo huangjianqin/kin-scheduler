@@ -9,15 +9,17 @@ import org.kin.scheduler.core.driver.Application;
 import org.kin.scheduler.core.driver.SchedulerBackend;
 import org.kin.scheduler.core.driver.route.RouteStrategy;
 import org.kin.scheduler.core.driver.transport.ExecutorRegisterInfo;
-import org.kin.scheduler.core.driver.transport.TaskExecResult;
+import org.kin.scheduler.core.driver.transport.TaskStatusChanged;
 import org.kin.scheduler.core.executor.ExecutorBackend;
 import org.kin.scheduler.core.executor.transport.TaskSubmitResult;
 import org.kin.scheduler.core.task.Task;
+import org.kin.scheduler.core.task.domain.TaskStatus;
 import org.kin.scheduler.core.transport.RPCResult;
 import org.kin.scheduler.core.worker.ExecutorContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -36,6 +38,7 @@ public abstract class TaskScheduler<T> extends AbstractService implements Schedu
     private volatile Map<String, ExecutorContext> executorContexts;
     /** application配置 */
     protected Application app;
+    /** task集合 */
     protected TaskSetManager taskSetManager;
     private short waiters;
 
@@ -70,20 +73,21 @@ public abstract class TaskScheduler<T> extends AbstractService implements Schedu
     public void stop() {
         super.stop();
         //取消所有未执行完的task
-        if (Objects.nonNull(taskSetManager)) {
-            for (TaskContext taskContext : taskSetManager.getAllUnFinishTask()) {
-                ExecutorBackend executorBackend = taskContext.getExecutorBackend();
-                if (Objects.nonNull(executorBackend)) {
-                    executorBackend.cancelTask(taskContext.getTask().getTaskId());
-                }
+        for (TaskContext taskContext : taskSetManager.getAllUnFinishTask()) {
+            ExecutorBackend executorBackend = taskContext.getExecutorBackend();
+            if (Objects.nonNull(executorBackend)) {
+                executorBackend.cancelTask(taskContext.getTask().getTaskId());
             }
+        }
+        for (ExecutorContext executorContext : executorContexts.values()) {
+            executorContext.destroy();
         }
         schedulerBackendServiceConfig.disable();
     }
 
-    public abstract <R> TaskExecFuture<R> submitTask(T task);
+    public abstract <R extends Serializable> TaskExecFuture<R> submitTask(T task);
 
-    protected final <R> TaskExecFuture<R> submitTask(ExecutorContext ec, TaskContext taskContext) {
+    protected final <R extends Serializable> TaskExecFuture<R> submitTask(ExecutorContext ec, TaskContext taskContext) {
         if (!isInState(State.STARTED)) {
             synchronized (this) {
                 try {
@@ -132,13 +136,25 @@ public abstract class TaskScheduler<T> extends AbstractService implements Schedu
     }
 
     @Override
-    public void taskFinish(TaskExecResult execResult) {
+    public void taskStatusChange(TaskStatusChanged taskStatusChanged) {
         if (isInState(State.STARTED)) {
-            String taskId = execResult.getTaskId();
+            String taskId = taskStatusChanged.getTaskId();
             if (taskSetManager.hasTask(taskId)) {
-                if (execResult.isSuccess()) {
-                    taskSetManager.taskFinish(execResult);
-                    log.info("Task(taskId={}) finished, result >>>> {}", taskId, execResult.getExecResult());
+                TaskStatus state = taskStatusChanged.getStatus();
+
+                TaskContext taskInfo = taskSetManager.getTaskInfo(taskId);
+                if (state == TaskStatus.LOST) {
+                    //移除该executor
+                    String executorId = taskInfo.getExecingTaskExecutorId();
+                    executorStatusChange(Collections.singletonList(executorId));
+                }
+                if (state.isFinished()) {
+                    Serializable execResult = taskStatusChanged.getExecResult();
+                    String reason = taskStatusChanged.getReason();
+
+                    //TODO 考虑重试
+                    taskSetManager.taskFinish(taskId, state, execResult, taskStatusChanged.getLogFileName(), reason);
+                    log.info("Task(taskId={}) finished, state: {}, reason: {}, result >>>> {}", taskId, state, reason, execResult);
                 }
             } else {
                 log.error("unknown taskId '{}'", taskId);
@@ -147,7 +163,6 @@ public abstract class TaskScheduler<T> extends AbstractService implements Schedu
     }
 
     public final boolean cancelTask(String taskId) {
-        //TODO
         return taskSetManager.cancelTask(taskId);
     }
 
@@ -165,11 +180,11 @@ public abstract class TaskScheduler<T> extends AbstractService implements Schedu
         }
     }
 
-    protected final void incrWaiter() {
+    private void incrWaiter() {
         waiters++;
     }
 
-    protected final void descWaiter() {
+    private void descWaiter() {
         waiters--;
     }
 

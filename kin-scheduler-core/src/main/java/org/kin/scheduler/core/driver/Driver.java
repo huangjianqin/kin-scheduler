@@ -10,11 +10,8 @@ import org.kin.scheduler.core.driver.exception.RegisterApplicationFailureExcepti
 import org.kin.scheduler.core.driver.scheduler.TaskScheduler;
 import org.kin.scheduler.core.driver.transport.ApplicationDescription;
 import org.kin.scheduler.core.driver.transport.ApplicationRegisterInfo;
-import org.kin.scheduler.core.driver.transport.ExecutorRegisterInfo;
-import org.kin.scheduler.core.driver.transport.TaskExecResult;
 import org.kin.scheduler.core.master.DriverMasterBackend;
 import org.kin.scheduler.core.master.transport.ApplicationRegisterResponse;
-import org.kin.scheduler.core.transport.RPCResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,7 +22,7 @@ import java.util.Objects;
  * @author huangjianqin
  * @date 2020-02-09
  */
-public abstract class Driver extends AbstractService implements MasterDriverBackend, SchedulerBackend {
+public abstract class Driver extends AbstractService implements MasterDriverBackend {
     private static final Logger log = LoggerFactory.getLogger(Driver.class);
     /** driver -> master rpc引用 */
     private ReferenceConfig<DriverMasterBackend> driverMasterBackendReferenceConfig;
@@ -116,15 +113,5 @@ public abstract class Driver extends AbstractService implements MasterDriverBack
     @Override
     public void executorStatusChange(List<String> newExecutorIds, List<String> unavailableExecutorIds) {
         taskScheduler.executorStatusChange(unavailableExecutorIds);
-    }
-
-    @Override
-    public RPCResult registerExecutor(ExecutorRegisterInfo executorRegisterInfo) {
-        return taskScheduler.registerExecutor(executorRegisterInfo);
-    }
-
-    @Override
-    public void taskFinish(TaskExecResult execResult) {
-        taskScheduler.taskFinish(execResult);
     }
 }

@@ -6,6 +6,8 @@ import org.kin.scheduler.core.driver.scheduler.TaskExecFuture;
 import org.kin.scheduler.core.executor.log.TaskExecLog;
 import org.kin.scheduler.core.master.DriverMasterBackend;
 
+import java.io.Serializable;
+
 /**
  * @author huangjianqin
  * @date 2020-03-10
@@ -16,7 +18,7 @@ public class KinDriver extends Driver {
         super.driverMasterBackend = driverMasterBackend;
     }
 
-    public <R> TaskExecFuture<R> submitTask(TaskInfoDTO dto) {
+    public <R extends Serializable> TaskExecFuture<R> submitTask(TaskInfoDTO dto) {
         return taskScheduler.submitTask(dto);
     }
 

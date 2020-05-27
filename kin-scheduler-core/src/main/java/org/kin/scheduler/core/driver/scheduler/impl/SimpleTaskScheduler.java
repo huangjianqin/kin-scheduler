@@ -9,6 +9,7 @@ import org.kin.scheduler.core.driver.scheduler.TaskScheduler;
 import org.kin.scheduler.core.task.Task;
 import org.kin.scheduler.core.worker.ExecutorContext;
 
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -30,7 +31,7 @@ public class SimpleTaskScheduler extends TaskScheduler<Task> {
     }
 
     @Override
-    public <R> TaskExecFuture<R> submitTask(Task task) {
+    public <R extends Serializable> TaskExecFuture<R> submitTask(Task task) {
         assignTaskId(task);
         TaskContext taskContext = taskSetManager.init(Collections.singletonList(task)).get(0);
 

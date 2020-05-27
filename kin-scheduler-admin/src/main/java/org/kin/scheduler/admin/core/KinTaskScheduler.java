@@ -14,6 +14,7 @@ import org.kin.scheduler.core.task.Task;
 import org.kin.scheduler.core.task.TaskExecStrategy;
 import org.kin.scheduler.core.worker.ExecutorContext;
 
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -30,7 +31,7 @@ public class KinTaskScheduler extends TaskScheduler<TaskInfoDTO> {
     }
 
     @Override
-    public <R> TaskExecFuture<R> submitTask(TaskInfoDTO dto) {
+    public <R extends Serializable> TaskExecFuture<R> submitTask(TaskInfoDTO dto) {
         TaskLog taskLog = new TaskLog();
         taskLog.setTaskId(dto.getTaskId());
         taskLog.setJobId(dto.getJobId());

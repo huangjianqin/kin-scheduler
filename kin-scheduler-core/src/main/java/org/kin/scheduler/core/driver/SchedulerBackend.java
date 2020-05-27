@@ -1,7 +1,7 @@
 package org.kin.scheduler.core.driver;
 
 import org.kin.scheduler.core.driver.transport.ExecutorRegisterInfo;
-import org.kin.scheduler.core.driver.transport.TaskExecResult;
+import org.kin.scheduler.core.driver.transport.TaskStatusChanged;
 import org.kin.scheduler.core.transport.RPCResult;
 
 /**
@@ -10,14 +10,14 @@ import org.kin.scheduler.core.transport.RPCResult;
  */
 public interface SchedulerBackend {
     /**
-     * @param executorRegisterInfo
-     * @return
+     * 注册executor
+     * @param  executorRegisterInfo executor注册信息
      */
     RPCResult registerExecutor(ExecutorRegisterInfo executorRegisterInfo);
 
     /**
-     *
-     * @param execResult
+     * task 状态变化
+     * @param taskStatusChanged task状态信息
      */
-    void taskFinish(TaskExecResult execResult);
+    void taskStatusChange(TaskStatusChanged taskStatusChanged);
 }

@@ -17,7 +17,7 @@ public class SimpleDriver extends Driver {
         super(app, new SimpleTaskScheduler(app));
     }
 
-    public <R, PARAM extends Serializable> TaskExecFuture<R> submitTask(Task<PARAM> task) {
+    public <R extends Serializable, PARAM extends Serializable> TaskExecFuture<R> submitTask(Task<PARAM> task) {
         return taskScheduler.submitTask(task);
     }
 
