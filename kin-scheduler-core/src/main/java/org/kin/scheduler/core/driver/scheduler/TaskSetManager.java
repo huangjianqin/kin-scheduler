@@ -1,6 +1,6 @@
 package org.kin.scheduler.core.driver.scheduler;
 
-import org.kin.scheduler.core.task.Task;
+import org.kin.scheduler.core.task.TaskDescription;
 import org.kin.scheduler.core.task.domain.TaskStatus;
 import org.kin.scheduler.core.transport.RPCResult;
 
@@ -16,11 +16,11 @@ import java.util.stream.Collectors;
 public class TaskSetManager {
     private Map<String, TaskContext> taskContexts = new ConcurrentHashMap<>();
 
-    public List<TaskContext> init(Collection<Task> tasks) {
+    public List<TaskContext> init(Collection<TaskDescription> taskDescriptions) {
         List<TaskContext> taskContexts = new ArrayList<>();
-        for (Task task : tasks) {
-            TaskContext taskContext = new TaskContext(task);
-            this.taskContexts.put(task.getTaskId(), taskContext);
+        for (TaskDescription taskDescription : taskDescriptions) {
+            TaskContext taskContext = new TaskContext(taskDescription);
+            this.taskContexts.put(taskDescription.getTaskId(), taskContext);
 
             taskContexts.add(taskContext);
         }
@@ -47,7 +47,7 @@ public class TaskSetManager {
     public boolean cancelTask(String taskId) {
         TaskContext taskContext = taskContexts.remove(taskId);
         if (Objects.nonNull(taskContext) && taskContext.isNotFinish()) {
-            RPCResult result = taskContext.getExecutorBackend().cancelTask(taskContext.getTask().getTaskId());
+            RPCResult result = taskContext.getExecutorBackend().cancelTask(taskContext.getTaskDescription().getTaskId());
             taskFinish(taskId, TaskStatus.CANCELLED, null, "", "task cancelled");
             return result.isSuccess();
         }

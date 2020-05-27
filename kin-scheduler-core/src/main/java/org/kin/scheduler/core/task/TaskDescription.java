@@ -9,7 +9,7 @@ import java.util.Objects;
  * <p>
  * task信息的抽象
  */
-public class Task<PARAM extends Serializable> implements Serializable {
+public class TaskDescription<PARAM extends Serializable> implements Serializable {
     private String jobId;
     private String taskId;
     /** 自定义Task参数类型 */
@@ -21,10 +21,10 @@ public class Task<PARAM extends Serializable> implements Serializable {
     //log文件名，发送者定义, 可以是重试次数1 2 3, 可以是自定义唯一Name
     private String logFileName;
 
-    public Task() {
+    public TaskDescription() {
     }
 
-    public Task(String jobId, String taskId) {
+    public TaskDescription(String jobId, String taskId) {
         this.jobId = jobId;
         this.taskId = taskId;
     }
@@ -34,12 +34,12 @@ public class Task<PARAM extends Serializable> implements Serializable {
     /**
      * 创建一个尚未分配id的Task
      */
-    public static <PARAM extends Serializable> Task<PARAM> createTmpTask(PARAM param, TaskExecStrategy execStrategy, int timeout) {
-        Task<PARAM> newTask = new Task<>();
-        newTask.setParam(param);
-        newTask.setExecStrategy(execStrategy);
-        newTask.setTimeout(timeout);
-        return newTask;
+    public static <PARAM extends Serializable> TaskDescription<PARAM> createTmpTask(PARAM param, TaskExecStrategy execStrategy, int timeout) {
+        TaskDescription<PARAM> newTaskDescription = new TaskDescription<>();
+        newTaskDescription.setParam(param);
+        newTaskDescription.setExecStrategy(execStrategy);
+        newTaskDescription.setTimeout(timeout);
+        return newTaskDescription;
     }
 
 
@@ -53,8 +53,8 @@ public class Task<PARAM extends Serializable> implements Serializable {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        Task<?> task = (Task<?>) o;
-        return Objects.equals(taskId, task.taskId);
+        TaskDescription<?> taskDescription = (TaskDescription<?>) o;
+        return Objects.equals(taskId, taskDescription.taskId);
     }
 
     @Override

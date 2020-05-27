@@ -12,7 +12,7 @@ import org.kin.scheduler.core.driver.transport.ExecutorRegisterInfo;
 import org.kin.scheduler.core.driver.transport.TaskStatusChanged;
 import org.kin.scheduler.core.executor.ExecutorBackend;
 import org.kin.scheduler.core.executor.transport.TaskSubmitResult;
-import org.kin.scheduler.core.task.Task;
+import org.kin.scheduler.core.task.TaskDescription;
 import org.kin.scheduler.core.task.domain.TaskStatus;
 import org.kin.scheduler.core.transport.RPCResult;
 import org.kin.scheduler.core.worker.ExecutorContext;
@@ -76,7 +76,7 @@ public abstract class TaskScheduler<T> extends AbstractService implements Schedu
         for (TaskContext taskContext : taskSetManager.getAllUnFinishTask()) {
             ExecutorBackend executorBackend = taskContext.getExecutorBackend();
             if (Objects.nonNull(executorBackend)) {
-                executorBackend.cancelTask(taskContext.getTask().getTaskId());
+                executorBackend.cancelTask(taskContext.getTaskDescription().getTaskId());
             }
         }
         for (ExecutorContext executorContext : executorContexts.values()) {
@@ -97,14 +97,14 @@ public abstract class TaskScheduler<T> extends AbstractService implements Schedu
                 }
             }
         }
-        Task task = taskContext.getTask();
+        TaskDescription taskDescription = taskContext.getTaskDescription();
         taskContext.exec(ec.getExecutorId(), ec);
-        TaskSubmitResult submitResult = ec.execTask(task);
+        TaskSubmitResult submitResult = ec.execTask(taskDescription);
         if (Objects.nonNull(submitResult)) {
             if (submitResult.isSuccess()) {
                 TaskExecFuture future = new TaskExecFuture(submitResult, taskSetManager, taskContext);
                 taskContext.submitTask(future);
-                log.debug("submitTask >>>> {}", taskContext.getTask());
+                log.debug("submitTask >>>> {}", taskContext.getTaskDescription());
                 return future;
             } else {
                 taskContext.execFail();

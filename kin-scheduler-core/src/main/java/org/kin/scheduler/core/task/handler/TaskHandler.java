@@ -1,6 +1,6 @@
 package org.kin.scheduler.core.task.handler;
 
-import org.kin.scheduler.core.task.Task;
+import org.kin.scheduler.core.task.TaskDescription;
 import org.kin.scheduler.core.task.log.TaskLoggers;
 
 import java.io.Serializable;
@@ -25,9 +25,9 @@ public interface TaskHandler<PARAM extends Serializable, RESULT extends Serializ
     /**
      * 处理Task
      *
-     * @param task task信息
+     * @param taskDescription task信息
      * @return task执行结果
      * @throws Exception 异常
      */
-    RESULT exec(Task<PARAM> task) throws Exception;
+    RESULT exec(TaskDescription<PARAM> taskDescription) throws Exception;
 }

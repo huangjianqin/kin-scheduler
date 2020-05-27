@@ -8,7 +8,6 @@ import org.kin.kinrpc.config.ServiceConfig;
 import org.kin.kinrpc.config.Services;
 import org.kin.scheduler.core.driver.exception.RegisterApplicationFailureException;
 import org.kin.scheduler.core.driver.scheduler.TaskScheduler;
-import org.kin.scheduler.core.driver.transport.ApplicationDescription;
 import org.kin.scheduler.core.driver.transport.ApplicationRegisterInfo;
 import org.kin.scheduler.core.master.DriverMasterBackend;
 import org.kin.scheduler.core.master.transport.ApplicationRegisterResponse;

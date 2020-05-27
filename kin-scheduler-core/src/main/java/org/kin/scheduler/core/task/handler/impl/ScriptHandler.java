@@ -1,7 +1,7 @@
 package org.kin.scheduler.core.task.handler.impl;
 
 import ch.qos.logback.classic.Logger;
-import org.kin.scheduler.core.task.Task;
+import org.kin.scheduler.core.task.TaskDescription;
 import org.kin.scheduler.core.task.handler.TaskHandler;
 import org.kin.scheduler.core.task.handler.domain.GlueResult;
 import org.kin.scheduler.core.task.handler.domain.GlueType;
@@ -37,18 +37,18 @@ public class ScriptHandler implements TaskHandler<ScriptParam, GlueResult> {
     }
 
     @Override
-    public GlueResult exec(Task<ScriptParam> task) throws Exception {
-        ScriptParam scriptParam = task.getParam();
+    public GlueResult exec(TaskDescription<ScriptParam> taskDescription) throws Exception {
+        ScriptParam scriptParam = taskDescription.getParam();
         if (Objects.nonNull(scriptParam)) {
             GlueType glueType = GlueType.getByType(scriptParam.getType());
             if (Objects.nonNull(glueType) && glueType.isScript()) {
                 ScriptResourcesStore resourcesStore = ScriptResourcesStore.getByName(scriptParam.getScriptResourcesStore());
                 if (Objects.nonNull(resourcesStore)) {
                     //复制 ｜ 创建 项目脚本代码
-                    String realRunEnvPath = getOrCreateRealRunEnvPath(task.getJobId());
+                    String realRunEnvPath = getOrCreateRealRunEnvPath(taskDescription.getJobId());
                     String workingDirectory = realRunEnvPath;
                     if (resourcesStore.equals(ScriptResourcesStore.RESOURCE_CODE)) {
-                        realRunEnvPath = realRunEnvPath.concat(File.separator).concat(task.getJobId()).concat(glueType.getSuffix());
+                        realRunEnvPath = realRunEnvPath.concat(File.separator).concat(taskDescription.getJobId()).concat(glueType.getSuffix());
                     }
                     resourcesStore.cloneResources(scriptParam.getScriptResources(), scriptParam.getUser(), scriptParam.getPassword(), realRunEnvPath);
 

@@ -3,8 +3,8 @@ package org.kin.scheduler.core.master.domain;
 import org.kin.kinrpc.config.ReferenceConfig;
 import org.kin.kinrpc.config.References;
 import org.kin.scheduler.core.domain.WorkerResource;
+import org.kin.scheduler.core.driver.ApplicationDescription;
 import org.kin.scheduler.core.driver.MasterDriverBackend;
-import org.kin.scheduler.core.driver.transport.ApplicationDescription;
 
 import java.util.Iterator;
 import java.util.List;

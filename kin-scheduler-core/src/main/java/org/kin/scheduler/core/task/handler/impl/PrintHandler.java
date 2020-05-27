@@ -1,6 +1,6 @@
 package org.kin.scheduler.core.task.handler.impl;
 
-import org.kin.scheduler.core.task.Task;
+import org.kin.scheduler.core.task.TaskDescription;
 import org.kin.scheduler.core.task.handler.TaskHandler;
 import org.kin.scheduler.core.task.handler.domain.Singleton;
 
@@ -18,11 +18,11 @@ public class PrintHandler implements TaskHandler<String, Integer> {
     }
 
     @Override
-    public Integer exec(Task<String> task) throws Exception {
-        System.out.println(task.getJobId());
-        System.out.println(task.getTaskId());
-        System.out.println(task.getExecStrategy());
-        System.out.println(task.getParam());
+    public Integer exec(TaskDescription<String> taskDescription) throws Exception {
+        System.out.println(taskDescription.getJobId());
+        System.out.println(taskDescription.getTaskId());
+        System.out.println(taskDescription.getExecStrategy());
+        System.out.println(taskDescription.getParam());
 
         return 1;
     }

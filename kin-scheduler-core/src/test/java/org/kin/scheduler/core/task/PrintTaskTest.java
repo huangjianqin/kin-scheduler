@@ -16,10 +16,10 @@ public class PrintTaskTest {
 
         Thread.sleep(3000);
 
-        Task<String> printTask = new Task<>("job1", "test1");
-        printTask.setParam("haha");
+        TaskDescription<String> printTaskDescription = new TaskDescription<>("job1", "test1");
+        printTaskDescription.setParam("haha");
 
-        driver.submitTask(printTask);
+        driver.submitTask(printTaskDescription);
 
     }
 }

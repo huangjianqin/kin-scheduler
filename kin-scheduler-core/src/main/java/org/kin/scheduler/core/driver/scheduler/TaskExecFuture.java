@@ -42,7 +42,7 @@ public class TaskExecFuture<R extends Serializable> implements Future<R> {
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
-        return taskSetManager.cancelTask(taskContext.getTask().getTaskId());
+        return taskSetManager.cancelTask(taskContext.getTaskDescription().getTaskId());
     }
 
     @Override

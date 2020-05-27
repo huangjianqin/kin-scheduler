@@ -4,7 +4,7 @@ import org.kin.kinrpc.config.ReferenceConfig;
 import org.kin.scheduler.core.executor.ExecutorBackend;
 import org.kin.scheduler.core.executor.log.TaskExecLog;
 import org.kin.scheduler.core.executor.transport.TaskSubmitResult;
-import org.kin.scheduler.core.task.Task;
+import org.kin.scheduler.core.task.TaskDescription;
 import org.kin.scheduler.core.transport.RPCResult;
 
 /**
@@ -30,8 +30,8 @@ public class ExecutorContext implements ExecutorBackend {
     }
 
     @Override
-    public TaskSubmitResult execTask(Task task) {
-        return getExecutorBackend().execTask(task);
+    public TaskSubmitResult execTask(TaskDescription taskDescription) {
+        return getExecutorBackend().execTask(taskDescription);
     }
 
     @Override

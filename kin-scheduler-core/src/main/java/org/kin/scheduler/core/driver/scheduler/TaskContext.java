@@ -2,7 +2,7 @@ package org.kin.scheduler.core.driver.scheduler;
 
 import org.kin.framework.utils.CollectionUtils;
 import org.kin.scheduler.core.executor.ExecutorBackend;
-import org.kin.scheduler.core.task.Task;
+import org.kin.scheduler.core.task.TaskDescription;
 import org.kin.scheduler.core.task.domain.TaskStatus;
 
 import java.io.Serializable;
@@ -16,7 +16,7 @@ import java.util.List;
  */
 public class TaskContext {
     /** task描述 */
-    private Task task;
+    private TaskDescription taskDescription;
     /** task状态 */
     private TaskStatus state;
     /** task执行结果 */
@@ -32,8 +32,8 @@ public class TaskContext {
     private ExecutorBackend executorBackend;
     private TaskExecFuture future;
 
-    public TaskContext(Task task) {
-        this.task = task;
+    public TaskContext(TaskDescription taskDescription) {
+        this.taskDescription = taskDescription;
     }
 
     public void submitTask(TaskExecFuture future) {
@@ -79,13 +79,13 @@ public class TaskContext {
     public void cancel() {
         if (isNotFinish()) {
             this.state = TaskStatus.CANCELLED;
-            future.done(task.getTaskId(), this.state, null, "", "task cancelled");
+            future.done(taskDescription.getTaskId(), this.state, null, "", "task cancelled");
         }
     }
 
 
-    public Task getTask() {
-        return task;
+    public TaskDescription getTaskDescription() {
+        return taskDescription;
     }
 
     public Serializable getResult() {

@@ -2,7 +2,7 @@ package org.kin.scheduler.core.task.handler.impl;
 
 import ch.qos.logback.classic.Logger;
 import com.google.common.base.Preconditions;
-import org.kin.scheduler.core.task.Task;
+import org.kin.scheduler.core.task.TaskDescription;
 import org.kin.scheduler.core.task.handler.TaskHandler;
 import org.kin.scheduler.core.task.handler.TaskHandlers;
 import org.kin.scheduler.core.task.handler.domain.GlueResult;
@@ -27,8 +27,8 @@ public class GlueHandler implements TaskHandler<GlueParam, GlueResult> {
     }
 
     @Override
-    public GlueResult exec(Task<GlueParam> task) throws Exception {
-        GlueParam glueParam = task.getParam();
+    public GlueResult exec(TaskDescription<GlueParam> taskDescription) throws Exception {
+        GlueParam glueParam = taskDescription.getParam();
         if (Objects.nonNull(glueParam)) {
             GlueType glueType = GlueType.getByType(glueParam.getType());
             if (Objects.nonNull(glueType)) {
@@ -40,10 +40,10 @@ public class GlueHandler implements TaskHandler<GlueParam, GlueResult> {
                     }
 
                     //获取task handler
-                    TaskHandler taskHandler = TaskHandlers.getTaskHandler(task);
+                    TaskHandler taskHandler = TaskHandlers.getTaskHandler(taskDescription);
                     Preconditions.checkNotNull(taskHandler, "task handler is null");
 
-                    return (GlueResult) taskHandler.exec(task);
+                    return (GlueResult) taskHandler.exec(taskDescription);
                 } else {
                     int exitValue = ScriptUtils.execCommand(glueParam.getCommand(), TaskLoggers.getLoggerFileName());
                     if (exitValue == 0) {

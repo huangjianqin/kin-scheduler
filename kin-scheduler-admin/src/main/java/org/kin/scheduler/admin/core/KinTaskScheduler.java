@@ -10,7 +10,7 @@ import org.kin.scheduler.core.driver.scheduler.TaskContext;
 import org.kin.scheduler.core.driver.scheduler.TaskExecFuture;
 import org.kin.scheduler.core.driver.scheduler.TaskScheduler;
 import org.kin.scheduler.core.executor.log.TaskExecLog;
-import org.kin.scheduler.core.task.Task;
+import org.kin.scheduler.core.task.TaskDescription;
 import org.kin.scheduler.core.task.TaskExecStrategy;
 import org.kin.scheduler.core.worker.ExecutorContext;
 
@@ -49,13 +49,13 @@ public class KinTaskScheduler extends TaskScheduler<TaskInfoDTO> {
         taskLog.setTriggerTime(new Date());
         KinSchedulerContext.instance().getTaskLogDao().save(taskLog);
 
-        Task task = new Task(String.valueOf(dto.getJobId()), String.valueOf(dto.getTaskId()));
-        task.setTimeout(dto.getExecTimeout());
-        task.setExecStrategy(TaskExecStrategy.getByName(dto.getExecStrategy()));
-        task.setParam(TaskType.getByName(dto.getType()).parseParam(dto.getParam()));
-        task.setLogFileName(String.valueOf(taskLog.getId()));
+        TaskDescription taskDescription = new TaskDescription(String.valueOf(dto.getJobId()), String.valueOf(dto.getTaskId()));
+        taskDescription.setTimeout(dto.getExecTimeout());
+        taskDescription.setExecStrategy(TaskExecStrategy.getByName(dto.getExecStrategy()));
+        taskDescription.setParam(TaskType.getByName(dto.getType()).parseParam(dto.getParam()));
+        taskDescription.setLogFileName(String.valueOf(taskLog.getId()));
 
-        TaskContext taskContext = taskSetManager.init(Collections.singletonList(task)).get(0);
+        TaskContext taskContext = taskSetManager.init(Collections.singletonList(taskDescription)).get(0);
 
         //过滤掉已经执行过该task的executor
         List<ExecutorContext> filterExecutorContexts = getAvailableExecutors().stream()

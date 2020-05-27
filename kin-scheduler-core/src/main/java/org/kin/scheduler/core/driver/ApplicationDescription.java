@@ -1,4 +1,4 @@
-package org.kin.scheduler.core.driver.transport;
+package org.kin.scheduler.core.driver;
 
 import org.kin.scheduler.core.master.executor.allocate.AllocateStrategies;
 import org.kin.scheduler.core.master.executor.allocate.AllocateStrategy;

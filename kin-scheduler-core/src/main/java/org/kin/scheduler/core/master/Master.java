@@ -10,7 +10,7 @@ import org.kin.framework.utils.TimeUtils;
 import org.kin.kinrpc.config.ServiceConfig;
 import org.kin.kinrpc.config.Services;
 import org.kin.scheduler.core.domain.WorkerResource;
-import org.kin.scheduler.core.driver.transport.ApplicationDescription;
+import org.kin.scheduler.core.driver.ApplicationDescription;
 import org.kin.scheduler.core.driver.transport.ApplicationRegisterInfo;
 import org.kin.scheduler.core.executor.domain.ExecutorState;
 import org.kin.scheduler.core.executor.transport.ExecutorStateChanged;

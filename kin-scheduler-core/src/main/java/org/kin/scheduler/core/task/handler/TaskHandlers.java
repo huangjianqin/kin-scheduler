@@ -1,7 +1,7 @@
 package org.kin.scheduler.core.task.handler;
 
 import org.kin.framework.utils.ClassUtils;
-import org.kin.scheduler.core.task.Task;
+import org.kin.scheduler.core.task.TaskDescription;
 import org.kin.scheduler.core.task.handler.domain.Singleton;
 
 import java.lang.reflect.Constructor;
@@ -47,8 +47,8 @@ public class TaskHandlers {
         }
     }
 
-    public static TaskHandler getTaskHandler(Task task) {
-        Class<?> paramType = task.getParam().getClass();
+    public static TaskHandler getTaskHandler(TaskDescription taskDescription) {
+        Class<?> paramType = taskDescription.getParam().getClass();
         if (paramType2TaskHandler.containsKey(paramType)) {
             return paramType2TaskHandler.get(paramType).get();
         }

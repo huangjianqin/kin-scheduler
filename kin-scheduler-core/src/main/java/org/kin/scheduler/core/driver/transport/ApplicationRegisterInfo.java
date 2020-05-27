@@ -1,5 +1,7 @@
 package org.kin.scheduler.core.driver.transport;
 
+import org.kin.scheduler.core.driver.ApplicationDescription;
+
 import java.io.Serializable;
 
 /**
