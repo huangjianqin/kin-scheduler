@@ -6,7 +6,7 @@ import org.kin.kinrpc.config.ReferenceConfig;
 import org.kin.kinrpc.config.References;
 import org.kin.kinrpc.config.ServiceConfig;
 import org.kin.kinrpc.config.Services;
-import org.kin.scheduler.core.driver.exception.SubmitJobFailureException;
+import org.kin.scheduler.core.driver.exception.RegisterApplicationFailureException;
 import org.kin.scheduler.core.driver.scheduler.TaskScheduler;
 import org.kin.scheduler.core.driver.transport.ApplicationDescription;
 import org.kin.scheduler.core.driver.transport.ApplicationRegisterInfo;
@@ -68,7 +68,7 @@ public abstract class Driver extends AbstractService implements MasterDriverBack
 
     @Override
     public void start() {
-        //提交job
+        //注册application
         super.start();
         try {
             ApplicationDescription appDesc = new ApplicationDescription();
@@ -84,14 +84,14 @@ public abstract class Driver extends AbstractService implements MasterDriverBack
                 if (response.isSuccess()) {
                     registered = true;
                 } else {
-                    throw new SubmitJobFailureException(response.getDesc());
+                    throw new RegisterApplicationFailureException(response.getDesc());
                 }
             } else {
-                throw new SubmitJobFailureException("master no response");
+                throw new RegisterApplicationFailureException("master no response");
             }
         } catch (Exception e) {
             close();
-            throw new SubmitJobFailureException(e.getMessage());
+            throw new RegisterApplicationFailureException(e.getMessage());
         }
         log.info("driver(appName={}, master={}) started", app.getAppName(), app.getMasterAddress());
     }

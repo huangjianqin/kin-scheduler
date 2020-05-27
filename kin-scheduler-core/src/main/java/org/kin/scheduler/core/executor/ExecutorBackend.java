@@ -23,7 +23,6 @@ public interface ExecutorBackend {
     /**
      * rpc请求取消task
      *
-     * @param jobId  jobId
      * @param taskId taskId
      * @return task取消结果
      */
