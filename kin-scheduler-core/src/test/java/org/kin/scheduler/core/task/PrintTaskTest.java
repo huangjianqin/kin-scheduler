@@ -16,8 +16,9 @@ public class PrintTaskTest {
 
         Thread.sleep(3000);
 
-        TaskDescription<String> printTaskDescription = new TaskDescription<>("job1", "test1");
-        printTaskDescription.setParam("haha");
+        TaskDescription<String> printTaskDescription = TaskDescription.createTmpTask("测试", TaskExecStrategy.COVER_EARLY, 0);
+        printTaskDescription.setJobId("job-test");
+        printTaskDescription.setTaskId("task-test");
 
         driver.submitTask(printTaskDescription);
 

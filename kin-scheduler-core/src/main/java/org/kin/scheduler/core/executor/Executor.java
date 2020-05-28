@@ -6,12 +6,14 @@ import org.kin.framework.concurrent.ExecutionContext;
 import org.kin.framework.service.AbstractService;
 import org.kin.framework.utils.CollectionUtils;
 import org.kin.framework.utils.ExceptionUtils;
+import org.kin.framework.utils.NetUtils;
 import org.kin.framework.utils.StringUtils;
 import org.kin.kinrpc.config.ReferenceConfig;
 import org.kin.kinrpc.config.References;
 import org.kin.kinrpc.config.ServiceConfig;
 import org.kin.kinrpc.config.Services;
 import org.kin.scheduler.core.driver.SchedulerBackend;
+import org.kin.scheduler.core.driver.transport.ExecutorRegisterInfo;
 import org.kin.scheduler.core.driver.transport.TaskStatusChanged;
 import org.kin.scheduler.core.executor.domain.ExecutorState;
 import org.kin.scheduler.core.executor.log.LogContext;
@@ -120,6 +122,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
     public void start() {
         super.start();
         executorWorkerBackend.executorStateChanged(ExecutorStateChanged.running(appName, executorId));
+        schedulerBackend.registerExecutor(new ExecutorRegisterInfo(executorId, NetUtils.getIpPort(backendHost, backendPort)));
         log.info("executor({}) started", executorId);
     }
 
@@ -243,7 +246,9 @@ public class Executor extends AbstractService implements ExecutorBackend {
      */
     private void cleanFinishedTask(TaskDescription taskDescription) {
         List<TaskRunner> exTaskRunners = taskId2TaskRunners.get(taskDescription.getTaskId());
-        exTaskRunners.removeIf(tr -> tr.taskDescription.getTaskId().equals(taskDescription.getTaskId()));
+        if (CollectionUtils.isNonEmpty(exTaskRunners)) {
+            exTaskRunners.removeIf(tr -> tr.taskDescription.getTaskId().equals(taskDescription.getTaskId()));
+        }
     }
 
     @Override
@@ -253,7 +258,11 @@ public class Executor extends AbstractService implements ExecutorBackend {
         logContext.stop();
 
         if (isLocal) {
-            executorWorkerBackend.executorStateChanged(ExecutorStateChanged.exit(appName, executorId));
+            try {
+                executorWorkerBackend.executorStateChanged(ExecutorStateChanged.exit(appName, executorId));
+            } catch (Exception e) {
+                log.error("", e);
+            }
         }
 
         executorBackendServiceConfig.disable();

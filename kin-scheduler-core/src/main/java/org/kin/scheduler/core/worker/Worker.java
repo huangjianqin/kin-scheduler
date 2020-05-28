@@ -4,7 +4,6 @@ import org.kin.framework.JvmCloseCleaner;
 import org.kin.framework.concurrent.keeper.Keeper;
 import org.kin.framework.service.AbstractService;
 import org.kin.framework.utils.NetUtils;
-import org.kin.framework.utils.TimeUtils;
 import org.kin.kinrpc.config.ReferenceConfig;
 import org.kin.kinrpc.config.References;
 import org.kin.kinrpc.config.ServiceConfig;
@@ -17,13 +16,14 @@ import org.kin.scheduler.core.master.MasterBackend;
 import org.kin.scheduler.core.master.transport.ExecutorLaunchInfo;
 import org.kin.scheduler.core.master.transport.WorkerHeartbeatResp;
 import org.kin.scheduler.core.master.transport.WorkerRegisterResult;
-import org.kin.scheduler.core.master.transport.WorkerUnregisterResult;
 import org.kin.scheduler.core.utils.LogUtils;
 import org.kin.scheduler.core.utils.ScriptUtils;
 import org.kin.scheduler.core.worker.transport.ExecutorLaunchResult;
 import org.kin.scheduler.core.worker.transport.WorkerHeartbeat;
 import org.kin.scheduler.core.worker.transport.WorkerInfo;
 import org.kin.scheduler.core.worker.transport.WorkerRegisterInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -35,6 +35,8 @@ import java.util.concurrent.TimeUnit;
  * @date 2020-02-06
  */
 public class Worker extends AbstractService implements WorkerBackend, ExecutorWorkerBackend {
+    private static final Logger log = LoggerFactory.getLogger(Worker.class);
+
     private String workerId;
     /** worker配置 */
     private final Config config;
@@ -82,13 +84,15 @@ public class Worker extends AbstractService implements WorkerBackend, ExecutorWo
 
         try {
             executorWorkerBackendServiceConfig = Services.service(this, ExecutorWorkerBackend.class)
-                    .appName(getName())
+                    .appName(getName().concat("-ExecutorWorkerBackend"))
                     .bind(config.getWorkerBackendHost(), config.getWorkerBackendPort())
                     .actorLike();
             executorWorkerBackendServiceConfig.export();
         } catch (Exception e) {
             StaticLogger.log.error(e.getMessage(), e);
         }
+
+        JvmCloseCleaner.DEFAULT().add(JvmCloseCleaner.MAX_PRIORITY, this::stop);
     }
 
     private WorkerRegisterInfo generateWorkerRegisterInfo() {
@@ -102,9 +106,13 @@ public class Worker extends AbstractService implements WorkerBackend, ExecutorWo
 
     private void registerWorker() {
         //注册worker
-        WorkerRegisterResult registerResult = masterBackend.registerWorker(generateWorkerRegisterInfo());
-        if (!registerResult.isSuccess()) {
-            StaticLogger.log.error("worker register error >>> {}".concat(registerResult.getDesc()));
+        try {
+            WorkerRegisterResult registerResult = masterBackend.registerWorker(generateWorkerRegisterInfo());
+            if (!registerResult.isSuccess()) {
+                StaticLogger.log.error("worker register error >>> {}".concat(registerResult.getDesc()));
+            }
+        } catch (Exception e) {
+
         }
     }
 
@@ -115,8 +123,6 @@ public class Worker extends AbstractService implements WorkerBackend, ExecutorWo
         registerWorker();
 
         heartbeatKeeper = Keeper.keep(this::sendHeartbeat);
-
-        JvmCloseCleaner.DEFAULT().add(JvmCloseCleaner.MAX_PRIORITY, this::stop);
 
         StaticLogger.log.info("worker({}) started", workerId);
     }
@@ -129,13 +135,11 @@ public class Worker extends AbstractService implements WorkerBackend, ExecutorWo
         super.stop();
         //取消注册
         try {
-            WorkerUnregisterResult unregisterResult = masterBackend.unregisterWorker(workerId);
-            if (!unregisterResult.isSuccess()) {
-                StaticLogger.log.error("worker unregister error >>> {}", unregisterResult.getDesc());
-            }
+            masterBackend.unregisterWorker(workerId);
         } catch (Exception e) {
-            StaticLogger.log.error("worker unregister encounter error >>> {}", e, e);
+            log.error("", e);
         }
+        StaticLogger.log.error("worker unregistered");
         stop0();
     }
 
@@ -154,9 +158,9 @@ public class Worker extends AbstractService implements WorkerBackend, ExecutorWo
     private void sendHeartbeat() {
         long heartbeatTime = config.getHeartbeatTime();
         try {
-            long sleepTime = heartbeatTime - TimeUtils.timestamp() % heartbeatTime;
+            long sleepTime = heartbeatTime - System.currentTimeMillis() % heartbeatTime;
             if (sleepTime > 0 && sleepTime < heartbeatTime) {
-                TimeUnit.SECONDS.sleep(sleepTime);
+                TimeUnit.MILLISECONDS.sleep(sleepTime);
             }
         } catch (InterruptedException e) {
 

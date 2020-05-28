@@ -6,7 +6,6 @@ import org.kin.framework.concurrent.actor.PinnedThreadSafeHandler;
 import org.kin.framework.service.AbstractService;
 import org.kin.framework.utils.CollectionUtils;
 import org.kin.framework.utils.StringUtils;
-import org.kin.framework.utils.TimeUtils;
 import org.kin.kinrpc.config.ServiceConfig;
 import org.kin.kinrpc.config.Services;
 import org.kin.scheduler.core.domain.WorkerResource;
@@ -19,7 +18,10 @@ import org.kin.scheduler.core.master.domain.ApplicationContext;
 import org.kin.scheduler.core.master.domain.ExecutorResource;
 import org.kin.scheduler.core.master.domain.WorkerContext;
 import org.kin.scheduler.core.master.executor.allocate.AllocateStrategy;
-import org.kin.scheduler.core.master.transport.*;
+import org.kin.scheduler.core.master.transport.ApplicationRegisterResponse;
+import org.kin.scheduler.core.master.transport.ExecutorLaunchInfo;
+import org.kin.scheduler.core.master.transport.WorkerHeartbeatResp;
+import org.kin.scheduler.core.master.transport.WorkerRegisterResult;
 import org.kin.scheduler.core.worker.transport.ExecutorLaunchResult;
 import org.kin.scheduler.core.worker.transport.WorkerHeartbeat;
 import org.kin.scheduler.core.worker.transport.WorkerInfo;
@@ -51,7 +53,7 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
     //心跳时间(秒)
     private int heartbeatTime;
     //心跳检测间隔(秒)
-    private int heartbeatCheckInterval = heartbeatTime + 2;
+    private int heartbeatCheckInterval = heartbeatTime + 2000;
     private PinnedThreadSafeHandler<?> threadSafeHandler =
             new PinnedThreadSafeHandler<>(ExecutionContext.fix(1, "Master", 1, "Master-schedule"));
 
@@ -87,15 +89,15 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
         } catch (Exception e) {
             StaticLogger.log.error(e.getMessage(), e);
         }
+
+        JvmCloseCleaner.DEFAULT().add(JvmCloseCleaner.MAX_PRIORITY, this::stop);
     }
 
     @Override
     public void start() {
         super.start();
 
-        threadSafeHandler.scheduleAtFixedRate(ts -> checkHeartbeatTimeout(), heartbeatCheckInterval, heartbeatCheckInterval, TimeUnit.SECONDS);
-
-        JvmCloseCleaner.DEFAULT().add(JvmCloseCleaner.MAX_PRIORITY, this::stop);
+        threadSafeHandler.scheduleAtFixedRate(ts -> checkHeartbeatTimeout(), heartbeatCheckInterval, heartbeatCheckInterval, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -120,16 +122,18 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
                 return WorkerRegisterResult.failure("master not started");
             }
 
-            WorkerContext worker = workers.get(workerInfo.getWorkerId());
+            String workerId = workerInfo.getWorkerId();
+            WorkerContext worker = workers.get(workerId);
             if (Objects.isNull(worker)) {
                 worker = new WorkerContext(workerInfo);
                 worker.init();
                 worker.start();
-                workers.put(workerInfo.getWorkerId(), worker);
+                workers.put(workerId, worker);
 
+                log.info("worker '{}' registered", workerId);
                 return WorkerRegisterResult.success();
             } else {
-                return WorkerRegisterResult.failure(String.format("worker(workerId=%s) has registered", workerInfo.getWorkerId()));
+                return WorkerRegisterResult.failure(String.format("worker(workerId=%s) has registered", workerId));
             }
         } else {
             return WorkerRegisterResult.failure("worker(workerId=null) register info error");
@@ -137,24 +141,17 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
     }
 
     @Override
-    public WorkerUnregisterResult unregisterWorker(String workerId) {
-        if (!isInState(State.STARTED)) {
-            return WorkerUnregisterResult.failure("master not started");
-        }
-        if (StringUtils.isNotBlank(workerId)) {
-            if (workers.containsKey(workerId)) {
-                WorkerContext worker = workers.remove(workerId);
-                worker.stop();
+    public void unregisterWorker(String workerId) {
+        if (isInState(State.STARTED)) {
+            if (StringUtils.isNotBlank(workerId)) {
+                if (workers.containsKey(workerId)) {
+                    WorkerContext worker = workers.remove(workerId);
+                    worker.stop();
 
-                //广播Driver更新Executor资源
-                executorStateChanged(workerId);
-
-                return WorkerUnregisterResult.success();
-            } else {
-                return WorkerUnregisterResult.failure(String.format("worker(workerId=%s) has not registered", workerId));
+                    //广播Driver更新Executor资源
+                    executorStateChanged(workerId);
+                }
             }
-        } else {
-            return WorkerUnregisterResult.failure(String.format("workerId(%s) error", workerId));
         }
     }
 
@@ -230,7 +227,7 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
         ApplicationDescription appDesc = request.getAppDesc();
 
         String appName = appDesc.getAppName();
-        if (!applicationContexts.containsKey(appName)) {
+        if (applicationContexts.containsKey(appName)) {
             return ApplicationRegisterResponse.failure(String.format("application '%s' has registered", appName));
         }
 
@@ -241,6 +238,7 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
         ApplicationContext applicationContext = new ApplicationContext(appDesc, request.getExecutorDriverBackendAddress(), request.getMasterDriverBackendAddress());
         applicationContext.init();
         applicationContexts.put(appName, applicationContext);
+        log.info("application '{}' registered", appName);
         return ApplicationRegisterResponse.success();
     }
 
@@ -350,9 +348,9 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
 
     private void checkHeartbeatTimeout() {
         try {
-            long sleepTime = heartbeatCheckInterval - TimeUtils.timestamp() % heartbeatCheckInterval;
+            long sleepTime = heartbeatCheckInterval - System.currentTimeMillis() % heartbeatCheckInterval;
             if (sleepTime > 0 && sleepTime < heartbeatCheckInterval) {
-                TimeUnit.SECONDS.sleep(sleepTime);
+                TimeUnit.MILLISECONDS.sleep(sleepTime);
             }
         } catch (InterruptedException e) {
 
@@ -362,7 +360,7 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
         for (String registeredWorkerId : registeredWorkerIds) {
             WorkerContext workerContext = workers.get(registeredWorkerId);
             if (Objects.nonNull(workerContext) &&
-                    workerContext.getLastHeartbeatTime() - System.currentTimeMillis() > TimeUnit.SECONDS.toMillis(heartbeatTime)) {
+                    workerContext.getLastHeartbeatTime() - System.currentTimeMillis() > TimeUnit.MILLISECONDS.toMillis(heartbeatTime)) {
                 //定时检测心跳超时, 并移除超时worker
                 unregisterWorker(workerContext.getWorkerInfo().getWorkerId());
             }

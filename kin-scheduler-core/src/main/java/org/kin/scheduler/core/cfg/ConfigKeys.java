@@ -105,7 +105,7 @@ public enum ConfigKeys {
 
     public void set(Config config, Properties properties) {
         if (ConfigUtils.containsKey(properties, this)) {
-            set(config, properties);
+            updateConfig(config, properties);
         }
     }
 }

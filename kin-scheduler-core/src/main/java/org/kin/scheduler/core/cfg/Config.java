@@ -7,10 +7,10 @@ import org.kin.framework.utils.SysUtils;
  * @date 2020-02-08
  */
 public class Config {
-    private String workerBackendHost;
+    private String workerBackendHost = "0.0.0.0";
     /** 不一定=配置值, 因为是根据定义worker的数量, 逐渐递增 */
     private int workerBackendPort;
-    private String masterBackendHost;
+    private String masterBackendHost = "0.0.0.0";
     private int masterBackendPort;
     /** 是否允许worker内置Executor(与Worker共享资源) */
     private boolean allowEmbeddedExecutor;

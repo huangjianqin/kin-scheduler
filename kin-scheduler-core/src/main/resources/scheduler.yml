@@ -6,3 +6,5 @@ kin:
     masterBackendPort: 46668
     allowEmbeddedExecutor: true
     executorBackendPort: 51000
+    logPath: /logs
+    heartbeat: 3000

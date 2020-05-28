@@ -6,7 +6,7 @@ import org.kin.scheduler.core.domain.WorkerResource;
 import org.kin.scheduler.core.driver.ApplicationDescription;
 import org.kin.scheduler.core.driver.MasterDriverBackend;
 
-import java.util.Iterator;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -72,11 +72,9 @@ public class ApplicationContext {
      * 释放Executor资源
      */
     public ExecutorResource removeExecutorResource(String executorId) {
-        Iterator<ExecutorResource> iterator = usedExecutorResources.iterator();
-        while (iterator.hasNext()) {
-            ExecutorResource executorResource = iterator.next();
+        for (ExecutorResource executorResource : new ArrayList<>(usedExecutorResources)) {
             if (executorResource.getExecutorId().equals(executorId)) {
-                iterator.remove();
+                usedExecutorResources.remove(executorResource);
                 return executorResource;
             }
         }

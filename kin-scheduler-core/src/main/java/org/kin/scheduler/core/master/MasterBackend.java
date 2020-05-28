@@ -3,7 +3,6 @@ package org.kin.scheduler.core.master;
 import org.kin.scheduler.core.executor.transport.ExecutorStateChanged;
 import org.kin.scheduler.core.master.transport.WorkerHeartbeatResp;
 import org.kin.scheduler.core.master.transport.WorkerRegisterResult;
-import org.kin.scheduler.core.master.transport.WorkerUnregisterResult;
 import org.kin.scheduler.core.worker.transport.WorkerHeartbeat;
 import org.kin.scheduler.core.worker.transport.WorkerRegisterInfo;
 
@@ -24,9 +23,8 @@ public interface MasterBackend {
      * 注销worker
      *
      * @param workerId workerId
-     * @return 注销worker结果
      */
-    WorkerUnregisterResult unregisterWorker(String workerId);
+    void unregisterWorker(String workerId);
 
     /**
      * 定时往master发送心跳

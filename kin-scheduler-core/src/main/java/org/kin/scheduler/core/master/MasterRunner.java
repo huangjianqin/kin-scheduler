@@ -10,7 +10,7 @@ public class MasterRunner {
             String masterBackendHost = args[0];
             int masterBackendPort = Integer.parseInt(args[1]);
             String logPath = args[2];
-            int heartbeat = Integer.parseInt(args[4]);
+            int heartbeat = Integer.parseInt(args[3]);
 
             Master master = new Master(masterBackendHost, masterBackendPort, logPath, heartbeat);
             try {

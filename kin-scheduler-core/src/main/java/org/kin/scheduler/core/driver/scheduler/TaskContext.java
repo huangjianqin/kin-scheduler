@@ -19,7 +19,7 @@ public class TaskContext {
     /** task描述 */
     private TaskDescription taskDescription;
     /** task状态 */
-    private TaskStatus state;
+    private TaskStatus state = TaskStatus.LAUNCHING;
     /** task执行结果 */
     private Serializable result;
     /**

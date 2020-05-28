@@ -1,5 +1,6 @@
 package org.kin.scheduler.core.driver;
 
+import org.kin.framework.JvmCloseCleaner;
 import org.kin.framework.service.AbstractService;
 import org.kin.framework.utils.NetUtils;
 import org.kin.kinrpc.config.ReferenceConfig;
@@ -60,6 +61,8 @@ public abstract class Driver extends AbstractService implements MasterDriverBack
 
         taskScheduler.init();
         taskScheduler.start();
+
+        JvmCloseCleaner.DEFAULT().add(JvmCloseCleaner.MAX_PRIORITY, this::stop);
     }
 
     @Override
@@ -79,6 +82,7 @@ public abstract class Driver extends AbstractService implements MasterDriverBack
             if (Objects.nonNull(response)) {
                 if (response.isSuccess()) {
                     registered = true;
+                    driverMasterBackend.scheduleResource(appDesc.getAppName());
                 } else {
                     throw new RegisterApplicationFailureException(response.getDesc());
                 }
@@ -99,9 +103,11 @@ public abstract class Driver extends AbstractService implements MasterDriverBack
             taskScheduler.stop();
         }
         if (Objects.nonNull(driverMasterBackend)) {
-            driverMasterBackend.applicationEnd(app.getAppName());
-        }
-        if (Objects.nonNull(driverMasterBackendReferenceConfig)) {
+            try {
+                driverMasterBackend.applicationEnd(app.getAppName());
+            } catch (Exception e) {
+                log.error("", e);
+            }
             driverMasterBackendReferenceConfig.disable();
         }
 

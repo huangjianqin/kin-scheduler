@@ -76,7 +76,11 @@ public abstract class TaskScheduler<T> extends AbstractService implements Schedu
         for (TaskContext taskContext : taskSetManager.getAllUnFinishTask()) {
             ExecutorBackend executorBackend = taskContext.getExecutorBackend();
             if (Objects.nonNull(executorBackend)) {
-                executorBackend.cancelTask(taskContext.getTaskDescription().getTaskId());
+                try {
+                    executorBackend.cancelTask(taskContext.getTaskDescription().getTaskId());
+                } catch (Exception e) {
+                    log.error("", e);
+                }
             }
         }
         for (ExecutorContext executorContext : executorContexts.values()) {

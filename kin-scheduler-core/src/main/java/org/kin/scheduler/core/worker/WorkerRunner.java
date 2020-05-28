@@ -33,6 +33,7 @@ public class WorkerRunner {
 
                     }
                 }
+                int a = 1;
             } finally {
                 worker.stop();
             }
