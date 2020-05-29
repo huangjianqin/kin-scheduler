@@ -11,19 +11,18 @@ import org.kin.kinrpc.config.Services;
 import org.kin.scheduler.core.cfg.Config;
 import org.kin.scheduler.core.executor.Executor;
 import org.kin.scheduler.core.executor.transport.ExecutorStateChanged;
-import org.kin.scheduler.core.log.StaticLogger;
+import org.kin.scheduler.core.log.LogUtils;
+import org.kin.scheduler.core.log.Loggers;
 import org.kin.scheduler.core.master.MasterBackend;
 import org.kin.scheduler.core.master.transport.ExecutorLaunchInfo;
 import org.kin.scheduler.core.master.transport.WorkerHeartbeatResp;
 import org.kin.scheduler.core.master.transport.WorkerRegisterResult;
-import org.kin.scheduler.core.utils.LogUtils;
 import org.kin.scheduler.core.utils.ScriptUtils;
 import org.kin.scheduler.core.worker.transport.ExecutorLaunchResult;
 import org.kin.scheduler.core.worker.transport.WorkerHeartbeat;
 import org.kin.scheduler.core.worker.transport.WorkerInfo;
 import org.kin.scheduler.core.worker.transport.WorkerRegisterInfo;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -35,7 +34,7 @@ import java.util.concurrent.TimeUnit;
  * @date 2020-02-06
  */
 public class Worker extends AbstractService implements WorkerBackend, ExecutorWorkerBackend {
-    private static final Logger log = LoggerFactory.getLogger(Worker.class);
+    private Logger log;
 
     private String workerId;
     /** worker配置 */
@@ -62,7 +61,7 @@ public class Worker extends AbstractService implements WorkerBackend, ExecutorWo
         super("Worker-".concat(workerId));
         this.workerId = workerId;
         this.config = config;
-        StaticLogger.init(config.getLogPath(), workerId);
+        log = Loggers.worker(config.getLogPath(), workerId);
     }
 
     @Override
@@ -79,7 +78,7 @@ public class Worker extends AbstractService implements WorkerBackend, ExecutorWo
                     .actorLike();
             workerServiceConfig.export();
         } catch (Exception e) {
-            StaticLogger.log.error(e.getMessage(), e);
+            log.error(e.getMessage(), e);
         }
 
         try {
@@ -89,7 +88,7 @@ public class Worker extends AbstractService implements WorkerBackend, ExecutorWo
                     .actorLike();
             executorWorkerBackendServiceConfig.export();
         } catch (Exception e) {
-            StaticLogger.log.error(e.getMessage(), e);
+            log.error(e.getMessage(), e);
         }
 
         JvmCloseCleaner.DEFAULT().add(JvmCloseCleaner.MAX_PRIORITY, this::stop);
@@ -109,7 +108,7 @@ public class Worker extends AbstractService implements WorkerBackend, ExecutorWo
         try {
             WorkerRegisterResult registerResult = masterBackend.registerWorker(generateWorkerRegisterInfo());
             if (!registerResult.isSuccess()) {
-                StaticLogger.log.error("worker register error >>> {}".concat(registerResult.getDesc()));
+                log.error("worker register error >>> {}".concat(registerResult.getDesc()));
             }
         } catch (Exception e) {
 
@@ -124,7 +123,7 @@ public class Worker extends AbstractService implements WorkerBackend, ExecutorWo
 
         heartbeatKeeper = Keeper.keep(this::sendHeartbeat);
 
-        StaticLogger.log.info("worker({}) started", workerId);
+        log.info("worker({}) started", workerId);
     }
 
     @Override
@@ -139,7 +138,7 @@ public class Worker extends AbstractService implements WorkerBackend, ExecutorWo
         } catch (Exception e) {
             log.error("", e);
         }
-        StaticLogger.log.error("worker unregistered");
+        log.error("worker unregistered");
         stop0();
     }
 
@@ -152,7 +151,7 @@ public class Worker extends AbstractService implements WorkerBackend, ExecutorWo
         workerServiceConfig.disable();
         executorWorkerBackendServiceConfig.disable();
 
-        StaticLogger.log.info("worker({}) closed", workerId);
+        log.info("worker({}) closed", workerId);
     }
 
     private void sendHeartbeat() {
@@ -179,9 +178,9 @@ public class Worker extends AbstractService implements WorkerBackend, ExecutorWo
 
         //log
         if (result.isSuccess()) {
-            StaticLogger.log.info("lauch executor success >>> executorId({}), executorBackendAddress({})", result.getExecutorId(), result.getAddress());
+            log.info("lauch executor success >>> executorId({}), executorBackendAddress({})", result.getExecutorId(), result.getAddress());
         } else {
-            StaticLogger.log.error("lauch executor fail >>> {}", result.getDesc());
+            log.error("lauch executor fail >>> {}", result.getDesc());
         }
 
         return result;

@@ -13,7 +13,7 @@ import org.kin.scheduler.core.driver.ApplicationDescription;
 import org.kin.scheduler.core.driver.transport.ApplicationRegisterInfo;
 import org.kin.scheduler.core.executor.domain.ExecutorState;
 import org.kin.scheduler.core.executor.transport.ExecutorStateChanged;
-import org.kin.scheduler.core.log.StaticLogger;
+import org.kin.scheduler.core.log.Loggers;
 import org.kin.scheduler.core.master.domain.ApplicationContext;
 import org.kin.scheduler.core.master.domain.ExecutorResource;
 import org.kin.scheduler.core.master.domain.WorkerContext;
@@ -27,7 +27,6 @@ import org.kin.scheduler.core.worker.transport.WorkerHeartbeat;
 import org.kin.scheduler.core.worker.transport.WorkerInfo;
 import org.kin.scheduler.core.worker.transport.WorkerRegisterInfo;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,7 +38,8 @@ import java.util.stream.Collectors;
  * @date 2020-02-07
  */
 public class Master extends AbstractService implements MasterBackend, DriverMasterBackend {
-    private static final Logger log = LoggerFactory.getLogger(Master.class);
+    private Logger log;
+
     private String masterBackendHost;
     /** master rpc端口 */
     private int masterBackendPort;
@@ -62,7 +62,7 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
         this.masterBackendHost = masterBackendHost;
         this.masterBackendPort = masterBackendPort;
         this.heartbeatTime = heartbeatTime;
-        StaticLogger.init(logPath);
+        log = Loggers.master(logPath, "Master");
     }
 
     //-------------------------------------------------------------------------------------------------
@@ -77,7 +77,7 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
         try {
             masterBackendServiceConfig.export();
         } catch (Exception e) {
-            StaticLogger.log.error(e.getMessage(), e);
+            log.error(e.getMessage(), e);
         }
 
         driverMasterBackendServiceConfig = Services.service(this, DriverMasterBackend.class)
@@ -87,7 +87,7 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
         try {
             driverMasterBackendServiceConfig.export();
         } catch (Exception e) {
-            StaticLogger.log.error(e.getMessage(), e);
+            log.error(e.getMessage(), e);
         }
 
         JvmCloseCleaner.DEFAULT().add(JvmCloseCleaner.MAX_PRIORITY, this::stop);
@@ -341,7 +341,7 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
             ApplicationContext applicationContext = applicationContexts.remove(appName);
             if (Objects.nonNull(applicationContext)) {
                 applicationContext.stop();
-                StaticLogger.log.error("applicaton '{}' shutdown", applicationContext.getAppDesc());
+                log.error("applicaton '{}' shutdown", applicationContext.getAppDesc());
             }
         }
     }

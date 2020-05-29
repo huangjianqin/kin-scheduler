@@ -2,6 +2,7 @@ package org.kin.scheduler.core.task.handler.impl;
 
 import ch.qos.logback.classic.Logger;
 import com.google.common.base.Preconditions;
+import org.kin.scheduler.core.log.Loggers;
 import org.kin.scheduler.core.task.TaskDescription;
 import org.kin.scheduler.core.task.handler.TaskHandler;
 import org.kin.scheduler.core.task.handler.TaskHandlers;
@@ -9,7 +10,6 @@ import org.kin.scheduler.core.task.handler.domain.GlueResult;
 import org.kin.scheduler.core.task.handler.domain.GlueType;
 import org.kin.scheduler.core.task.handler.params.GlueParam;
 import org.kin.scheduler.core.task.handler.params.ScriptParam;
-import org.kin.scheduler.core.task.log.TaskLoggers;
 import org.kin.scheduler.core.utils.ScriptUtils;
 
 import java.util.Objects;
@@ -19,7 +19,7 @@ import java.util.Objects;
  * @date 2020-02-21
  */
 public class GlueHandler implements TaskHandler<GlueParam, GlueResult> {
-    private Logger log = TaskLoggers.logger();
+    private Logger log = Loggers.logger();
 
     @Override
     public Class<GlueParam> getTaskParamType() {
@@ -45,7 +45,7 @@ public class GlueHandler implements TaskHandler<GlueParam, GlueResult> {
 
                     return (GlueResult) taskHandler.exec(taskDescription);
                 } else {
-                    int exitValue = ScriptUtils.execCommand(glueParam.getCommand(), TaskLoggers.getLoggerFileName());
+                    int exitValue = ScriptUtils.execCommand(glueParam.getCommand(), Loggers.getLoggerFileName());
                     if (exitValue == 0) {
                         return GlueResult.success();
                     }

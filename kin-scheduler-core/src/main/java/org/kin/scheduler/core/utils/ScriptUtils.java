@@ -1,8 +1,8 @@
 package org.kin.scheduler.core.utils;
 
 import org.apache.commons.exec.*;
+import org.kin.scheduler.core.log.Loggers;
 import org.kin.scheduler.core.task.handler.exception.WorkingDirectoryNotExistsException;
-import org.kin.scheduler.core.task.log.TaskLoggers;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -31,13 +31,13 @@ public class ScriptUtils {
             fileOutputStream.close();
             return true;
         } catch (Exception e) {
-            TaskLoggers.logger().error(e.getMessage(), e);
+            Loggers.logger().error(e.getMessage(), e);
         } finally {
             if (fileOutputStream != null) {
                 try {
                     fileOutputStream.close();
                 } catch (IOException e) {
-                    TaskLoggers.logger().error(e.getMessage(), e);
+                    Loggers.logger().error(e.getMessage(), e);
                 }
             }
         }
@@ -55,7 +55,7 @@ public class ScriptUtils {
         try {
             return execCommand0(command, logFile, workingDirectory, params);
         } catch (Exception e) {
-            TaskLoggers.logger().error(e.getMessage(), e);
+            Loggers.logger().error(e.getMessage(), e);
         }
         return -1;
     }
@@ -97,7 +97,7 @@ public class ScriptUtils {
                 try {
                     fileOutputStream.close();
                 } catch (IOException e) {
-                    TaskLoggers.logger().error(e.getMessage(), e);
+                    Loggers.logger().error(e.getMessage(), e);
                 }
             }
         }
@@ -113,7 +113,7 @@ public class ScriptUtils {
         try {
             return execCommand0(command, logFile);
         } catch (Exception e) {
-            TaskLoggers.logger().error(e.getMessage(), e);
+            Loggers.logger().error(e.getMessage(), e);
         }
         return -1;
     }
@@ -149,7 +149,7 @@ public class ScriptUtils {
                 try {
                     fileOutputStream.close();
                 } catch (IOException e) {
-                    TaskLoggers.logger().error(e.getMessage(), e);
+                    Loggers.logger().error(e.getMessage(), e);
                 }
 
             }

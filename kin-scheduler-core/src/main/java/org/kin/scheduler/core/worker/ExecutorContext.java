@@ -2,7 +2,7 @@ package org.kin.scheduler.core.worker;
 
 import org.kin.kinrpc.config.ReferenceConfig;
 import org.kin.scheduler.core.executor.ExecutorBackend;
-import org.kin.scheduler.core.executor.log.TaskExecLog;
+import org.kin.scheduler.core.executor.transport.TaskExecLog;
 import org.kin.scheduler.core.executor.transport.TaskSubmitResult;
 import org.kin.scheduler.core.task.TaskDescription;
 import org.kin.scheduler.core.transport.RPCResult;

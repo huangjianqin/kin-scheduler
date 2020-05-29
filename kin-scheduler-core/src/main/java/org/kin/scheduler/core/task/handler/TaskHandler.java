@@ -1,7 +1,7 @@
 package org.kin.scheduler.core.task.handler;
 
+import org.kin.scheduler.core.log.Loggers;
 import org.kin.scheduler.core.task.TaskDescription;
-import org.kin.scheduler.core.task.log.TaskLoggers;
 
 import java.io.Serializable;
 
@@ -12,7 +12,7 @@ import java.io.Serializable;
  * 必须包含无参constructor
  * 单例模式调用
  * <p>
- * {@link TaskLoggers} 获取当前日志输出
+ * {@link Loggers} 获取当前日志输出
  */
 public interface TaskHandler<PARAM extends Serializable, RESULT extends Serializable> {
     /**

@@ -11,7 +11,7 @@ import org.kin.scheduler.admin.domain.WebResponse;
 import org.kin.scheduler.admin.entity.TaskLog;
 import org.kin.scheduler.admin.entity.User;
 import org.kin.scheduler.admin.service.UserService;
-import org.kin.scheduler.core.executor.log.TaskExecLog;
+import org.kin.scheduler.core.executor.transport.TaskExecLog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

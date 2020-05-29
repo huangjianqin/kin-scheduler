@@ -24,6 +24,7 @@ import java.util.Objects;
  */
 public abstract class Driver extends AbstractService implements MasterDriverBackend {
     private static final Logger log = LoggerFactory.getLogger(Driver.class);
+
     /** driver -> master rpc引用 */
     private ReferenceConfig<DriverMasterBackend> driverMasterBackendReferenceConfig;
     protected DriverMasterBackend driverMasterBackend;

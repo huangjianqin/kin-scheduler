@@ -1,13 +1,13 @@
 package org.kin.scheduler.core.task.handler.impl;
 
 import ch.qos.logback.classic.Logger;
+import org.kin.scheduler.core.log.Loggers;
 import org.kin.scheduler.core.task.TaskDescription;
 import org.kin.scheduler.core.task.handler.TaskHandler;
 import org.kin.scheduler.core.task.handler.domain.GlueResult;
 import org.kin.scheduler.core.task.handler.domain.GlueType;
 import org.kin.scheduler.core.task.handler.domain.ScriptResourcesStore;
 import org.kin.scheduler.core.task.handler.params.ScriptParam;
-import org.kin.scheduler.core.task.log.TaskLoggers;
 import org.kin.scheduler.core.utils.ScriptUtils;
 
 import java.io.File;
@@ -20,7 +20,7 @@ import java.util.Objects;
 public class ScriptHandler implements TaskHandler<ScriptParam, GlueResult> {
     private static final String RUN_ENCV_PATH = "/runEnv";
 
-    private Logger log = TaskLoggers.logger();
+    private Logger log = Loggers.logger();
 
     @Override
     public Class<ScriptParam> getTaskParamType() {
@@ -54,7 +54,7 @@ public class ScriptHandler implements TaskHandler<ScriptParam, GlueResult> {
 
                     log.info("workingDirectory >>> {}", workingDirectory);
 
-                    int exitValue = ScriptUtils.execCommand(scriptParam.getCommand(), TaskLoggers.getLoggerFileName(), workingDirectory);
+                    int exitValue = ScriptUtils.execCommand(scriptParam.getCommand(), Loggers.getLoggerFileName(), workingDirectory);
                     if (exitValue == 0) {
                         return GlueResult.success();
                     }

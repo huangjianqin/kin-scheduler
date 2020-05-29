@@ -16,16 +16,16 @@ import org.kin.scheduler.core.driver.SchedulerBackend;
 import org.kin.scheduler.core.driver.transport.ExecutorRegisterInfo;
 import org.kin.scheduler.core.driver.transport.TaskStatusChanged;
 import org.kin.scheduler.core.executor.domain.ExecutorState;
-import org.kin.scheduler.core.executor.log.LogContext;
-import org.kin.scheduler.core.executor.log.TaskExecLog;
 import org.kin.scheduler.core.executor.transport.ExecutorStateChanged;
+import org.kin.scheduler.core.executor.transport.TaskExecLog;
 import org.kin.scheduler.core.executor.transport.TaskSubmitResult;
+import org.kin.scheduler.core.log.LogUtils;
+import org.kin.scheduler.core.log.Loggers;
+import org.kin.scheduler.core.log.TaskLoggerContext;
 import org.kin.scheduler.core.task.TaskDescription;
 import org.kin.scheduler.core.task.handler.TaskHandler;
 import org.kin.scheduler.core.task.handler.TaskHandlers;
-import org.kin.scheduler.core.task.log.TaskLoggers;
 import org.kin.scheduler.core.transport.RPCResult;
-import org.kin.scheduler.core.utils.LogUtils;
 import org.kin.scheduler.core.worker.ExecutorWorkerBackend;
 
 import java.io.*;
@@ -52,7 +52,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
     /** log路径 */
     protected final String logPath;
     /** 日志信息 */
-    protected LogContext logContext;
+    protected TaskLoggerContext taskLoggerContext;
     /** logger */
     protected Logger log;
     private ServiceConfig executorBackendServiceConfig;
@@ -92,7 +92,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
     public void init() {
         super.init();
         this.executionContext = ExecutionContext.cache("executor-".concat(executorId).concat("-"));
-        logContext = new LogContext(executorId);
+        taskLoggerContext = new TaskLoggerContext(executorId);
         log = LogUtils.getExecutorLogger(logPath, workerId, executorId);
 
         executorBackendServiceConfig = Services.service(this, ExecutorBackend.class)
@@ -255,7 +255,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
     public void stop() {
         super.stop();
         executionContext.shutdown();
-        logContext.stop();
+        taskLoggerContext.stop();
 
         if (isLocal) {
             try {
@@ -323,7 +323,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
                         execResult = TaskStatusChanged.fail(taskDescription.getTaskId(), taskDescription.getLogFileName(), "task execute time out");
                     } catch (InterruptedException e) {
                         execResult = TaskStatusChanged.cancelled(taskDescription.getTaskId(), taskDescription.getLogFileName(), "task execute cancel");
-                        TaskLoggers.logger().debug("task({}) canceled >>>>", taskDescription.getTaskId());
+                        Loggers.logger().debug("task({}) canceled >>>>", taskDescription.getTaskId());
                     } catch (Exception e) {
                         if (Objects.nonNull(future) && !future.isDone()) {
                             future.cancel(true);
@@ -337,8 +337,8 @@ public class Executor extends AbstractService implements ExecutorBackend {
 
                 schedulerBackend.taskStatusChange(execResult);
             } finally {
-                TaskLoggers.logger().detachAndStopAllAppenders();
-                TaskLoggers.removeAll();
+                Loggers.logger().detachAndStopAllAppenders();
+                Loggers.removeAll();
                 isStopped = true;
                 cleanFinishedTask(taskDescription);
             }
@@ -350,8 +350,8 @@ public class Executor extends AbstractService implements ExecutorBackend {
             Preconditions.checkNotNull(taskHandler, "task handler is null");
 
             //更新上下文日志
-            TaskLoggers.updateLogger(logContext.getTaskLogger(logPath, taskDescription.getJobId(), taskDescription.getTaskId(), taskDescription.getLogFileName()));
-            TaskLoggers.updateLoggerFile(LogUtils.getTaskLogFileAbsoluteName(logPath, taskDescription.getJobId(), taskDescription.getTaskId(), taskDescription.getLogFileName()));
+            Loggers.updateLogger(taskLoggerContext.getTaskLogger(logPath, taskDescription.getJobId(), taskDescription.getTaskId(), taskDescription.getLogFileName()));
+            Loggers.updateLoggerFile(LogUtils.getTaskLogFileAbsoluteName(logPath, taskDescription.getJobId(), taskDescription.getTaskId(), taskDescription.getLogFileName()));
             TaskStatusChanged execResult = null;
             try {
                 execResult = TaskStatusChanged.finished(
@@ -363,7 +363,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
                         taskHandler.exec(taskDescription));
             } catch (InterruptedException e) {
                 execResult = TaskStatusChanged.cancelled(taskDescription.getTaskId(), taskDescription.getLogFileName(), "task execute cancel");
-                TaskLoggers.logger().debug("task({}) canceled >>>>", taskDescription.getTaskId());
+                Loggers.logger().debug("task({}) canceled >>>>", taskDescription.getTaskId());
             } catch (Exception e) {
                 TaskStatusChanged.fail(taskDescription.getTaskId(), taskDescription.getLogFileName(), "task execute encounter error >>>>".concat(ExceptionUtils.getExceptionDesc(e)));
 

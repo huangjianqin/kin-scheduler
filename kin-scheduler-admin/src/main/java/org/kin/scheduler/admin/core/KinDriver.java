@@ -3,7 +3,7 @@ package org.kin.scheduler.admin.core;
 import org.kin.scheduler.core.driver.Application;
 import org.kin.scheduler.core.driver.Driver;
 import org.kin.scheduler.core.driver.scheduler.TaskExecFuture;
-import org.kin.scheduler.core.executor.log.TaskExecLog;
+import org.kin.scheduler.core.executor.transport.TaskExecLog;
 import org.kin.scheduler.core.master.DriverMasterBackend;
 
 import java.io.Serializable;

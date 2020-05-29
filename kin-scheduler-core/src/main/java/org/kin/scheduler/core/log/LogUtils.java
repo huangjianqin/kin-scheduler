@@ -1,4 +1,4 @@
-package org.kin.scheduler.core.utils;
+package org.kin.scheduler.core.log;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
