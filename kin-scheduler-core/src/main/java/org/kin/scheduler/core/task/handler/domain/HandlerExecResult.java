@@ -7,7 +7,10 @@ import java.io.Serializable;
  * @date 2020-02-21
  */
 public class HandlerExecResult implements Serializable {
+    private static final long serialVersionUID = 2270632692743128073L;
+
     protected boolean success;
+    protected String reason;
 
     public HandlerExecResult() {
     }
@@ -17,7 +20,6 @@ public class HandlerExecResult implements Serializable {
     }
 
     //----------------------------------------------------------------------------------------
-
     public static HandlerExecResult success() {
         return new HandlerExecResult(true);
     }
@@ -27,12 +29,19 @@ public class HandlerExecResult implements Serializable {
     }
 
     //setter && getter
-
     public boolean isSuccess() {
         return success;
     }
 
     public void setSuccess(boolean success) {
         this.success = success;
+    }
+
+    public String getReason() {
+        return reason;
+    }
+
+    public void setReason(String reason) {
+        this.reason = reason;
     }
 }

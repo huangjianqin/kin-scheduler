@@ -1,10 +1,6 @@
 package org.kin.scheduler.core.task.handler.domain;
 
-import org.kin.framework.utils.NetUtils;
-import org.kin.framework.utils.StringUtils;
-import org.kin.scheduler.core.utils.GitUtils;
-import org.kin.scheduler.core.utils.SVNUtils;
-import org.kin.scheduler.core.utils.ScriptUtils;
+import org.kin.framework.utils.*;
 
 /**
  * @author huangjianqin
@@ -27,7 +23,7 @@ public enum ScriptResourcesStore {
      */
     GIT("git仓库") {
         @Override
-        public boolean cloneResources(String scriptResources, String user, String password, String path) {
+        public boolean cloneResources(String scriptResources, String user, String password, String path) throws Exception {
             return GitUtils.cloneRepository(scriptResources, user, password, path);
         }
     },
@@ -36,7 +32,7 @@ public enum ScriptResourcesStore {
      */
     SVN("remote仓库") {
         @Override
-        public boolean cloneResources(String scriptResources, String user, String password, String path) {
+        public boolean cloneResources(String scriptResources, String user, String password, String path) throws Exception {
             return SVNUtils.checkoutRepository(scriptResources, user, password, path);
         }
     },
@@ -45,8 +41,8 @@ public enum ScriptResourcesStore {
      */
     RESOURCE_CODE("源代码") {
         @Override
-        public boolean cloneResources(String scriptResources, String user, String password, String path) {
-            return ScriptUtils.createScriptFile(path, scriptResources);
+        public boolean cloneResources(String scriptResources, String user, String password, String path) throws Exception {
+            return FileUtils.createFile(path, scriptResources);
         }
     };
     public static ScriptResourcesStore[] STORES = values();
@@ -56,7 +52,7 @@ public enum ScriptResourcesStore {
         this.desc = desc;
     }
 
-    public abstract boolean cloneResources(String scriptResources, String user, String password, String path);
+    public abstract boolean cloneResources(String scriptResources, String user, String password, String path) throws Exception;
 
     //----------------------------------------------------------------------------------
 

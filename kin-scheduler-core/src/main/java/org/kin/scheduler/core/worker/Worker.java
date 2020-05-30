@@ -3,7 +3,9 @@ package org.kin.scheduler.core.worker;
 import org.kin.framework.JvmCloseCleaner;
 import org.kin.framework.concurrent.keeper.Keeper;
 import org.kin.framework.service.AbstractService;
+import org.kin.framework.utils.ExceptionUtils;
 import org.kin.framework.utils.NetUtils;
+import org.kin.framework.utils.ScriptUtils;
 import org.kin.kinrpc.config.ReferenceConfig;
 import org.kin.kinrpc.config.References;
 import org.kin.kinrpc.config.ServiceConfig;
@@ -17,7 +19,6 @@ import org.kin.scheduler.core.master.MasterBackend;
 import org.kin.scheduler.core.master.transport.ExecutorLaunchInfo;
 import org.kin.scheduler.core.master.transport.WorkerHeartbeatResp;
 import org.kin.scheduler.core.master.transport.WorkerRegisterResult;
-import org.kin.scheduler.core.utils.ScriptUtils;
 import org.kin.scheduler.core.worker.transport.ExecutorLaunchResult;
 import org.kin.scheduler.core.worker.transport.WorkerHeartbeat;
 import org.kin.scheduler.core.worker.transport.WorkerInfo;
@@ -210,14 +211,20 @@ public class Worker extends AbstractService implements WorkerBackend, ExecutorWo
             } else {
                 //启动新jvm来启动Executor
                 //TODO 通过启动进程控制CPU使用数
-                int commandExecResult = ScriptUtils.execCommand("java -jar kin-scheduler-admin.jar ExecutorRunner",
-                        LogUtils.getExecutorLogFileName(config.getLogPath(), workerId, executorId), "/",
-                        appName, workerId, executorId, config.getWorkerBackendHost(), String.valueOf(executorBackendPort),
-                        config.getLogPath(), launchInfo.getExecutorDriverBackendAddress(), executorWorkerBackendAddress);
+                int commandExecResult = 0;
+                String reason = "";
+                try {
+                    commandExecResult = ScriptUtils.execCommand("java -jar kin-scheduler-admin.jar ExecutorRunner",
+                            LogUtils.getExecutorLogFileName(config.getLogPath(), workerId, executorId), "/",
+                            appName, workerId, executorId, config.getWorkerBackendHost(), String.valueOf(executorBackendPort),
+                            config.getLogPath(), launchInfo.getExecutorDriverBackendAddress(), executorWorkerBackendAddress);
+                } catch (Exception e) {
+                    reason = ExceptionUtils.getExceptionDesc(e);
+                }
                 if (commandExecResult == 0) {
                     result = ExecutorLaunchResult.success(executorId, NetUtils.getIpPort(config.getWorkerBackendHost(), executorBackendPort));
                 } else {
-                    result = ExecutorLaunchResult.failure("executor launch fail");
+                    result = ExecutorLaunchResult.failure("executor launch fail >>>>>".concat(System.lineSeparator()).concat(reason));
                 }
             }
         } else {
