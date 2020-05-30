@@ -1,7 +1,7 @@
 package org.kin.scheduler.core.task.handler.impl;
 
 import ch.qos.logback.classic.Logger;
-import org.kin.framework.utils.ScriptUtils;
+import org.kin.framework.utils.CommandUtils;
 import org.kin.scheduler.core.log.Loggers;
 import org.kin.scheduler.core.task.TaskDescription;
 import org.kin.scheduler.core.task.handler.TaskHandler;
@@ -54,7 +54,7 @@ public class ScriptHandler implements TaskHandler<ScriptParam, GlueResult> {
 
                     log.info("workingDirectory >>> {}", workingDirectory);
 
-                    int exitValue = ScriptUtils.execCommand(scriptParam.getCommand(), Loggers.getLoggerFileName(), workingDirectory);
+                    int exitValue = CommandUtils.execCommand(scriptParam.getCommand(), Loggers.getLoggerFileName(), workingDirectory);
                     if (exitValue == 0) {
                         return GlueResult.success();
                     }

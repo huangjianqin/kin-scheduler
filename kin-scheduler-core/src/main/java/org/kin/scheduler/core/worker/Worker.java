@@ -3,9 +3,9 @@ package org.kin.scheduler.core.worker;
 import org.kin.framework.JvmCloseCleaner;
 import org.kin.framework.concurrent.keeper.Keeper;
 import org.kin.framework.service.AbstractService;
+import org.kin.framework.utils.CommandUtils;
 import org.kin.framework.utils.ExceptionUtils;
 import org.kin.framework.utils.NetUtils;
-import org.kin.framework.utils.ScriptUtils;
 import org.kin.kinrpc.config.ReferenceConfig;
 import org.kin.kinrpc.config.References;
 import org.kin.kinrpc.config.ServiceConfig;
@@ -214,7 +214,7 @@ public class Worker extends AbstractService implements WorkerBackend, ExecutorWo
                 int commandExecResult = 0;
                 String reason = "";
                 try {
-                    commandExecResult = ScriptUtils.execCommand("java -jar kin-scheduler-admin.jar ExecutorRunner",
+                    commandExecResult = CommandUtils.execCommand("java -jar kin-scheduler-admin.jar ExecutorRunner",
                             LogUtils.getExecutorLogFileName(config.getLogPath(), workerId, executorId), "/",
                             appName, workerId, executorId, config.getWorkerBackendHost(), String.valueOf(executorBackendPort),
                             config.getLogPath(), launchInfo.getExecutorDriverBackendAddress(), executorWorkerBackendAddress);

@@ -2,7 +2,7 @@ package org.kin.scheduler.core.task.handler.impl;
 
 import ch.qos.logback.classic.Logger;
 import com.google.common.base.Preconditions;
-import org.kin.framework.utils.ScriptUtils;
+import org.kin.framework.utils.CommandUtils;
 import org.kin.scheduler.core.log.Loggers;
 import org.kin.scheduler.core.task.TaskDescription;
 import org.kin.scheduler.core.task.handler.TaskHandler;
@@ -45,7 +45,7 @@ public class GlueHandler implements TaskHandler<GlueParam, GlueResult> {
 
                     return (GlueResult) taskHandler.exec(taskDescription);
                 } else {
-                    int exitValue = ScriptUtils.execCommand(glueParam.getCommand(), Loggers.getLoggerFileName());
+                    int exitValue = CommandUtils.execCommand(glueParam.getCommand(), Loggers.getLoggerFileName());
                     if (exitValue == 0) {
                         return GlueResult.success();
                     }
