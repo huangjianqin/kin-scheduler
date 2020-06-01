@@ -6,26 +6,26 @@ import java.io.Serializable;
  * @author huangjianqin
  * @date 2020-02-21
  */
-public class HandlerExecResult implements Serializable {
+public class TaskExecResult implements Serializable {
     private static final long serialVersionUID = 2270632692743128073L;
 
     protected boolean success;
     protected String reason;
 
-    public HandlerExecResult() {
+    public TaskExecResult() {
     }
 
-    public HandlerExecResult(boolean success) {
+    public TaskExecResult(boolean success) {
         this.success = success;
     }
 
     //----------------------------------------------------------------------------------------
-    public static HandlerExecResult success() {
-        return new HandlerExecResult(true);
+    public static TaskExecResult success() {
+        return new TaskExecResult(true);
     }
 
-    public static HandlerExecResult failure() {
-        return new HandlerExecResult(false);
+    public static TaskExecResult failure() {
+        return new TaskExecResult(false);
     }
 
     //setter && getter

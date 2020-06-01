@@ -127,6 +127,7 @@ public abstract class TaskScheduler<T> extends AbstractService implements Schedu
                     .urls(executorRegisterInfo.getAddress());
             executorContext.start(executorBackendReferenceConfig);
             executorContexts.put(executorId, executorContext);
+            log.info("executor('{}') registered", executorId);
             if (waiters > 0) {
                 //等待所有executor都注册完才开始调度task
                 synchronized (this) {

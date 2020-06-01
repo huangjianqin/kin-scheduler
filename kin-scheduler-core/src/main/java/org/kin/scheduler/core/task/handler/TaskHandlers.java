@@ -33,11 +33,10 @@ public class TaskHandlers {
             for (Class<? extends TaskHandler> taskHandlerType : taskHandlerImplClasses) {
                 try {
                     Constructor constructor = taskHandlerType.getConstructor();
-                    TaskHandler taskHandler;
-                    if (taskHandlerType.isAnnotationPresent(Singleton.class)) {
-                        taskHandler = (TaskHandler) constructor.newInstance();
-                        paramType2TaskHandler.put(taskHandler.getTaskParamType(), new TaskHandlerInfo(taskHandlerType, taskHandler));
-                    }
+                    TaskHandler taskHandler = (TaskHandler) constructor.newInstance();
+
+                    paramType2TaskHandler.put(taskHandler.getTaskParamType(),
+                            new TaskHandlerInfo(taskHandlerType, taskHandlerType.isAnnotationPresent(Singleton.class) ? taskHandler : null));
                 } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
                     e.printStackTrace();
                 }

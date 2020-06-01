@@ -42,22 +42,26 @@ public class ScriptHandler implements TaskHandler<ScriptParam, GlueResult> {
         if (Objects.nonNull(scriptParam)) {
             GlueType glueType = GlueType.getByType(scriptParam.getType());
             if (Objects.nonNull(glueType) && glueType.isScript()) {
+                //创建环境目录
+                String realRunEnvPath = getOrCreateRealRunEnvPath(taskDescription.getJobId());
+                String workingDirectory = realRunEnvPath;
+
                 ScriptResourcesStore resourcesStore = ScriptResourcesStore.getByName(scriptParam.getScriptResourcesStore());
                 if (Objects.nonNull(resourcesStore)) {
                     //复制 ｜ 创建 项目脚本代码
-                    String realRunEnvPath = getOrCreateRealRunEnvPath(taskDescription.getJobId());
-                    String workingDirectory = realRunEnvPath;
                     if (resourcesStore.equals(ScriptResourcesStore.RESOURCE_CODE)) {
                         realRunEnvPath = realRunEnvPath.concat(File.separator).concat(taskDescription.getJobId()).concat(glueType.getSuffix());
                     }
                     resourcesStore.cloneResources(scriptParam.getScriptResources(), scriptParam.getUser(), scriptParam.getPassword(), realRunEnvPath);
+                } else {
+                    //已有的bash文件
+                }
 
-                    log.info("workingDirectory >>> {}", workingDirectory);
+                log.info("workingDirectory >>> {}", workingDirectory);
 
-                    int exitValue = CommandUtils.execCommand(scriptParam.getCommand(), Loggers.getLoggerFileName(), workingDirectory);
-                    if (exitValue == 0) {
-                        return GlueResult.success();
-                    }
+                int exitValue = CommandUtils.execCommand(scriptParam.getCommand(), Loggers.getLoggerFileName(), workingDirectory);
+                if (exitValue == 0) {
+                    return GlueResult.success();
                 }
             }
         }

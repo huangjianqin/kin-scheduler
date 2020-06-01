@@ -6,6 +6,7 @@ import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
 import ch.qos.logback.classic.filter.ThresholdFilter;
 import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.Appender;
 import ch.qos.logback.core.FileAppender;
 import org.kin.framework.log.logback.LogbackFactory;
 import org.kin.framework.utils.StringUtils;
@@ -14,6 +15,7 @@ import java.io.File;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Objects;
 
 /**
  * @author huangjianqin
@@ -120,7 +122,21 @@ public class LogUtils {
 
         fileAppender.start();
 
-        return LogbackFactory.create(loggerName, lc).add(fileAppender).level(Level.INFO).additive(false).get();
+        //从已有的logger中获取打印控制台的appender
+        Appender<ILoggingEvent> consoleAppender = null;
+        for (Logger logger : lc.getLoggerList()) {
+            consoleAppender = logger.getAppender("CONSOLE");
+            if (Objects.nonNull(consoleAppender)) {
+                break;
+            }
+        }
+
+        LogbackFactory logbackFactory = LogbackFactory.create(loggerName, lc);
+        logbackFactory.add(fileAppender);
+        if (Objects.nonNull(consoleAppender)) {
+            logbackFactory.add(consoleAppender);
+        }
+        return logbackFactory.level(Level.INFO).additive(false).get();
     }
 
 }

@@ -5,27 +5,27 @@ package org.kin.scheduler.core.task.handler.params;
  * @date 2020-02-21
  */
 public class ScriptParam extends GlueParam {
-    private String ScriptResources;
-    private String ScriptResourcesStore;
+    private String scriptResources;
+    private String scriptResourcesStore;
     private String user;
     private String password;
 
     //setter && getter
 
     public String getScriptResources() {
-        return ScriptResources;
+        return scriptResources;
     }
 
     public void setScriptResources(String scriptResources) {
-        ScriptResources = scriptResources;
+        this.scriptResources = scriptResources;
     }
 
     public String getScriptResourcesStore() {
-        return ScriptResourcesStore;
+        return scriptResourcesStore;
     }
 
     public void setScriptResourcesStore(String scriptResourcesStore) {
-        ScriptResourcesStore = scriptResourcesStore;
+        this.scriptResourcesStore = scriptResourcesStore;
     }
 
     public String getUser() {

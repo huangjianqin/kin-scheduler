@@ -1,5 +1,6 @@
 package org.kin.scheduler.core.worker;
 
+import ch.qos.logback.classic.Logger;
 import org.kin.framework.JvmCloseCleaner;
 import org.kin.framework.concurrent.keeper.Keeper;
 import org.kin.framework.service.AbstractService;
@@ -23,7 +24,6 @@ import org.kin.scheduler.core.worker.transport.ExecutorLaunchResult;
 import org.kin.scheduler.core.worker.transport.WorkerHeartbeat;
 import org.kin.scheduler.core.worker.transport.WorkerInfo;
 import org.kin.scheduler.core.worker.transport.WorkerRegisterInfo;
-import org.slf4j.Logger;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -152,7 +152,7 @@ public class Worker extends AbstractService implements WorkerBackend, ExecutorWo
         workerServiceConfig.disable();
         executorWorkerBackendServiceConfig.disable();
 
-        log.info("worker({}) closed", workerId);
+        log.info("worker({}) stopped", workerId);
     }
 
     private void sendHeartbeat() {

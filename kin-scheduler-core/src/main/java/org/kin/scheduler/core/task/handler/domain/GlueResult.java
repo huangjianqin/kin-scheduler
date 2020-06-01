@@ -4,7 +4,7 @@ package org.kin.scheduler.core.task.handler.domain;
  * @author huangjianqin
  * @date 2020-02-21
  */
-public class GlueResult extends HandlerExecResult {
+public class GlueResult extends TaskExecResult {
     public GlueResult() {
     }
 

@@ -61,7 +61,10 @@ public class Loggers {
     }
 
     public static void removeAll() {
-        threadLocalLogger.get().detachAndStopAllAppenders();
+        Logger logger = threadLocalLogger.get();
+        if (Objects.nonNull(logger)) {
+            logger.detachAndStopAllAppenders();
+        }
         threadLocalLogger.remove();
         threadLocalLoggerFile.remove();
     }

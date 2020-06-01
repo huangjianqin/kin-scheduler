@@ -10,11 +10,11 @@ public enum GlueType {
     /**
      * linux 命令
      */
-    BEAN("BEAN", false, null, null),
+    BASH("BASH", false, null, null),
     /**
      * .sh脚本
      */
-    SHELL("GLUE(Shell)", true, "bash", ".sh"),
+    SHELL("GLUE(Shell)", true, "/bin/bash", ".sh"),
     /**
      * python脚本
      */

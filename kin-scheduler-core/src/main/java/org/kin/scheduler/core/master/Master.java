@@ -1,5 +1,6 @@
 package org.kin.scheduler.core.master;
 
+import ch.qos.logback.classic.Logger;
 import org.kin.framework.JvmCloseCleaner;
 import org.kin.framework.concurrent.ExecutionContext;
 import org.kin.framework.concurrent.actor.PinnedThreadSafeHandler;
@@ -26,7 +27,6 @@ import org.kin.scheduler.core.worker.transport.ExecutorLaunchResult;
 import org.kin.scheduler.core.worker.transport.WorkerHeartbeat;
 import org.kin.scheduler.core.worker.transport.WorkerInfo;
 import org.kin.scheduler.core.worker.transport.WorkerRegisterInfo;
-import org.slf4j.Logger;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -58,11 +58,11 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
             new PinnedThreadSafeHandler<>(ExecutionContext.fix(1, "Master", 1, "Master-schedule"));
 
     public Master(String masterBackendHost, int masterBackendPort, String logPath, int heartbeatTime) {
-        super("Master");
+        super("master");
         this.masterBackendHost = masterBackendHost;
         this.masterBackendPort = masterBackendPort;
         this.heartbeatTime = heartbeatTime;
-        log = Loggers.master(logPath, "Master");
+        log = Loggers.master(logPath, getName());
     }
 
     //-------------------------------------------------------------------------------------------------
@@ -98,6 +98,8 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
         super.start();
 
         threadSafeHandler.scheduleAtFixedRate(ts -> checkHeartbeatTimeout(), heartbeatCheckInterval, heartbeatCheckInterval, TimeUnit.MILLISECONDS);
+
+        log.info("Master '{}' started", getName());
     }
 
     @Override
@@ -106,10 +108,15 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
         threadSafeHandler.stop();
         masterBackendServiceConfig.disable();
         driverMasterBackendServiceConfig.disable();
+        for (ApplicationContext applicationContext : applicationContexts.values()) {
+            applicationContext.stop();
+        }
         for (WorkerContext worker : workers.values()) {
             worker.stop();
         }
         workers.clear();
+
+        log.info("Master '{}' stopped", getName());
     }
 
     //-------------------------------------------------------------------------------------------------

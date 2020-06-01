@@ -6,12 +6,16 @@ import org.kin.scheduler.core.executor.transport.TaskExecLog;
 import org.kin.scheduler.core.executor.transport.TaskSubmitResult;
 import org.kin.scheduler.core.task.TaskDescription;
 import org.kin.scheduler.core.transport.RPCResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author huangjianqin
  * @date 2020-02-07
  */
 public class ExecutorContext implements ExecutorBackend {
+    private static final Logger log = LoggerFactory.getLogger(ExecutorContext.class);
+
     private String executorId;
     private ReferenceConfig<ExecutorBackend> executorBackendReferenceConfig;
     private ExecutorBackend executorBackend;
@@ -46,8 +50,13 @@ public class ExecutorContext implements ExecutorBackend {
 
     @Override
     public void destroy() {
-        getExecutorBackend().destroy();
-        executorBackendReferenceConfig.disable();
+        try {
+            getExecutorBackend().destroy();
+        } catch (Exception e) {
+            log.warn("", e);
+        } finally {
+            executorBackendReferenceConfig.disable();
+        }
     }
 
     public String getExecutorId() {

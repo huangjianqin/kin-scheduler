@@ -121,6 +121,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
     @Override
     public void start() {
         super.start();
+        taskLoggerContext.start();
         executorWorkerBackend.executorStateChanged(ExecutorStateChanged.running(appName, executorId));
         schedulerBackend.registerExecutor(new ExecutorRegisterInfo(executorId, NetUtils.getIpPort(backendHost, backendPort)));
         log.info("executor({}) started", executorId);
@@ -128,7 +129,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
 
     private TaskSubmitResult execTask0(TaskDescription taskDescription, Logger log) {
         if (this.isInState(State.STARTED)) {
-            log.debug("execing task({})", taskDescription);
+            log.info("execing task({})", taskDescription);
             try {
                 TaskRunner newTaskRunner = new TaskRunner(taskDescription);
                 List<TaskRunner> exTaskRunners = taskId2TaskRunners.get(taskDescription.getTaskId());
@@ -270,6 +271,8 @@ public class Executor extends AbstractService implements ExecutorBackend {
         schedulerBackendReferenceConfig.disable();
 
         log.info("executor({}) closed", executorId);
+
+        taskLoggerContext.stop();
     }
 
     public void executorStateChanged(ExecutorState state) {
@@ -313,38 +316,38 @@ public class Executor extends AbstractService implements ExecutorBackend {
 
             currentThread = Thread.currentThread();
             try {
-                TaskStatusChanged execResult = null;
-                if (taskDescription.getTimeout() > 0) {
-                    Future<TaskStatusChanged> future = null;
-                    try {
+                TaskStatusChanged execResult;
+                Future<TaskStatusChanged> future = null;
+                try {
+                    if (taskDescription.getTimeout() > 0) {
                         future = executionContext.submit(this::runTask);
                         execResult = future.get(taskDescription.getTimeout(), TimeUnit.SECONDS);
-                    } catch (TimeoutException e) {
-                        execResult = TaskStatusChanged.fail(taskDescription.getTaskId(), taskDescription.getLogFileName(), "task execute time out");
-                    } catch (InterruptedException e) {
-                        execResult = TaskStatusChanged.cancelled(taskDescription.getTaskId(), taskDescription.getLogFileName(), "task execute cancel");
-                        Loggers.logger().debug("task({}) canceled >>>>", taskDescription.getTaskId());
-                    } catch (Exception e) {
-                        if (Objects.nonNull(future) && !future.isDone()) {
-                            future.cancel(true);
-                        }
-                        execResult = TaskStatusChanged.fail(taskDescription.getTaskId(), taskDescription.getLogFileName(),
-                                "task execute encounter error >>>>".concat(ExceptionUtils.getExceptionDesc(e)));
+                    } else {
+                        execResult = runTask();
                     }
-                } else if (taskDescription.getTimeout() == 0) {
-                    execResult = runTask();
+                } catch (TimeoutException e) {
+                    execResult = TaskStatusChanged.fail(taskDescription.getTaskId(), taskDescription.getLogFileName(), "task execute time out");
+                } catch (InterruptedException e) {
+                    execResult = TaskStatusChanged.cancelled(taskDescription.getTaskId(), taskDescription.getLogFileName(), "task execute cancel");
+                    Loggers.logger().debug("task({}) canceled >>>>", taskDescription.getTaskId());
+                } catch (Exception e) {
+                    if (Objects.nonNull(future) && !future.isDone()) {
+                        future.cancel(true);
+                    }
+                    execResult = TaskStatusChanged.fail(taskDescription.getTaskId(), taskDescription.getLogFileName(),
+                            "task execute encounter error >>>>".concat(ExceptionUtils.getExceptionDesc(e)));
+                    Loggers.logger().debug("task({}) execute error >>>> {}", taskDescription.getTaskId(), e);
                 }
 
                 schedulerBackend.taskStatusChange(execResult);
             } finally {
-                Loggers.logger().detachAndStopAllAppenders();
                 Loggers.removeAll();
                 isStopped = true;
                 cleanFinishedTask(taskDescription);
             }
         }
 
-        private TaskStatusChanged runTask() {
+        private TaskStatusChanged runTask() throws Exception {
             //获取task handler
             TaskHandler taskHandler = TaskHandlers.getTaskHandler(taskDescription);
             Preconditions.checkNotNull(taskHandler, "task handler is null");
@@ -352,23 +355,14 @@ public class Executor extends AbstractService implements ExecutorBackend {
             //更新上下文日志
             Loggers.updateLogger(taskLoggerContext.getTaskLogger(logPath, taskDescription.getJobId(), taskDescription.getTaskId(), taskDescription.getLogFileName()));
             Loggers.updateLoggerFile(LogUtils.getTaskLogFileAbsoluteName(logPath, taskDescription.getJobId(), taskDescription.getTaskId(), taskDescription.getLogFileName()));
-            TaskStatusChanged execResult = null;
-            try {
-                execResult = TaskStatusChanged.finished(
-                        taskDescription.getTaskId(),
-                        taskDescription.getLogFileName(),
-                        taskDescription.getExecStrategy().getDesc()
-                                .concat("run task >>>> ")
-                                .concat(taskDescription.toString()),
-                        taskHandler.exec(taskDescription));
-            } catch (InterruptedException e) {
-                execResult = TaskStatusChanged.cancelled(taskDescription.getTaskId(), taskDescription.getLogFileName(), "task execute cancel");
-                Loggers.logger().debug("task({}) canceled >>>>", taskDescription.getTaskId());
-            } catch (Exception e) {
-                TaskStatusChanged.fail(taskDescription.getTaskId(), taskDescription.getLogFileName(), "task execute encounter error >>>>".concat(ExceptionUtils.getExceptionDesc(e)));
 
-            }
-            return execResult;
+            return TaskStatusChanged.finished(
+                    taskDescription.getTaskId(),
+                    taskDescription.getLogFileName(),
+                    taskDescription.getExecStrategy().getDesc()
+                            .concat("run task >>>> ")
+                            .concat(taskDescription.toString()),
+                    taskHandler.exec(taskDescription));
         }
 
         public void interrupt() {
