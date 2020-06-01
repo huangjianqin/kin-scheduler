@@ -108,7 +108,7 @@ public abstract class TaskScheduler<T> extends AbstractService implements Schedu
             if (submitResult.isSuccess()) {
                 TaskExecFuture future = new TaskExecFuture(submitResult, taskSetManager, taskContext);
                 taskContext.submitTask(future);
-                log.debug("submitTask >>>> {}", taskContext.getTaskDescription());
+                log.info("submitTask >>>> {}", taskContext.getTaskDescription());
                 return future;
             } else {
                 taskContext.execFail();

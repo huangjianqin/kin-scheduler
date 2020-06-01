@@ -19,8 +19,6 @@ import java.util.Objects;
  * @date 2020-02-21
  */
 public class GlueHandler implements TaskHandler<GlueParam, GlueResult> {
-    private Logger log = Loggers.logger();
-
     @Override
     public Class<GlueParam> getTaskParamType() {
         return GlueParam.class;
@@ -28,6 +26,9 @@ public class GlueHandler implements TaskHandler<GlueParam, GlueResult> {
 
     @Override
     public GlueResult exec(TaskDescription<GlueParam> taskDescription) throws Exception {
+        //初始化logger
+        Logger log = Loggers.logger();
+
         GlueParam glueParam = taskDescription.getParam();
         if (Objects.nonNull(glueParam)) {
             GlueType glueType = GlueType.getByType(glueParam.getType());

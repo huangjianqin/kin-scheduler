@@ -43,4 +43,16 @@ public class ScriptParam extends GlueParam {
     public void setPassword(String password) {
         this.password = password;
     }
+
+    @Override
+    public String toString() {
+        return "ScriptParam{" +
+                "scriptResources='" + scriptResources + '\'' +
+                ", scriptResourcesStore='" + scriptResourcesStore + '\'' +
+                ", user='" + user + '\'' +
+                ", password='" + password + '\'' +
+                ", command='" + command + '\'' +
+                ", type='" + type + '\'' +
+                '}';
+    }
 }

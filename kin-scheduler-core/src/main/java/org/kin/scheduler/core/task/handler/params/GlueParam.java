@@ -27,4 +27,12 @@ public class GlueParam implements Serializable {
     public void setType(String type) {
         this.type = type;
     }
+
+    @Override
+    public String toString() {
+        return "GlueParam{" +
+                "command='" + command + '\'' +
+                ", type='" + type + '\'' +
+                '}';
+    }
 }

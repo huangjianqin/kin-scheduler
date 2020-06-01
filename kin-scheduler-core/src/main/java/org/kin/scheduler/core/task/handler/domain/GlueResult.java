@@ -20,4 +20,12 @@ public class GlueResult extends TaskExecResult {
     public static GlueResult failure() {
         return new GlueResult(false);
     }
+
+    @Override
+    public String toString() {
+        return "GlueResult{" +
+                "success=" + success +
+                ", reason='" + reason + '\'' +
+                '}';
+    }
 }

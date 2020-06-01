@@ -20,8 +20,6 @@ import java.util.Objects;
 public class ScriptHandler implements TaskHandler<ScriptParam, GlueResult> {
     private static final String RUN_ENCV_PATH = "/runEnv";
 
-    private Logger log = Loggers.logger();
-
     @Override
     public Class<ScriptParam> getTaskParamType() {
         return ScriptParam.class;
@@ -38,6 +36,9 @@ public class ScriptHandler implements TaskHandler<ScriptParam, GlueResult> {
 
     @Override
     public GlueResult exec(TaskDescription<ScriptParam> taskDescription) throws Exception {
+        //初始化logger
+        Logger log = Loggers.logger();
+
         ScriptParam scriptParam = taskDescription.getParam();
         if (Objects.nonNull(scriptParam)) {
             GlueType glueType = GlueType.getByType(scriptParam.getType());
