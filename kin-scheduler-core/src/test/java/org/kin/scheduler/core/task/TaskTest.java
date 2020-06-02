@@ -21,6 +21,8 @@ public abstract class TaskTest {
         taskDescription.setTaskId("task-test");
 
         driver.submitTask(taskDescription);
+        driver.awaitTermination();
+        driver.stop();
     }
 
     abstract TaskDescription<?> generateTaskDescription();

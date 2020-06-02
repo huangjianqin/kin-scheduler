@@ -141,7 +141,7 @@ public abstract class TaskScheduler<T> extends AbstractService implements Schedu
     }
 
     @Override
-    public void taskStatusChange(TaskStatusChanged taskStatusChanged) {
+    public final void taskStatusChange(TaskStatusChanged taskStatusChanged) {
         if (isInState(State.STARTED)) {
             String taskId = taskStatusChanged.getTaskId();
             if (taskSetManager.hasTask(taskId)) {
@@ -231,5 +231,18 @@ public abstract class TaskScheduler<T> extends AbstractService implements Schedu
      */
     protected final ExecutorContext getAvailableExecutors(TaskContext taskContext, RouteStrategy routeStrategy) {
         return routeStrategy.route(getAvailableExecutors(taskContext));
+    }
+
+    /**
+     * 等待所有task完成, 并结束
+     */
+    public void awaitTermination() {
+        synchronized (taskSetManager) {
+            try {
+                taskSetManager.wait();
+            } catch (InterruptedException e) {
+
+            }
+        }
     }
 }

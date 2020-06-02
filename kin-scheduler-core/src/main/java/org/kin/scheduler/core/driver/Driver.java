@@ -34,7 +34,6 @@ public abstract class Driver extends AbstractService implements MasterDriverBack
     protected Application app;
     /** TaskScheduler实现 */
     protected TaskScheduler taskScheduler;
-    protected volatile boolean registered;
 
     public Driver(Application app, TaskScheduler taskScheduler) {
         super(app.getAppName());
@@ -82,7 +81,7 @@ public abstract class Driver extends AbstractService implements MasterDriverBack
                     ApplicationRegisterInfo.create(appDesc, NetUtils.getIpPort(app.getDriverPort()), NetUtils.getIpPort(app.getDriverPort())));
             if (Objects.nonNull(response)) {
                 if (response.isSuccess()) {
-                    registered = true;
+                    //TODO 可以做点事
                     driverMasterBackend.scheduleResource(appDesc.getAppName());
                 } else {
                     throw new RegisterApplicationFailureException(response.getDesc());
@@ -117,7 +116,11 @@ public abstract class Driver extends AbstractService implements MasterDriverBack
     }
 
     @Override
-    public void executorStatusChange(List<String> newExecutorIds, List<String> unavailableExecutorIds) {
+    public final void executorStatusChange(List<String> newExecutorIds, List<String> unavailableExecutorIds) {
         taskScheduler.executorStatusChange(unavailableExecutorIds);
+    }
+
+    public final void awaitTermination() {
+        taskScheduler.awaitTermination();
     }
 }

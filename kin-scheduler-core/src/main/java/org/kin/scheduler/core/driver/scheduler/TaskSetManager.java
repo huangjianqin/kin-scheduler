@@ -18,11 +18,13 @@ public class TaskSetManager {
 
     public List<TaskContext> init(Collection<TaskDescription> taskDescriptions) {
         List<TaskContext> taskContexts = new ArrayList<>();
-        for (TaskDescription taskDescription : taskDescriptions) {
-            TaskContext taskContext = new TaskContext(taskDescription);
-            this.taskContexts.put(taskDescription.getTaskId(), taskContext);
+        synchronized (this) {
+            for (TaskDescription taskDescription : taskDescriptions) {
+                TaskContext taskContext = new TaskContext(taskDescription);
+                this.taskContexts.put(taskDescription.getTaskId(), taskContext);
 
-            taskContexts.add(taskContext);
+                taskContexts.add(taskContext);
+            }
         }
 
         return taskContexts;
@@ -45,7 +47,7 @@ public class TaskSetManager {
     }
 
     public boolean cancelTask(String taskId) {
-        TaskContext taskContext = taskContexts.remove(taskId);
+        TaskContext taskContext = taskContexts.get(taskId);
         if (Objects.nonNull(taskContext) && taskContext.isNotFinish()) {
             RPCResult result = taskContext.getExecutorBackend().cancelTask(taskContext.getTaskDescription().getTaskId());
             taskFinish(taskId, TaskStatus.CANCELLED, null, "", "task cancelled");
@@ -56,9 +58,21 @@ public class TaskSetManager {
     }
 
     public void taskFinish(String taskId, TaskStatus taskStatus, Serializable result, String logFileName, String reason) {
-        TaskContext taskContext = taskContexts.remove(taskId);
+        TaskContext taskContext;
+        synchronized (this) {
+            taskContext = taskContexts.remove(taskId);
+        }
         if (Objects.nonNull(taskContext) && taskContext.isNotFinish()) {
             taskContext.finish(taskId, taskStatus, result, logFileName, reason);
+            tryTermination();
+        }
+    }
+
+    private void tryTermination() {
+        if (isAllFinish()) {
+            synchronized (this) {
+                notifyAll();
+            }
         }
     }
 }
