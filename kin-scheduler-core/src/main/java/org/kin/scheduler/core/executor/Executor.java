@@ -130,6 +130,11 @@ public class Executor extends AbstractService implements ExecutorBackend {
     private TaskSubmitResult execTask0(TaskDescription taskDescription, Logger log) {
         if (this.isInState(State.STARTED)) {
             log.info("execing task({})", taskDescription);
+
+            if (StringUtils.isBlank(taskDescription.getLogFileName())) {
+                //task 默认输出目录和log文件名为taskid
+                taskDescription.setLogFileName(taskDescription.getTaskId());
+            }
             try {
                 TaskRunner newTaskRunner = new TaskRunner(taskDescription);
                 List<TaskRunner> exTaskRunners = taskId2TaskRunners.get(taskDescription.getTaskId());
@@ -172,7 +177,9 @@ public class Executor extends AbstractService implements ExecutorBackend {
                     }
                 }
 
-                return TaskSubmitResult.success(taskDescription.getTaskId(), LogUtils.getTaskLogFileAbsoluteName(logPath, taskDescription.getJobId(), taskDescription.getTaskId(), taskDescription.getLogFileName()));
+                String taskLogName = LogUtils.getTaskLogFileAbsoluteName(logPath, taskDescription.getJobId(), taskDescription.getTaskId(), taskDescription.getLogFileName());
+                String taskOutputName = LogUtils.getTaskOutputFileAbsoluteName(logPath, taskDescription.getJobId(), taskDescription.getTaskId(), taskDescription.getLogFileName());
+                return TaskSubmitResult.success(taskDescription.getTaskId(), taskLogName, taskOutputName);
             } catch (Exception e) {
                 cleanFinishedTask(taskDescription);
                 return TaskSubmitResult.failure(taskDescription.getTaskId(), ExceptionUtils.getExceptionDesc(e));
@@ -352,9 +359,8 @@ public class Executor extends AbstractService implements ExecutorBackend {
         private void initLogger() {
             //更新上下文日志
             Loggers.updateLogger(taskLoggerContext.getTaskLogger(logPath, taskDescription.getJobId(), taskDescription.getTaskId(), taskDescription.getLogFileName()));
-            Loggers.updateLoggerFile(LogUtils.getTaskLogFileAbsoluteName(logPath, taskDescription.getJobId(), taskDescription.getTaskId(), taskDescription.getLogFileName()));
+            Loggers.updateTaskOutputFileName(LogUtils.getTaskOutputFileAbsoluteName(logPath, taskDescription.getJobId(), taskDescription.getTaskId(), taskDescription.getLogFileName()));
         }
-
 
         private TaskStatusChanged runTask() throws Exception {
             //获取task handler

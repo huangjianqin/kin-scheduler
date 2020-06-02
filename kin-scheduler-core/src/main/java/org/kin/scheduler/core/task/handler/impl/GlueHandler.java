@@ -46,7 +46,7 @@ public class GlueHandler implements TaskHandler<GlueParam, GlueResult> {
 
                     return (GlueResult) taskHandler.exec(taskDescription);
                 } else {
-                    int exitValue = CommandUtils.execCommand(glueParam.getCommand(), Loggers.getLoggerFileName());
+                    int exitValue = CommandUtils.execCommand(glueParam.getCommand(), Loggers.getTaskOutputFileName());
                     if (exitValue == 0) {
                         return GlueResult.success();
                     }

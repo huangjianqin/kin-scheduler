@@ -133,6 +133,7 @@ public class TaskTrigger {
                 triggerMsg.append("<br>Task执行超时限制: ").append(taskLog.getExecTimeout());
                 triggerMsg.append("<br>Task当前尝试执行次数: ").append(taskLog.getRetryTimes());
                 triggerMsg.append("<br>Task log地址: ").append(taskLog.getLogPath());
+                triggerMsg.append("<br>Task output地址: ").append(taskLog.getOutputPath());
 
                 StringBuffer handlerMsg = new StringBuffer();
                 handlerMsg.append("<br>任务执行完成时间: ").append(TimeUtils.formatDateTime(taskLog.getHandleTime()));

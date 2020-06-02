@@ -60,7 +60,7 @@ public class ScriptHandler implements TaskHandler<ScriptParam, GlueResult> {
 
                 log.info("workingDirectory >>> {}", workingDirectory);
 
-                int exitValue = CommandUtils.execCommand(scriptParam.getCommand(), Loggers.getLoggerFileName(), workingDirectory);
+                int exitValue = CommandUtils.execCommand(scriptParam.getCommand(), Loggers.getTaskOutputFileName(), workingDirectory);
                 if (exitValue == 0) {
                     return GlueResult.success();
                 }

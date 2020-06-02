@@ -13,10 +13,10 @@ public class Loggers {
     public static Logger log;
 
     //task相关
-    //每个task执行线程绑定的logger
+    //task执行线程绑定的logger
     private static ThreadLocal<Logger> threadLocalLogger = new ThreadLocal<>();
-    //每个task执行线程绑定的logger file
-    private static ThreadLocal<String> threadLocalLoggerFile = new ThreadLocal<>();
+    //task输出内容
+    private static ThreadLocal<String> threadLocalTaskOutputFile = new ThreadLocal<>();
 
     //-----------------------------------------------------------------------------------------------------------------
     public static Logger master(String logPath, String masterId) {
@@ -52,12 +52,12 @@ public class Loggers {
         return threadLocalLogger.get();
     }
 
-    public static void updateLoggerFile(String logFile) {
-        threadLocalLoggerFile.set(logFile);
+    public static void updateTaskOutputFileName(String logFile) {
+        threadLocalTaskOutputFile.set(logFile);
     }
 
-    public static String getLoggerFileName() {
-        return threadLocalLoggerFile.get();
+    public static String getTaskOutputFileName() {
+        return threadLocalTaskOutputFile.get();
     }
 
     public static void removeAll() {
@@ -66,6 +66,6 @@ public class Loggers {
             logger.detachAndStopAllAppenders();
         }
         threadLocalLogger.remove();
-        threadLocalLoggerFile.remove();
+        threadLocalTaskOutputFile.remove();
     }
 }

@@ -33,6 +33,8 @@ public class TaskLog {
     private int handleCode;
     //task执行日志
     private String logPath;
+    //task输出文件
+    private String outputPath;
 
     public TaskInfoDTO convert() {
         return new TaskInfoDTO(jobId, taskId, desc, retryTimes + 1, retryTimesLimit, execTimeout, type, execStrategy, routeStrategy, param);
@@ -172,5 +174,13 @@ public class TaskLog {
 
     public void setLogPath(String logPath) {
         this.logPath = logPath;
+    }
+
+    public String getOutputPath() {
+        return outputPath;
+    }
+
+    public void setOutputPath(String outputPath) {
+        this.outputPath = outputPath;
     }
 }

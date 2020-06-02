@@ -54,6 +54,9 @@ public class LogUtils {
         return getLogFileName(basePath, workerId.concat(File.separator).concat(executorId));
     }
 
+    /**
+     * @return task log name
+     */
     public static String getTaskLogFileName(String basePath, String jobId, String taskId, String logFileName) {
         String fileName = "jobs".concat(File.separator).concat(jobId).concat(File.separator).concat(taskId);
         if (StringUtils.isNotBlank(logFileName)) {
@@ -68,6 +71,22 @@ public class LogUtils {
     }
 
     /**
+     * @return task output name
+     */
+    public static String getTaskOutputFileName(String basePath, String jobId, String taskId, String logFileName) {
+        String fileName = "jobs".concat(File.separator).concat(jobId).concat(File.separator).concat(taskId);
+        if (StringUtils.isNotBlank(logFileName)) {
+            fileName = fileName.concat(File.separator).concat(logFileName);
+        }
+        return getFileName(basePath, fileName, ".out");
+    }
+
+    public static String getTaskOutputFileAbsoluteName(String basePath, String jobId, String taskId, String logFileName) {
+        File logFile = new File(getTaskOutputFileName(basePath, jobId, taskId, logFileName));
+        return logFile.getAbsolutePath();
+    }
+
+    /**
      * 获取log文件路径
      *
      * @param basePath log目录
@@ -75,7 +94,19 @@ public class LogUtils {
      * @return log文件路径
      */
     public static String getLogFileName(String basePath, String file) {
-        return basePath.concat(File.separator).concat(DATE_FORMAT.format(new Date())).concat(File.separator).concat(file).concat(".log");
+        return getFileName(basePath, file, ".log");
+    }
+
+    /**
+     * 获取文件路径
+     *
+     * @param basePath 基础目录
+     * @param file     自定义文件路径
+     * @param suffix   后缀
+     * @return 文件路径
+     */
+    public static String getFileName(String basePath, String file, String suffix) {
+        return basePath.concat(File.separator).concat(DATE_FORMAT.format(new Date())).concat(File.separator).concat(file).concat(suffix);
     }
 
     public static Logger getLogger(String loggerName, String appenderName, String file) {

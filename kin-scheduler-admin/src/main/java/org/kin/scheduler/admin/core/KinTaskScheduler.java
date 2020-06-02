@@ -73,6 +73,7 @@ public class KinTaskScheduler extends TaskScheduler<TaskInfoDTO> {
                 //future不为null就是成功调度了
                 taskLog.setTriggerCode(Constants.SUCCESS_CODE);
                 taskLog.setLogPath(future.getTaskSubmitResult().getLogPath());
+                taskLog.setOutputPath(future.getTaskSubmitResult().getOutputPath());
             } else {
                 taskLog.setTriggerCode(Constants.FAIL_CODE);
             }
