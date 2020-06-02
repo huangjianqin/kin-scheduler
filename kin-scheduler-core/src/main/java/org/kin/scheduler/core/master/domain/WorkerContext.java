@@ -7,6 +7,7 @@ import org.kin.scheduler.core.domain.WorkerResource;
 import org.kin.scheduler.core.master.transport.ExecutorLaunchInfo;
 import org.kin.scheduler.core.worker.WorkerBackend;
 import org.kin.scheduler.core.worker.transport.ExecutorLaunchResult;
+import org.kin.scheduler.core.worker.transport.TaskExecFileContent;
 import org.kin.scheduler.core.worker.transport.WorkerInfo;
 
 import java.util.Objects;
@@ -52,6 +53,12 @@ public class WorkerContext extends AbstractService implements WorkerBackend {
     public ExecutorLaunchResult launchExecutor(ExecutorLaunchInfo launchInfo) {
         return workerBackend.launchExecutor(launchInfo);
     }
+
+    @Override
+    public TaskExecFileContent readFile(String path, int fromLineNum) {
+        return workerBackend.readFile(path, fromLineNum);
+    }
+
 
     public WorkerInfo getWorkerInfo() {
         return workerInfo;

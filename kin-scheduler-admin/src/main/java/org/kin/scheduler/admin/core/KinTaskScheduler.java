@@ -9,7 +9,6 @@ import org.kin.scheduler.core.driver.route.RouteStrategy;
 import org.kin.scheduler.core.driver.scheduler.TaskContext;
 import org.kin.scheduler.core.driver.scheduler.TaskExecFuture;
 import org.kin.scheduler.core.driver.scheduler.TaskScheduler;
-import org.kin.scheduler.core.executor.transport.TaskExecLog;
 import org.kin.scheduler.core.task.TaskDescription;
 import org.kin.scheduler.core.task.TaskExecStrategy;
 import org.kin.scheduler.core.worker.ExecutorContext;
@@ -69,6 +68,7 @@ public class KinTaskScheduler extends TaskScheduler<TaskInfoDTO> {
             TaskExecFuture<R> future = submitTask(selected, taskContext);
 
             taskLog.setExecutorAddress(selected.getExecutorAddress());
+            taskLog.setWorkerId(selected.getWorkerId());
             if (Objects.nonNull(future)) {
                 //future不为null就是成功调度了
                 taskLog.setTriggerCode(Constants.SUCCESS_CODE);
@@ -83,23 +83,6 @@ public class KinTaskScheduler extends TaskScheduler<TaskInfoDTO> {
         }
         //任务提交失败
         TaskTrigger.instance().submitTaskFail(taskLog);
-        return null;
-    }
-
-    public TaskExecLog readLog(int logId, int fromLineNum) {
-        TaskLog taskLog = KinSchedulerContext.instance().getTaskLogDao().load(logId);
-        ExecutorContext target = null;
-        for (ExecutorContext executorContext : getAvailableExecutors()) {
-            if (executorContext.getExecutorAddress().equals(taskLog.getExecutorAddress())) {
-                target = executorContext;
-                break;
-            }
-        }
-
-        if (Objects.nonNull(target)) {
-            return target.readLog(taskLog.getLogPath(), fromLineNum);
-        }
-
         return null;
     }
 }

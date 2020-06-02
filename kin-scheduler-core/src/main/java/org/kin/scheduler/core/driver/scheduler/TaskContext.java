@@ -1,7 +1,7 @@
 package org.kin.scheduler.core.driver.scheduler;
 
 import org.kin.framework.utils.CollectionUtils;
-import org.kin.scheduler.core.executor.ExecutorBackend;
+import org.kin.scheduler.core.executor.transport.TaskSubmitResult;
 import org.kin.scheduler.core.task.TaskDescription;
 import org.kin.scheduler.core.task.domain.TaskStatus;
 
@@ -27,27 +27,35 @@ public class TaskContext {
      * 最后一个item表示正执行该task的ExecutorId
      */
     private List<String> execedExecutorIds = new ArrayList<>();
-    /**
-     * 正在执行该task的executor
-     */
-    private ExecutorBackend executorBackend;
+    /** 正在执行该task的executor id */
+    private String runningExecutorId;
+    /** 正在执行该task的executor所属的worker id */
+    private String workerId;
+    /** 该task的log路径 */
+    private String logPath;
+    /** 该task的output路径 */
+    private String outputPath;
+
     private TaskExecFuture future;
 
     public TaskContext(TaskDescription taskDescription) {
         this.taskDescription = taskDescription;
     }
 
-    public void submitTask(TaskExecFuture future) {
+    public void submitTask(TaskSubmitResult submitResult, TaskExecFuture future) {
+        this.logPath = submitResult.getLogPath();
+        this.outputPath = submitResult.getOutputPath();
         this.future = future;
     }
 
-    public void exec(String executorId, ExecutorBackend executorBackend) {
-        execedExecutorIds.add(executorId);
-        this.executorBackend = executorBackend;
+    public void preExecute(String workerId, String runningExecutorId) {
+        this.workerId = workerId;
+        execedExecutorIds.add(runningExecutorId);
+        this.runningExecutorId = runningExecutorId;
     }
 
     public void execFail() {
-        this.executorBackend = null;
+        this.runningExecutorId = null;
     }
 
     public boolean isFinish() {
@@ -101,7 +109,19 @@ public class TaskContext {
         return future;
     }
 
-    public ExecutorBackend getExecutorBackend() {
-        return executorBackend;
+    public String getRunningExecutorId() {
+        return runningExecutorId;
+    }
+
+    public String getWorkerId() {
+        return workerId;
+    }
+
+    public String getLogPath() {
+        return logPath;
+    }
+
+    public String getOutputPath() {
+        return outputPath;
     }
 }

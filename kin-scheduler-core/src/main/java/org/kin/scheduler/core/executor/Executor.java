@@ -17,7 +17,6 @@ import org.kin.scheduler.core.driver.transport.ExecutorRegisterInfo;
 import org.kin.scheduler.core.driver.transport.TaskStatusChanged;
 import org.kin.scheduler.core.executor.domain.ExecutorState;
 import org.kin.scheduler.core.executor.transport.ExecutorStateChanged;
-import org.kin.scheduler.core.executor.transport.TaskExecLog;
 import org.kin.scheduler.core.executor.transport.TaskSubmitResult;
 import org.kin.scheduler.core.log.LogUtils;
 import org.kin.scheduler.core.log.Loggers;
@@ -28,8 +27,6 @@ import org.kin.scheduler.core.task.handler.TaskHandlers;
 import org.kin.scheduler.core.transport.RPCResult;
 import org.kin.scheduler.core.worker.ExecutorWorkerBackend;
 
-import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.*;
@@ -123,7 +120,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
         super.start();
         taskLoggerContext.start();
         executorWorkerBackend.executorStateChanged(ExecutorStateChanged.running(appName, executorId));
-        schedulerBackend.registerExecutor(new ExecutorRegisterInfo(executorId, NetUtils.getIpPort(backendHost, backendPort)));
+        schedulerBackend.registerExecutor(new ExecutorRegisterInfo(workerId, executorId, NetUtils.getIpPort(backendHost, backendPort)));
         log.info("executor({}) started", executorId);
     }
 
@@ -215,33 +212,6 @@ public class Executor extends AbstractService implements ExecutorBackend {
         log.info("task({}) cancel >>>>", taskId);
         RPCResult result = cancelTask0(taskId);
         return result;
-    }
-
-    @Override
-    public TaskExecLog readLog(String logPath, int fromLineNum) {
-        if (StringUtils.isBlank(logPath)) {
-            return new TaskExecLog(fromLineNum, 0, "readLog fail, logFile not found", true);
-        }
-
-        File logFile = new File(logPath);
-        if (!logFile.exists()) {
-            return new TaskExecLog(fromLineNum, 0, "readLog fail, logFile not found", true);
-        }
-
-        StringBuffer logContentBuffer = new StringBuffer();
-        int toLineNum = 0;
-        try (LineNumberReader reader = new LineNumberReader(new InputStreamReader(new FileInputStream(logFile), StandardCharsets.UTF_8))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                toLineNum = reader.getLineNumber();
-                if (toLineNum >= fromLineNum) {
-                    logContentBuffer.append(line).append("\n");
-                }
-            }
-        } catch (IOException e) {
-            log.error("read log file encounter error >>>>", e);
-        }
-        return new TaskExecLog(fromLineNum, toLineNum, logContentBuffer.toString(), fromLineNum == toLineNum);
     }
 
     @Override

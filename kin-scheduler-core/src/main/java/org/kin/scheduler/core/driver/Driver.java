@@ -8,10 +8,12 @@ import org.kin.kinrpc.config.References;
 import org.kin.kinrpc.config.ServiceConfig;
 import org.kin.kinrpc.config.Services;
 import org.kin.scheduler.core.driver.exception.RegisterApplicationFailureException;
+import org.kin.scheduler.core.driver.scheduler.TaskContext;
 import org.kin.scheduler.core.driver.scheduler.TaskScheduler;
 import org.kin.scheduler.core.driver.transport.ApplicationRegisterInfo;
 import org.kin.scheduler.core.master.DriverMasterBackend;
 import org.kin.scheduler.core.master.transport.ApplicationRegisterResponse;
+import org.kin.scheduler.core.worker.transport.TaskExecFileContent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -122,5 +124,37 @@ public abstract class Driver extends AbstractService implements MasterDriverBack
 
     public final void awaitTermination() {
         taskScheduler.awaitTermination();
+    }
+
+    /**
+     * 向master请求某worker上的log文件
+     *
+     * @param taskId      task id
+     * @param fromLineNum 开始的行数
+     * @return log info
+     */
+    public final TaskExecFileContent readLog(String taskId, int fromLineNum) {
+        TaskContext taskContext = taskScheduler.getTaskInfo(taskId);
+        if (Objects.isNull(taskContext)) {
+            throw new IllegalStateException(String.format("unknown task(taskid='%s')", taskId));
+        }
+
+        return driverMasterBackend.readFile(taskContext.getWorkerId(), taskContext.getLogPath(), fromLineNum);
+    }
+
+    /**
+     * 向master请求某worker上的output文件
+     *
+     * @param taskId      task id
+     * @param fromLineNum 开始的行数
+     * @return output info
+     */
+    public final TaskExecFileContent readOutput(String taskId, int fromLineNum) {
+        TaskContext taskContext = taskScheduler.getTaskInfo(taskId);
+        if (Objects.isNull(taskContext)) {
+            throw new IllegalStateException(String.format("unknown task(taskid='%s')", taskId));
+        }
+
+        return driverMasterBackend.readFile(taskContext.getWorkerId(), taskContext.getOutputPath(), fromLineNum);
     }
 }

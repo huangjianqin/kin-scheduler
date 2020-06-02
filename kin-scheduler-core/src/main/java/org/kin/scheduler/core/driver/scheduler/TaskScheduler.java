@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -35,7 +36,7 @@ public abstract class TaskScheduler<T> extends AbstractService implements Schedu
     /** SchedulerBackend服务配置 */
     private ServiceConfig schedulerBackendServiceConfig;
     /** 已注册executors */
-    private volatile Map<String, ExecutorContext> executorContexts;
+    private volatile Map<String, ExecutorContext> executors;
     /** application配置 */
     protected Application app;
     /** task集合 */
@@ -50,7 +51,7 @@ public abstract class TaskScheduler<T> extends AbstractService implements Schedu
     @Override
     public void init() {
         super.init();
-        executorContexts = new HashMap<>();
+        executors = Collections.emptyMap();
         taskSetManager = new TaskSetManager();
 
         schedulerBackendServiceConfig = Services.service(this, SchedulerBackend.class)
@@ -74,16 +75,17 @@ public abstract class TaskScheduler<T> extends AbstractService implements Schedu
         super.stop();
         //取消所有未执行完的task
         for (TaskContext taskContext : taskSetManager.getAllUnFinishTask()) {
-            ExecutorBackend executorBackend = taskContext.getExecutorBackend();
-            if (Objects.nonNull(executorBackend)) {
+            String runningExecutorId = taskContext.getRunningExecutorId();
+            ExecutorContext runningExecutorContext = executors.get(runningExecutorId);
+            if (Objects.nonNull(runningExecutorContext)) {
                 try {
-                    executorBackend.cancelTask(taskContext.getTaskDescription().getTaskId());
+                    runningExecutorContext.cancelTask(taskContext.getTaskDescription().getTaskId());
                 } catch (Exception e) {
                     log.error("", e);
                 }
             }
         }
-        for (ExecutorContext executorContext : executorContexts.values()) {
+        for (ExecutorContext executorContext : executors.values()) {
             executorContext.destroy();
         }
         schedulerBackendServiceConfig.disable();
@@ -102,12 +104,12 @@ public abstract class TaskScheduler<T> extends AbstractService implements Schedu
             }
         }
         TaskDescription taskDescription = taskContext.getTaskDescription();
-        taskContext.exec(ec.getExecutorId(), ec);
+        taskContext.preExecute(ec.getWorkerId(), ec.getExecutorId());
         TaskSubmitResult submitResult = ec.execTask(taskDescription);
         if (Objects.nonNull(submitResult)) {
             if (submitResult.isSuccess()) {
                 TaskExecFuture future = new TaskExecFuture(submitResult, taskSetManager, taskContext);
-                taskContext.submitTask(future);
+                taskContext.submitTask(submitResult, future);
                 log.info("submitTask >>>> {}", taskContext.getTaskDescription());
                 return future;
             } else {
@@ -119,14 +121,18 @@ public abstract class TaskScheduler<T> extends AbstractService implements Schedu
 
     @Override
     public RPCResult registerExecutor(ExecutorRegisterInfo executorRegisterInfo) {
+        String workerId = executorRegisterInfo.getWorkerId();
         String executorId = executorRegisterInfo.getExecutorId();
         if (isInState(State.INITED) || isInState(State.STARTED)) {
-            ExecutorContext executorContext = new ExecutorContext(executorId);
+            ExecutorContext executorContext = new ExecutorContext(workerId, executorId);
             ReferenceConfig<ExecutorBackend> executorBackendReferenceConfig = References.reference(ExecutorBackend.class)
                     .appName(getName().concat("-").concat(executorId))
                     .urls(executorRegisterInfo.getAddress());
             executorContext.start(executorBackendReferenceConfig);
-            executorContexts.put(executorId, executorContext);
+
+            Map<String, ExecutorContext> tmpExecutors = new HashMap<>(this.executors);
+            tmpExecutors.put(executorId, executorContext);
+            executors = tmpExecutors;
             log.info("executor('{}') registered", executorId);
             if (waiters > 0) {
                 //等待所有executor都注册完才开始调度task
@@ -174,14 +180,14 @@ public abstract class TaskScheduler<T> extends AbstractService implements Schedu
     public final void executorStatusChange(List<String> unAvailableExecutorIds) {
         if (isInState(State.INITED) || isInState(State.STARTED)) {
             //只管关闭无用Executor, 新Executor等待master分配好后, 新Executor会重新注册
-            Map<String, ExecutorContext> executorContexts = new HashMap<>(this.executorContexts);
+            Map<String, ExecutorContext> executorContexts = new HashMap<>(this.executors);
             for (String unAvailableExecutorId : unAvailableExecutorIds) {
                 ExecutorContext executorContext = executorContexts.remove(unAvailableExecutorId);
                 if (Objects.nonNull(executorContext)) {
                     executorContext.destroy();
                 }
             }
-            this.executorContexts = executorContexts;
+            this.executors = executorContexts;
         }
     }
 
@@ -197,9 +203,9 @@ public abstract class TaskScheduler<T> extends AbstractService implements Schedu
      * @return 可用Executor
      */
     protected final Collection<ExecutorContext> getAvailableExecutors() {
-        if (executorContexts.size() <= 0) {
+        if (executors.size() <= 0) {
             synchronized (this) {
-                if (executorContexts.size() <= 0) {
+                if (executors.size() <= 0) {
                     incrWaiter();
                     try {
                         wait();
@@ -211,7 +217,7 @@ public abstract class TaskScheduler<T> extends AbstractService implements Schedu
                 }
             }
         }
-        return executorContexts.values();
+        return executors.values();
     }
 
     /**
@@ -245,4 +251,84 @@ public abstract class TaskScheduler<T> extends AbstractService implements Schedu
             }
         }
     }
+
+    /**
+     * @return task上下文信息
+     */
+    public TaskContext getTaskInfo(String taskId) {
+        return taskSetManager.getTaskInfo(taskId);
+    }
+
+    protected Map<String, ExecutorContext> getExecutors() {
+        return executors;
+    }
+
+    //-----------------------------------------------------------------------------------------------------------------
+    public class TaskSetManager {
+        private Map<String, TaskContext> taskContexts = new ConcurrentHashMap<>();
+
+        public List<TaskContext> init(Collection<TaskDescription> taskDescriptions) {
+            List<TaskContext> taskContexts = new ArrayList<>();
+            synchronized (this) {
+                for (TaskDescription taskDescription : taskDescriptions) {
+                    TaskContext taskContext = new TaskContext(taskDescription);
+                    this.taskContexts.put(taskDescription.getTaskId(), taskContext);
+
+                    taskContexts.add(taskContext);
+                }
+            }
+
+            return taskContexts;
+        }
+
+        public boolean isAllFinish() {
+            return taskContexts.values().stream().allMatch(TaskContext::isFinish);
+        }
+
+        public TaskContext getTaskInfo(String taskId) {
+            return taskContexts.get(taskId);
+        }
+
+        public boolean hasTask(String taskId) {
+            return taskContexts.containsKey(taskId);
+        }
+
+        public List<TaskContext> getAllUnFinishTask() {
+            return taskContexts.values().stream().filter(TaskContext::isNotFinish).collect(Collectors.toList());
+        }
+
+        public boolean cancelTask(String taskId) {
+            TaskContext taskContext = taskContexts.get(taskId);
+            if (Objects.nonNull(taskContext) && taskContext.isNotFinish()) {
+                ExecutorContext runningExecutorContext = executors.get(taskContext.getRunningExecutorId());
+                if (Objects.nonNull(runningExecutorContext)) {
+                    RPCResult result = runningExecutorContext.cancelTask(taskContext.getTaskDescription().getTaskId());
+                    taskFinish(taskId, TaskStatus.CANCELLED, null, "", "task cancelled");
+                    return result.isSuccess();
+                }
+            }
+
+            return false;
+        }
+
+        public void taskFinish(String taskId, TaskStatus taskStatus, Serializable result, String logFileName, String reason) {
+            TaskContext taskContext;
+            synchronized (this) {
+                taskContext = taskContexts.remove(taskId);
+            }
+            if (Objects.nonNull(taskContext) && taskContext.isNotFinish()) {
+                taskContext.finish(taskId, taskStatus, result, logFileName, reason);
+                tryTermination();
+            }
+        }
+
+        private void tryTermination() {
+            if (isAllFinish()) {
+                synchronized (this) {
+                    notifyAll();
+                }
+            }
+        }
+    }
+
 }

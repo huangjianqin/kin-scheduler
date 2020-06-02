@@ -7,15 +7,25 @@ import java.io.Serializable;
  * @date 2020-03-09
  */
 public class ExecutorRegisterInfo implements Serializable {
+    private String workerId;
     private String executorId;
     private String address;
 
     public ExecutorRegisterInfo() {
     }
 
-    public ExecutorRegisterInfo(String executorId, String address) {
+    public ExecutorRegisterInfo(String workerId, String executorId, String address) {
+        this.workerId = workerId;
         this.executorId = executorId;
         this.address = address;
+    }
+
+    public String getWorkerId() {
+        return workerId;
+    }
+
+    public void setWorkerId(String workerId) {
+        this.workerId = workerId;
     }
 
     public String getExecutorId() {

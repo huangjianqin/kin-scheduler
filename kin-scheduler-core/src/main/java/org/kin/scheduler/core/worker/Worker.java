@@ -7,6 +7,7 @@ import org.kin.framework.service.AbstractService;
 import org.kin.framework.utils.CommandUtils;
 import org.kin.framework.utils.ExceptionUtils;
 import org.kin.framework.utils.NetUtils;
+import org.kin.framework.utils.StringUtils;
 import org.kin.kinrpc.config.ReferenceConfig;
 import org.kin.kinrpc.config.References;
 import org.kin.kinrpc.config.ServiceConfig;
@@ -20,11 +21,10 @@ import org.kin.scheduler.core.master.MasterBackend;
 import org.kin.scheduler.core.master.transport.ExecutorLaunchInfo;
 import org.kin.scheduler.core.master.transport.WorkerHeartbeatResp;
 import org.kin.scheduler.core.master.transport.WorkerRegisterResult;
-import org.kin.scheduler.core.worker.transport.ExecutorLaunchResult;
-import org.kin.scheduler.core.worker.transport.WorkerHeartbeat;
-import org.kin.scheduler.core.worker.transport.WorkerInfo;
-import org.kin.scheduler.core.worker.transport.WorkerRegisterInfo;
+import org.kin.scheduler.core.worker.transport.*;
 
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -185,6 +185,34 @@ public class Worker extends AbstractService implements WorkerBackend, ExecutorWo
         }
 
         return result;
+    }
+
+    @Override
+    public TaskExecFileContent readFile(String path, int fromLineNum) {
+        if (StringUtils.isBlank(path)) {
+            return TaskExecFileContent.fail(workerId, path, fromLineNum, "path is blank");
+        }
+
+        File logFile = new File(path);
+        if (!logFile.exists()) {
+            return TaskExecFileContent.fail(workerId, path, fromLineNum, "read file fail, file not found");
+        }
+
+        StringBuffer logContentBuffer = new StringBuffer();
+        int toLineNum = 0;
+        try (LineNumberReader reader = new LineNumberReader(new InputStreamReader(new FileInputStream(logFile), StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                toLineNum = reader.getLineNumber();
+                if (toLineNum >= fromLineNum) {
+                    logContentBuffer.append(line).append("\n");
+                }
+            }
+        } catch (IOException e) {
+            log.error("read log file encounter error >>>>", e);
+            return TaskExecFileContent.fail(workerId, path, fromLineNum, ExceptionUtils.getExceptionDesc(e));
+        }
+        return TaskExecFileContent.success(workerId, path, fromLineNum, toLineNum, logContentBuffer.toString(), fromLineNum == toLineNum);
     }
 
     private ExecutorLaunchResult launchExecutor0(ExecutorLaunchInfo launchInfo) {

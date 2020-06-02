@@ -2,6 +2,7 @@ package org.kin.scheduler.core.master;
 
 import org.kin.scheduler.core.driver.transport.ApplicationRegisterInfo;
 import org.kin.scheduler.core.master.transport.ApplicationRegisterResponse;
+import org.kin.scheduler.core.worker.transport.TaskExecFileContent;
 
 /**
  * @author huangjianqin
@@ -31,4 +32,13 @@ public interface DriverMasterBackend {
      */
     void applicationEnd(String appName);
 
+    /**
+     * 从某worker上的读取文件
+     *
+     * @param workerId    workerId
+     * @param path        文件路径
+     * @param fromLineNum 开始行数
+     * @return 文件内容
+     */
+    TaskExecFileContent readFile(String workerId, String path, int fromLineNum);
 }

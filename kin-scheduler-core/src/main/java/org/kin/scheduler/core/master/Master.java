@@ -23,10 +23,7 @@ import org.kin.scheduler.core.master.transport.ApplicationRegisterResponse;
 import org.kin.scheduler.core.master.transport.ExecutorLaunchInfo;
 import org.kin.scheduler.core.master.transport.WorkerHeartbeatResp;
 import org.kin.scheduler.core.master.transport.WorkerRegisterResult;
-import org.kin.scheduler.core.worker.transport.ExecutorLaunchResult;
-import org.kin.scheduler.core.worker.transport.WorkerHeartbeat;
-import org.kin.scheduler.core.worker.transport.WorkerInfo;
-import org.kin.scheduler.core.worker.transport.WorkerRegisterInfo;
+import org.kin.scheduler.core.worker.transport.*;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -351,6 +348,15 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
                 log.error("applicaton '{}' shutdown", applicationContext.getAppDesc());
             }
         }
+    }
+
+    @Override
+    public TaskExecFileContent readFile(String workerId, String path, int fromLineNum) {
+        WorkerContext worker = workers.get(workerId);
+        if (Objects.nonNull(worker)) {
+            return worker.readFile(path, fromLineNum);
+        }
+        return TaskExecFileContent.fail(workerId, path, fromLineNum, String.format("unknow worker(workerId='%s')", workerId));
     }
 
     private void checkHeartbeatTimeout() {

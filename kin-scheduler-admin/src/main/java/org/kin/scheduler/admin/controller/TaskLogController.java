@@ -11,7 +11,7 @@ import org.kin.scheduler.admin.domain.WebResponse;
 import org.kin.scheduler.admin.entity.TaskLog;
 import org.kin.scheduler.admin.entity.User;
 import org.kin.scheduler.admin.service.UserService;
-import org.kin.scheduler.core.executor.transport.TaskExecLog;
+import org.kin.scheduler.core.worker.transport.TaskExecFileContent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -130,16 +130,16 @@ public class TaskLogController {
     @RequestMapping("/logDetailCat")
     @ResponseBody
     @Permission
-    public WebResponse<TaskExecLog> logDetailCat(int logId, int fromLineNum) {
+    public WebResponse<TaskExecFileContent> logDetailCat(int logId, int fromLineNum) {
         try {
-            TaskExecLog taskExecLog = KinSchedulerContext.instance().getDriver().readLog(logId, fromLineNum);
+            TaskExecFileContent taskExecFileContent = KinSchedulerContext.instance().getDriver().readLog(logId, fromLineNum);
 
-            if (Objects.nonNull(taskExecLog) && StringUtils.isNotBlank(taskExecLog.getLogContent()) && !taskExecLog.isEnd()) {
+            if (Objects.nonNull(taskExecFileContent) && StringUtils.isNotBlank(taskExecFileContent.getContent()) && !taskExecFileContent.isEnd()) {
                 TaskLog taskLog = taskLogDao.load(logId);
                 if (taskLog.getHandleCode() > 0) {
-                    taskExecLog.setEnd(true);
+                    taskExecFileContent.setEnd(true);
                 }
-                return WebResponse.success(taskExecLog);
+                return WebResponse.success(taskExecFileContent);
             } else {
                 return WebResponse.fail("remote read log, get null");
             }

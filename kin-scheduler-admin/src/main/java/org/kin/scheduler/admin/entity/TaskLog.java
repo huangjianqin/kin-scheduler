@@ -15,6 +15,7 @@ public class TaskLog {
 
     private String desc;
     private String executorAddress;
+    private String workerId;
     private String type;
     private String param;
     private String execStrategy;
@@ -78,6 +79,14 @@ public class TaskLog {
 
     public void setExecutorAddress(String executorAddress) {
         this.executorAddress = executorAddress;
+    }
+
+    public String getWorkerId() {
+        return workerId;
+    }
+
+    public void setWorkerId(String workerId) {
+        this.workerId = workerId;
     }
 
     public String getType() {

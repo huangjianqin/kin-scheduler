@@ -60,4 +60,6 @@ public class TaskSubmitResult extends RPCResult {
     public void setOutputPath(String outputPath) {
         this.outputPath = outputPath;
     }
+
+
 }

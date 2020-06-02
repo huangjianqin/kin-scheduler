@@ -27,14 +27,14 @@ public class TaskExecFuture<R extends Serializable> implements Future<R> {
     }
 
     private TaskSubmitResult taskSubmitResult;
-    private TaskSetManager taskSetManager;
+    private TaskScheduler.TaskSetManager taskSetManager;
     private TaskContext taskContext;
     private volatile boolean done;
     private boolean canneled;
     private Collection<TaskExecCallback<R>> callbacks = new CopyOnWriteArrayList<>();
     private short waiters;
 
-    public TaskExecFuture(TaskSubmitResult taskSubmitResult, TaskSetManager taskSetManager, TaskContext taskContext) {
+    public TaskExecFuture(TaskSubmitResult taskSubmitResult, TaskScheduler.TaskSetManager taskSetManager, TaskContext taskContext) {
         this.taskSubmitResult = taskSubmitResult;
         this.taskSetManager = taskSetManager;
         this.taskContext = taskContext;

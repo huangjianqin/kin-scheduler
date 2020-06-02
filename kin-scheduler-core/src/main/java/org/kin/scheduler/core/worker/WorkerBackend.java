@@ -2,6 +2,7 @@ package org.kin.scheduler.core.worker;
 
 import org.kin.scheduler.core.master.transport.ExecutorLaunchInfo;
 import org.kin.scheduler.core.worker.transport.ExecutorLaunchResult;
+import org.kin.scheduler.core.worker.transport.TaskExecFileContent;
 
 /**
  * @author huangjianqin
@@ -21,4 +22,12 @@ public interface WorkerBackend {
      */
     ExecutorLaunchResult launchExecutor(ExecutorLaunchInfo launchInfo);
 
+    /**
+     * 从worker上的读取文件
+     *
+     * @param path        文件路径
+     * @param fromLineNum 开始行数
+     * @return 文件内容
+     */
+    TaskExecFileContent readFile(String path, int fromLineNum);
 }
