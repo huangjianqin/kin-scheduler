@@ -134,7 +134,10 @@ public class TaskLogController {
         try {
             TaskExecFileContent taskExecFileContent = KinSchedulerContext.instance().getDriver().readLog(logId, fromLineNum);
 
-            if (Objects.nonNull(taskExecFileContent) && StringUtils.isNotBlank(taskExecFileContent.getContent()) && !taskExecFileContent.isEnd()) {
+            if (Objects.nonNull(taskExecFileContent) && StringUtils.isNotBlank(taskExecFileContent.getContent())) {
+                if (taskExecFileContent.isEnd()) {
+                    return WebResponse.fail("log file reach end");
+                }
                 TaskLog taskLog = taskLogDao.load(logId);
                 if (taskLog.getHandleCode() > 0) {
                     taskExecFileContent.setEnd(true);
@@ -157,7 +160,10 @@ public class TaskLogController {
         try {
             TaskExecFileContent taskExecFileContent = KinSchedulerContext.instance().getDriver().readOutput(logId, fromLineNum);
 
-            if (Objects.nonNull(taskExecFileContent) && StringUtils.isNotBlank(taskExecFileContent.getContent()) && !taskExecFileContent.isEnd()) {
+            if (Objects.nonNull(taskExecFileContent) && StringUtils.isNotBlank(taskExecFileContent.getContent())) {
+                if (taskExecFileContent.isEnd()) {
+                    return WebResponse.fail("output file reach end");
+                }
                 TaskLog taskLog = taskLogDao.load(logId);
                 if (taskLog.getHandleCode() > 0) {
                     taskExecFileContent.setEnd(true);
