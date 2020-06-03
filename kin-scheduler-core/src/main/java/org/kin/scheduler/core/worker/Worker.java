@@ -8,6 +8,7 @@ import org.kin.framework.utils.CommandUtils;
 import org.kin.framework.utils.ExceptionUtils;
 import org.kin.framework.utils.NetUtils;
 import org.kin.framework.utils.StringUtils;
+import org.kin.kinrpc.cluster.exception.CannotFindInvokerException;
 import org.kin.kinrpc.config.ReferenceConfig;
 import org.kin.kinrpc.config.References;
 import org.kin.kinrpc.config.ServiceConfig;
@@ -136,6 +137,8 @@ public class Worker extends AbstractService implements WorkerBackend, ExecutorWo
         //取消注册
         try {
             masterBackend.unregisterWorker(workerId);
+        } catch (CannotFindInvokerException e) {
+
         } catch (Exception e) {
             log.error("", e);
         }

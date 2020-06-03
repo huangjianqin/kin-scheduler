@@ -3,6 +3,7 @@ package org.kin.scheduler.core.driver;
 import org.kin.framework.JvmCloseCleaner;
 import org.kin.framework.service.AbstractService;
 import org.kin.framework.utils.NetUtils;
+import org.kin.kinrpc.cluster.exception.CannotFindInvokerException;
 import org.kin.kinrpc.config.ReferenceConfig;
 import org.kin.kinrpc.config.References;
 import org.kin.kinrpc.config.ServiceConfig;
@@ -107,6 +108,8 @@ public abstract class Driver extends AbstractService implements MasterDriverBack
         if (Objects.nonNull(driverMasterBackend)) {
             try {
                 driverMasterBackend.applicationEnd(app.getAppName());
+            } catch (CannotFindInvokerException e) {
+
             } catch (Exception e) {
                 log.error("", e);
             }
@@ -139,7 +142,11 @@ public abstract class Driver extends AbstractService implements MasterDriverBack
             throw new IllegalStateException(String.format("unknown task(taskid='%s')", taskId));
         }
 
-        return driverMasterBackend.readFile(taskContext.getWorkerId(), taskContext.getLogPath(), fromLineNum);
+        return readLog(taskContext.getWorkerId(), taskContext.getLogPath(), fromLineNum);
+    }
+
+    public final TaskExecFileContent readLog(String workerId, String logPath, int fromLineNum) {
+        return driverMasterBackend.readFile(workerId, logPath, fromLineNum);
     }
 
     /**
@@ -155,6 +162,11 @@ public abstract class Driver extends AbstractService implements MasterDriverBack
             throw new IllegalStateException(String.format("unknown task(taskid='%s')", taskId));
         }
 
-        return driverMasterBackend.readFile(taskContext.getWorkerId(), taskContext.getOutputPath(), fromLineNum);
+        return readOutput(taskContext.getWorkerId(), taskContext.getOutputPath(), fromLineNum);
     }
+
+    public final TaskExecFileContent readOutput(String workerId, String outputPath, int fromLineNum) {
+        return driverMasterBackend.readFile(workerId, outputPath, fromLineNum);
+    }
+
 }

@@ -108,7 +108,7 @@ public abstract class TaskScheduler<T> extends AbstractService implements Schedu
         TaskSubmitResult submitResult = ec.execTask(taskDescription);
         if (Objects.nonNull(submitResult)) {
             if (submitResult.isSuccess()) {
-                TaskExecFuture future = new TaskExecFuture(submitResult, taskSetManager, taskContext);
+                TaskExecFuture future = new TaskExecFuture(submitResult, this);
                 taskContext.submitTask(submitResult, future);
                 log.info("submitTask >>>> {}", taskContext.getTaskDescription());
                 return future;
@@ -164,7 +164,7 @@ public abstract class TaskScheduler<T> extends AbstractService implements Schedu
                     String reason = taskStatusChanged.getReason();
 
                     //TODO 考虑重试
-                    taskSetManager.taskFinish(taskId, state, execResult, taskStatusChanged.getLogFileName(), reason);
+                    taskSetManager.taskFinish(taskId, state, execResult, reason);
                     log.info("Task(taskId={}) finished, state: {}, reason: {}, result >>>> {}", taskId, state, reason, execResult);
                 }
             } else {
@@ -303,7 +303,7 @@ public abstract class TaskScheduler<T> extends AbstractService implements Schedu
                 ExecutorContext runningExecutorContext = executors.get(taskContext.getRunningExecutorId());
                 if (Objects.nonNull(runningExecutorContext)) {
                     RPCResult result = runningExecutorContext.cancelTask(taskContext.getTaskDescription().getTaskId());
-                    taskFinish(taskId, TaskStatus.CANCELLED, null, "", "task cancelled");
+                    taskFinish(taskId, TaskStatus.CANCELLED, null, "task cancelled");
                     return result.isSuccess();
                 }
             }
@@ -311,13 +311,18 @@ public abstract class TaskScheduler<T> extends AbstractService implements Schedu
             return false;
         }
 
-        public void taskFinish(String taskId, TaskStatus taskStatus, Serializable result, String logFileName, String reason) {
+        public void taskFinish(String taskId, TaskStatus taskStatus, Serializable result, String reason) {
             TaskContext taskContext;
-            synchronized (this) {
-                taskContext = taskContexts.remove(taskId);
+            if (app.isKeepResult()) {
+                taskContext = taskContexts.get(taskId);
+            } else {
+                synchronized (this) {
+                    taskContext = taskContexts.remove(taskId);
+                }
             }
+
             if (Objects.nonNull(taskContext) && taskContext.isNotFinish()) {
-                taskContext.finish(taskId, taskStatus, result, logFileName, reason);
+                taskContext.finish(taskId, taskStatus, result, reason);
                 tryTermination();
             }
         }

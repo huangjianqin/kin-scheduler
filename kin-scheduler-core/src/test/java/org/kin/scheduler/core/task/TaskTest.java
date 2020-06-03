@@ -2,8 +2,11 @@ package org.kin.scheduler.core.task;
 
 import org.kin.scheduler.core.driver.impl.SimpleApplication;
 import org.kin.scheduler.core.driver.impl.SimpleDriver;
+import org.kin.scheduler.core.driver.scheduler.TaskExecFuture;
 import org.kin.scheduler.core.master.executor.allocate.AllocateStrategyType;
 import org.kin.scheduler.core.worker.transport.TaskExecFileContent;
+
+import java.io.Serializable;
 
 /**
  * @author huangjianqin
@@ -21,9 +24,18 @@ public abstract class TaskTest {
         taskDescription.setJobId("job-test");
         taskDescription.setTaskId("task-test");
 
-        driver.submitTask(taskDescription);
-        TaskExecFileContent content = driver.readLog("task-test", 0);
-        System.out.println(content);
+        TaskExecFuture<Serializable> taskExecFuture = driver.submitTask(taskDescription);
+        String taskId = taskExecFuture.getTaskSubmitResult().getTaskId();
+        TaskExecFileContent log = driver.readLog(taskId, 0);
+        TaskExecFileContent output = driver.readOutput(taskId, 0);
+        System.out.println("-----------------------------------------------------------------------------------------------------------------------------------");
+        System.out.println("任务id:" + taskId);
+        System.out.println(log.getPath());
+        System.out.println(log.getContent());
+        System.out.println("-------------------------");
+        System.out.println(output.getPath());
+        System.out.println(output.getContent());
+        System.out.println("-----------------------------------------------------------------------------------------------------------------------------------");
         driver.awaitTermination();
         driver.stop();
     }

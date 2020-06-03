@@ -182,6 +182,7 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
         ApplicationContext driver = applicationContexts.get(appName);
         if (Objects.nonNull(driver) && driver.containsExecutorResource(executorId)) {
             ExecutorState executorState = executorStateChanged.getState();
+            log.info("app '{}''s executor '{}' state changed, now state is {}", appName, executorId, executorState);
             if (!executorState.isFinished()) {
                 if (ExecutorState.RUNNING.equals(executorState)) {
                     //已在启动executor时预占用资源
@@ -343,9 +344,11 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
     public void applicationEnd(String appName) {
         if (isInState(State.STARTED)) {
             ApplicationContext applicationContext = applicationContexts.remove(appName);
+            waitingDrivers.remove(applicationContext);
             if (Objects.nonNull(applicationContext)) {
                 applicationContext.stop();
-                log.error("applicaton '{}' shutdown", applicationContext.getAppDesc());
+                scheduleResource();
+                log.info("applicaton '{}' shutdown", applicationContext.getAppDesc());
             }
         }
     }

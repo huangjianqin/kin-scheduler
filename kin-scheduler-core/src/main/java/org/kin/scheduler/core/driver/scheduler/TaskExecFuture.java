@@ -27,22 +27,22 @@ public class TaskExecFuture<R extends Serializable> implements Future<R> {
     }
 
     private TaskSubmitResult taskSubmitResult;
-    private TaskScheduler.TaskSetManager taskSetManager;
-    private TaskContext taskContext;
+    private TaskScheduler taskScheduler;
+    private volatile R result;
     private volatile boolean done;
-    private boolean canneled;
+    private volatile boolean canneled;
     private Collection<TaskExecCallback<R>> callbacks = new CopyOnWriteArrayList<>();
     private short waiters;
 
-    public TaskExecFuture(TaskSubmitResult taskSubmitResult, TaskScheduler.TaskSetManager taskSetManager, TaskContext taskContext) {
+    public TaskExecFuture(TaskSubmitResult taskSubmitResult, TaskScheduler taskScheduler) {
         this.taskSubmitResult = taskSubmitResult;
-        this.taskSetManager = taskSetManager;
-        this.taskContext = taskContext;
+        this.taskScheduler = taskScheduler;
     }
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
-        return taskSetManager.cancelTask(taskContext.getTaskDescription().getTaskId());
+        canneled = taskScheduler.cancelTask(taskSubmitResult.getTaskId());
+        return canneled;
     }
 
     @Override
@@ -67,7 +67,7 @@ public class TaskExecFuture<R extends Serializable> implements Future<R> {
                 }
             }
         }
-        return (R) taskContext.getResult();
+        return (R) result;
     }
 
     @Override
@@ -82,14 +82,15 @@ public class TaskExecFuture<R extends Serializable> implements Future<R> {
                 }
             }
         }
-        return (R) taskContext.getResult();
+        return (R) result;
     }
 
-    public void done(String taskId, TaskStatus taskStatus, Serializable result, String logFileName, String reason) {
+    public void done(String taskId, TaskStatus taskStatus, Serializable result, String logPath, String outputPath, String reason) {
         done = true;
+        this.result = (R) result;
         CALLBACK_EXECUTORS.execute(() -> {
             for (TaskExecCallback<R> callback : callbacks) {
-                callback.execFinish(taskId, taskStatus, (R) result, logFileName, reason);
+                callback.execFinish(taskId, taskStatus, this.result, logPath, outputPath, reason);
             }
         });
         if (waiters > 0) {

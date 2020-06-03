@@ -89,4 +89,15 @@ public class ApplicationDescription implements Serializable {
     public int hashCode() {
         return Objects.hash(appName);
     }
+
+    @Override
+    public String toString() {
+        return "ApplicationDescription{" +
+                "appName='" + appName + '\'' +
+                ", allocateStrategyType=" + allocateStrategyType +
+                ", cpuCoreNum=" + cpuCoreNum +
+                ", minCoresPerExecutor=" + minCoresPerExecutor +
+                ", oneExecutorPerWorker=" + oneExecutorPerWorker +
+                '}';
+    }
 }

@@ -21,6 +21,8 @@ public abstract class Application {
     private int minCoresPerExecutor = SysUtils.CPU_NUM;
     //每个worker一个Executor
     private boolean oneExecutorPerWorker;
+    //application是否缓存结果
+    private boolean keepResult;
 
     public Application() {
     }
@@ -71,6 +73,11 @@ public abstract class Application {
         return this;
     }
 
+    public Application keepResult() {
+        this.keepResult = true;
+        return this;
+    }
+
     //getter
     public String getAppName() {
         return appName;
@@ -98,5 +105,9 @@ public abstract class Application {
 
     public boolean isOneExecutorPerWorker() {
         return oneExecutorPerWorker;
+    }
+
+    public boolean isKeepResult() {
+        return keepResult;
     }
 }

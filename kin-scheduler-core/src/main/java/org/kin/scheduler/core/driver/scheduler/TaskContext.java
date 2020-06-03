@@ -62,11 +62,11 @@ public class TaskContext {
         return state.isFinished();
     }
 
-    public void finish(String taskId, TaskStatus taskStatus, Serializable result, String logFileName, String reason) {
+    public void finish(String taskId, TaskStatus taskStatus, Serializable result, String reason) {
         if (isNotFinish()) {
             this.result = result;
             this.state = taskStatus;
-            future.done(taskId, taskStatus, result, logFileName, reason);
+            future.done(taskId, taskStatus, result, logPath, outputPath, reason);
         }
     }
 
@@ -84,14 +84,6 @@ public class TaskContext {
 
         return null;
     }
-
-    public void cancel() {
-        if (isNotFinish()) {
-            this.state = TaskStatus.CANCELLED;
-            future.done(taskDescription.getTaskId(), this.state, null, "", "task cancelled");
-        }
-    }
-
 
     public TaskDescription getTaskDescription() {
         return taskDescription;

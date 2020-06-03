@@ -9,5 +9,5 @@ import java.io.Serializable;
  * @date 2020-03-09
  */
 public interface TaskExecCallback<R extends Serializable> {
-    void execFinish(String taskId, TaskStatus taskStatus, R result, String logFileName, String reason);
+    void execFinish(String taskId, TaskStatus taskStatus, R result, String logPath, String outputPath, String reason);
 }
