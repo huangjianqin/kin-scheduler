@@ -1,6 +1,7 @@
 package org.kin.scheduler.core.driver.scheduler;
 
 import org.kin.framework.service.AbstractService;
+import org.kin.kinrpc.cluster.exception.CannotFindInvokerException;
 import org.kin.kinrpc.config.ReferenceConfig;
 import org.kin.kinrpc.config.References;
 import org.kin.kinrpc.config.ServiceConfig;
@@ -80,13 +81,21 @@ public abstract class TaskScheduler<T> extends AbstractService implements Schedu
             if (Objects.nonNull(runningExecutorContext)) {
                 try {
                     runningExecutorContext.cancelTask(taskContext.getTaskDescription().getTaskId());
+                } catch (CannotFindInvokerException e) {
+
                 } catch (Exception e) {
                     log.error("", e);
                 }
             }
         }
         for (ExecutorContext executorContext : executors.values()) {
-            executorContext.destroy();
+            try {
+                executorContext.destroy();
+            } catch (CannotFindInvokerException e) {
+
+            } catch (Exception e) {
+                log.error("", e);
+            }
         }
         schedulerBackendServiceConfig.disable();
     }
@@ -313,7 +322,7 @@ public abstract class TaskScheduler<T> extends AbstractService implements Schedu
 
         public void taskFinish(String taskId, TaskStatus taskStatus, Serializable result, String reason) {
             TaskContext taskContext;
-            if (app.isKeepResult()) {
+            if (!app.isDropResult()) {
                 taskContext = taskContexts.get(taskId);
             } else {
                 synchronized (this) {

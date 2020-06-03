@@ -102,9 +102,7 @@ public abstract class Driver extends AbstractService implements MasterDriverBack
     @Override
     public void stop() {
         super.stop();
-        if (Objects.nonNull(taskScheduler)) {
-            taskScheduler.stop();
-        }
+        //先通知master 应用stop
         if (Objects.nonNull(driverMasterBackend)) {
             try {
                 driverMasterBackend.applicationEnd(app.getAppName());
@@ -114,6 +112,11 @@ public abstract class Driver extends AbstractService implements MasterDriverBack
                 log.error("", e);
             }
             driverMasterBackendReferenceConfig.disable();
+        }
+        //再shutdown executor
+        //防止无用executor分配, 如果先shutdown executor再通知master 应用stop, master存在再次为该应用分配资源的可能
+        if (Objects.nonNull(taskScheduler)) {
+            taskScheduler.stop();
         }
 
         masterDriverServiceConfig.disable();

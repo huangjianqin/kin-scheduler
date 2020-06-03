@@ -7,6 +7,7 @@ import org.kin.framework.concurrent.actor.PinnedThreadSafeHandler;
 import org.kin.framework.service.AbstractService;
 import org.kin.framework.utils.CollectionUtils;
 import org.kin.framework.utils.StringUtils;
+import org.kin.kinrpc.cluster.exception.CannotFindInvokerException;
 import org.kin.kinrpc.config.ServiceConfig;
 import org.kin.kinrpc.config.Services;
 import org.kin.scheduler.core.domain.WorkerResource;
@@ -45,14 +46,17 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
     private Map<String, WorkerContext> workers = new ConcurrentHashMap<>();
     private ServiceConfig masterBackendServiceConfig;
     private ServiceConfig driverMasterBackendServiceConfig;
-    private Map<String, ApplicationContext> applicationContexts = new ConcurrentHashMap<>();
-    private List<ApplicationContext> waitingDrivers = new ArrayList<>();
+    //已注册的应用
+    private Map<String, ApplicationContext> drivers = new ConcurrentHashMap<>();
+    //copy on write方式更新
+    //等待资源分配的应用
+    private volatile List<ApplicationContext> waitingDrivers = new ArrayList<>();
     //心跳时间(秒)
     private int heartbeatTime;
     //心跳检测间隔(秒)
     private int heartbeatCheckInterval = heartbeatTime + 2000;
     private PinnedThreadSafeHandler<?> threadSafeHandler =
-            new PinnedThreadSafeHandler<>(ExecutionContext.fix(1, "Master", 1, "Master-schedule"));
+            new PinnedThreadSafeHandler<>(ExecutionContext.fix(2, "Master", 1, "Master-schedule"));
 
     public Master(String masterBackendHost, int masterBackendPort, String logPath, int heartbeatTime) {
         super("master");
@@ -105,8 +109,8 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
         threadSafeHandler.stop();
         masterBackendServiceConfig.disable();
         driverMasterBackendServiceConfig.disable();
-        for (ApplicationContext applicationContext : applicationContexts.values()) {
-            applicationContext.stop();
+        for (ApplicationContext driver : drivers.values()) {
+            driver.stop();
         }
         for (WorkerContext worker : workers.values()) {
             worker.stop();
@@ -135,6 +139,8 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
                 workers.put(workerId, worker);
 
                 log.info("worker '{}' registered", workerId);
+                //调度资源
+                threadSafeHandler.handle(t -> scheduleResource());
                 return WorkerRegisterResult.success();
             } else {
                 return WorkerRegisterResult.failure(String.format("worker(workerId=%s) has registered", workerId));
@@ -179,7 +185,7 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
     public void executorStateChanged(ExecutorStateChanged executorStateChanged) {
         String appName = executorStateChanged.getAppName();
         String executorId = executorStateChanged.getExecutorId();
-        ApplicationContext driver = applicationContexts.get(appName);
+        ApplicationContext driver = drivers.get(appName);
         if (Objects.nonNull(driver) && driver.containsExecutorResource(executorId)) {
             ExecutorState executorState = executorStateChanged.getState();
             log.info("app '{}''s executor '{}' state changed, now state is {}", appName, executorId, executorState);
@@ -190,7 +196,6 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
                 }
                 //TODO 启动状态暂时不处理
             } else {
-                //
                 ExecutorResource executorResource = driver.removeExecutorResource(executorId);
                 if (Objects.nonNull(executorResource)) {
                     WorkerResource workerResource = executorResource.getWorkerResource();
@@ -198,7 +203,13 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
                     if (Objects.nonNull(workerContext)) {
                         workerContext.getResource().recoverCpuCore(workerResource.getCpuCore());
                     }
-                    driver.executorStatusChange(Collections.emptyList(), Collections.singletonList(executorId));
+                    try {
+                        driver.executorStatusChange(Collections.emptyList(), Collections.singletonList(executorId));
+                    } catch (CannotFindInvokerException e) {
+
+                    } catch (Exception e) {
+                        log.error("", e);
+                    }
                     tryWaitingResource(driver);
                     scheduleResource();
                 }
@@ -207,7 +218,7 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
     }
 
     private void executorStateChanged(String unAvailableWorkerId) {
-        for (ApplicationContext driver : applicationContexts.values()) {
+        for (ApplicationContext driver : drivers.values()) {
             //无用Executor
             List<String> unAvailableExecutorIds =
                     driver.getUsedExecutorResources().stream()
@@ -232,7 +243,7 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
         ApplicationDescription appDesc = request.getAppDesc();
 
         String appName = appDesc.getAppName();
-        if (applicationContexts.containsKey(appName)) {
+        if (drivers.containsKey(appName)) {
             return ApplicationRegisterResponse.failure(String.format("application '%s' has registered", appName));
         }
 
@@ -240,16 +251,16 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
             return ApplicationRegisterResponse.failure("unknown allocate strategy type");
         }
 
-        ApplicationContext applicationContext = new ApplicationContext(appDesc, request.getExecutorDriverBackendAddress(), request.getMasterDriverBackendAddress());
-        applicationContext.init();
-        applicationContexts.put(appName, applicationContext);
+        ApplicationContext driver = new ApplicationContext(appDesc, request.getExecutorDriverBackendAddress(), request.getMasterDriverBackendAddress());
+        driver.init();
+        drivers.put(appName, driver);
         log.info("application '{}' registered", appName);
         return ApplicationRegisterResponse.success();
     }
 
     @Override
     public void scheduleResource(String appName) {
-        ApplicationContext driver = applicationContexts.get(appName);
+        ApplicationContext driver = drivers.get(appName);
         if (Objects.nonNull(driver)) {
             scheduleResource(driver);
         }
@@ -336,19 +347,33 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
     private void tryWaitingResource(ApplicationContext driver) {
         //资源分配不足仍然需要在队列等待有足够的资源分配
         if (driver.getCpuCoreLeft() > 0) {
+            List<ApplicationContext> waitingDrivers = new ArrayList<>(this.waitingDrivers);
             waitingDrivers.add(driver);
+            this.waitingDrivers = waitingDrivers;
         }
     }
 
     @Override
     public void applicationEnd(String appName) {
         if (isInState(State.STARTED)) {
-            ApplicationContext applicationContext = applicationContexts.remove(appName);
-            waitingDrivers.remove(applicationContext);
-            if (Objects.nonNull(applicationContext)) {
-                applicationContext.stop();
+            ApplicationContext driver = drivers.remove(appName);
+
+            List<ApplicationContext> waitingDrivers = new ArrayList<>(this.waitingDrivers);
+            waitingDrivers.remove(driver);
+            this.waitingDrivers = waitingDrivers;
+
+            if (Objects.nonNull(driver)) {
+                driver.stop();
+                //回收应用占用的资源
+                for (ExecutorResource usedExecutorResource : driver.getUsedExecutorResources()) {
+                    WorkerResource workerResource = usedExecutorResource.getWorkerResource();
+                    WorkerContext workerContext = workers.get(workerResource.getWorkerId());
+                    if (Objects.nonNull(workerContext)) {
+                        workerContext.getResource().recoverCpuCore(workerResource.getCpuCore());
+                    }
+                }
                 scheduleResource();
-                log.info("applicaton '{}' shutdown", applicationContext.getAppDesc());
+                log.info("applicaton '{}' shutdown", driver.getAppDesc());
             }
         }
     }

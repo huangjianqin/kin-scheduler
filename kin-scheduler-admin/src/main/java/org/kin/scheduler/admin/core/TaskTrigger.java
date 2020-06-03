@@ -81,13 +81,23 @@ public class TaskTrigger {
         }
     }
 
-    private class AdminTaskExecCallback implements TaskExecCallback {
+    private class AdminTaskExecCallback implements TaskExecCallback<Serializable> {
         private AdminTaskExecCallback() {
         }
 
         @Override
-        public void execFinish(String taskId, TaskStatus taskStatus, Serializable result, String logFileName, String reason) {
-            TaskLog taskLog = KinSchedulerContext.instance().getTaskLogDao().load(Integer.valueOf(logFileName));
+        public void execFinish(String taskId, TaskStatus taskStatus, Serializable result, String logPath, String outputPath, String reason) {
+            int index = logPath.lastIndexOf("/");
+            if (index < 0) {
+                log.error("task({}) log not found >>>>> {}, {}, {}, {}, {}", taskId, taskStatus, result, logPath, outputPath, reason);
+                return;
+            }
+            String taskLogIdStr = logPath.substring(index);
+            if (StringUtils.isBlank(taskLogIdStr)) {
+                log.error("task({}) log not found >>>>> {}, {}, {}, {}, {}", taskId, taskStatus, result, logPath, outputPath, reason);
+                return;
+            }
+            TaskLog taskLog = KinSchedulerContext.instance().getTaskLogDao().load(Integer.parseInt(taskLogIdStr));
             if (Objects.isNull(taskLog)) {
                 log.error("task({}) log not found", taskId);
             }

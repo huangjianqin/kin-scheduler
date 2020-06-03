@@ -22,7 +22,7 @@ public abstract class Application {
     //每个worker一个Executor
     private boolean oneExecutorPerWorker;
     //application是否缓存结果
-    private boolean keepResult;
+    private boolean dropResult;
 
     public Application() {
     }
@@ -73,8 +73,8 @@ public abstract class Application {
         return this;
     }
 
-    public Application keepResult() {
-        this.keepResult = true;
+    public Application dropResult() {
+        this.dropResult = true;
         return this;
     }
 
@@ -107,7 +107,7 @@ public abstract class Application {
         return oneExecutorPerWorker;
     }
 
-    public boolean isKeepResult() {
-        return keepResult;
+    public boolean isDropResult() {
+        return dropResult;
     }
 }
