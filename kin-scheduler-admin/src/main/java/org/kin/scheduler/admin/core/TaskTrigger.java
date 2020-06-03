@@ -29,7 +29,7 @@ public class TaskTrigger {
     private static Logger log = LoggerFactory.getLogger(TaskTrigger.class);
     private static TaskTrigger INSTANCE;
     // email alarm template
-    private static final String mailBodyTemplate = "<h5>" + "：</span>" +
+    private static final String MAIL_BODY_TEMPLATE = "<h5>" + "：</span>" +
             "<table border=\"1\" cellpadding=\"3\" style=\"border-collapse:collapse; width:80%;\" >\n" +
             "   <thead style=\"font-weight: bold;color: #ffffff;background-color: #ff8c00;\" >" +
             "   </thead>\n" +
@@ -161,7 +161,7 @@ public class TaskTrigger {
                         .concat("-")
                         .concat(taskLog.getDesc())
                         .concat(")");
-                String content = MessageFormat.format(mailBodyTemplate,
+                String content = MessageFormat.format(MAIL_BODY_TEMPLATE,
                         jobInfo != null ? jobInfo.getTitle() : "null",
                         taskLog.getTaskId(),
                         taskLog.getDesc(),
