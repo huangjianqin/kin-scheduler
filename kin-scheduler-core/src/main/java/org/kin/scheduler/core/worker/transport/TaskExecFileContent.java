@@ -95,4 +95,18 @@ public class TaskExecFileContent extends RPCResult implements Serializable {
     public void setEnd(boolean end) {
         isEnd = end;
     }
+
+    @Override
+    public String toString() {
+        return "TaskExecFileContent{" +
+                "workerId='" + workerId + '\'' +
+                ", path='" + path + '\'' +
+                ", fromLineNum=" + fromLineNum +
+                ", toLineNum=" + toLineNum +
+                ", content='" + content + '\'' +
+                ", isEnd=" + isEnd +
+                ", success=" + success +
+                ", desc='" + desc + '\'' +
+                '}';
+    }
 }

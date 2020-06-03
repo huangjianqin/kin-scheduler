@@ -3,6 +3,7 @@ package org.kin.scheduler.core.task;
 import org.kin.scheduler.core.driver.impl.SimpleApplication;
 import org.kin.scheduler.core.driver.impl.SimpleDriver;
 import org.kin.scheduler.core.master.executor.allocate.AllocateStrategyType;
+import org.kin.scheduler.core.worker.transport.TaskExecFileContent;
 
 /**
  * @author huangjianqin
@@ -21,6 +22,8 @@ public abstract class TaskTest {
         taskDescription.setTaskId("task-test");
 
         driver.submitTask(taskDescription);
+        TaskExecFileContent content = driver.readLog("task-test", 0);
+        System.out.println(content);
         driver.awaitTermination();
         driver.stop();
     }

@@ -127,10 +127,10 @@ public class TaskLogController {
         return maps;
     }
 
-    @RequestMapping("/logDetailCat")
+    @RequestMapping("/logDetail")
     @ResponseBody
     @Permission
-    public WebResponse<TaskExecFileContent> logDetailCat(int logId, int fromLineNum) {
+    public WebResponse<TaskExecFileContent> logDetail(int logId, int fromLineNum) {
         try {
             TaskExecFileContent taskExecFileContent = KinSchedulerContext.instance().getDriver().readLog(logId, fromLineNum);
 
@@ -147,6 +147,29 @@ public class TaskLogController {
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             return WebResponse.fail(String.format("remote read log error >>>> %s", ExceptionUtils.getExceptionDesc(e)));
+        }
+    }
+
+    @RequestMapping("/outputDetail")
+    @ResponseBody
+    @Permission
+    public WebResponse<TaskExecFileContent> outputDetail(int logId, int fromLineNum) {
+        try {
+            TaskExecFileContent taskExecFileContent = KinSchedulerContext.instance().getDriver().readOutput(logId, fromLineNum);
+
+            if (Objects.nonNull(taskExecFileContent) && StringUtils.isNotBlank(taskExecFileContent.getContent()) && !taskExecFileContent.isEnd()) {
+                TaskLog taskLog = taskLogDao.load(logId);
+                if (taskLog.getHandleCode() > 0) {
+                    taskExecFileContent.setEnd(true);
+                }
+                return WebResponse.success(taskExecFileContent);
+            } else {
+                return WebResponse.fail("remote read output, get null");
+            }
+
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            return WebResponse.fail(String.format("remote read output error >>>> %s", ExceptionUtils.getExceptionDesc(e)));
         }
     }
 
