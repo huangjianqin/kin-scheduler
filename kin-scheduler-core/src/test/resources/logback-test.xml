@@ -52,12 +52,12 @@
         <appender-ref ref="asyncERROR"/>
     </logger>
 
-    <logger name="org.kin.kinrpc" level="WARN">
+    <logger name="org.kin.kinrpc" level="INFO">
         <appender-ref ref="asyncSTDOUT"/>
         <appender-ref ref="asyncERROR"/>
     </logger>
 
-    <logger name="org.kin.transport" level="WARN">
+    <logger name="org.kin.transport" level="INFO">
         <appender-ref ref="asyncSTDOUT"/>
         <appender-ref ref="asyncERROR"/>
     </logger>
