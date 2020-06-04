@@ -1,10 +1,11 @@
 kin:
   scheduler:
-    #    workerBackendHost:
+    workerBackendHost: 0.0.0.0
     workerBackendPort: 50000
-    #    masterBackendHost:
+    masterBackendHost: 0.0.0.0
     masterBackendPort: 46668
     allowEmbeddedExecutor: true
     executorBackendPort: 51000
     logPath: logs
     heartbeat: 3000
+#    CPU: 3

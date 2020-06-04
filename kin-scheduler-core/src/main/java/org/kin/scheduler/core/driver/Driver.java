@@ -13,13 +13,16 @@ import org.kin.scheduler.core.driver.exception.RegisterApplicationFailureExcepti
 import org.kin.scheduler.core.driver.scheduler.TaskContext;
 import org.kin.scheduler.core.driver.scheduler.TaskExecFuture;
 import org.kin.scheduler.core.driver.scheduler.TaskScheduler;
+import org.kin.scheduler.core.driver.scheduler.impl.DefaultTaskScheduler;
 import org.kin.scheduler.core.driver.transport.ApplicationRegisterInfo;
 import org.kin.scheduler.core.master.DriverMasterBackend;
 import org.kin.scheduler.core.master.transport.ApplicationRegisterResponse;
+import org.kin.scheduler.core.task.TaskDescription;
 import org.kin.scheduler.core.worker.transport.TaskExecFileContent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 
@@ -27,7 +30,7 @@ import java.util.Objects;
  * @author huangjianqin
  * @date 2020-02-09
  */
-public abstract class Driver extends AbstractService implements MasterDriverBackend {
+public class Driver extends AbstractService implements MasterDriverBackend {
     private static final Logger log = LoggerFactory.getLogger(Driver.class);
 
     /** driver -> master rpc引用 */
@@ -40,6 +43,12 @@ public abstract class Driver extends AbstractService implements MasterDriverBack
     /** TaskScheduler实现 */
     protected TaskScheduler taskScheduler;
 
+    //---------------------------------------------------------------------------------------------------------------------
+    public static Driver a(Application app) {
+        return new Driver(app, new DefaultTaskScheduler(app));
+    }
+
+    //---------------------------------------------------------------------------------------------------------------------
     public Driver(Application app, TaskScheduler taskScheduler) {
         super(app.getAppName());
         this.app = app;
@@ -173,4 +182,13 @@ public abstract class Driver extends AbstractService implements MasterDriverBack
         return driverMasterBackend.readFile(workerId, outputPath, fromLineNum);
     }
 
+
+    public final <R extends Serializable, PARAM extends Serializable> TaskExecFuture<R> submitTask(TaskDescription<PARAM> taskDescription) {
+        return taskScheduler.submitTask(taskDescription);
+    }
+
+
+    public final boolean cancelTask(String taskId) {
+        return taskScheduler.cancelTask(taskId);
+    }
 }

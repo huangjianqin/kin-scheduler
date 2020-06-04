@@ -18,16 +18,16 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author huangjianqin
  * @date 2020-03-09
  */
-public class SimpleTaskScheduler extends TaskScheduler<TaskDescription> {
+public class DefaultTaskScheduler extends TaskScheduler<TaskDescription> {
     private AtomicInteger taskIdCounter = new AtomicInteger(1);
 
-    public SimpleTaskScheduler(Application app) {
+    public DefaultTaskScheduler(Application app) {
         super(app);
     }
 
     private void assignTaskId(TaskDescription taskDescription) {
         taskDescription.setJobId(taskDescription.getJobId());
-        taskDescription.setTaskId(taskDescription.getJobId().concat("-Task").concat(String.valueOf(taskIdCounter.getAndIncrement())));
+        taskDescription.setTaskId(taskDescription.getJobId().concat("-Task-").concat(String.valueOf(taskIdCounter.getAndIncrement())));
     }
 
     @Override

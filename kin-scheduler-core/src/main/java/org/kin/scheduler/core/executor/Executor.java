@@ -88,7 +88,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
     @Override
     public void serviceInit() {
         super.init();
-        this.executionContext = ExecutionContext.cache("executor-".concat(executorId).concat("-"));
+        this.executionContext = ExecutionContext.cache("executor-".concat(executorId));
         taskLoggerContext = new TaskLoggerContext(executorId);
         log = LogUtils.getExecutorLogger(logPath, workerId, executorId);
 

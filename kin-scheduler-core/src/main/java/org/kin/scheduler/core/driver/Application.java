@@ -7,7 +7,7 @@ import org.kin.scheduler.core.master.executor.allocate.AllocateStrategyType;
  * @author huangjianqin
  * @date 2020-02-11
  */
-public abstract class Application {
+public class Application {
     private String appName;
     /** master rpc接口 */
     private String masterAddress = "0.0.0.0:46668";
@@ -29,6 +29,15 @@ public abstract class Application {
 
     public Application(String appName) {
         this.appName = appName;
+    }
+
+    //-----------------------------------------------------------------------------------------------
+    public static Application build() {
+        return new Application();
+    }
+
+    public static Application build(String appName) {
+        return new Application(appName);
     }
 
     //-----------------------------------------------------------------------------------------------
@@ -68,8 +77,8 @@ public abstract class Application {
         return this;
     }
 
-    public Application oneExecutorPerWorker(boolean oneExecutorPerWorker) {
-        this.oneExecutorPerWorker = oneExecutorPerWorker;
+    public Application oneExecutorPerWorker() {
+        this.oneExecutorPerWorker = true;
         return this;
     }
 

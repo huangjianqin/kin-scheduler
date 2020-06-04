@@ -1,7 +1,7 @@
 package org.kin.scheduler.core.task;
 
-import org.kin.scheduler.core.driver.impl.SimpleApplication;
-import org.kin.scheduler.core.driver.impl.SimpleDriver;
+import org.kin.scheduler.core.driver.Application;
+import org.kin.scheduler.core.driver.Driver;
 import org.kin.scheduler.core.driver.scheduler.TaskExecFuture;
 import org.kin.scheduler.core.master.executor.allocate.AllocateStrategyType;
 import org.kin.scheduler.core.worker.transport.TaskExecFileContent;
@@ -14,7 +14,7 @@ import java.io.Serializable;
  */
 public abstract class TaskTest {
     protected void run() throws InterruptedException {
-        SimpleDriver driver = new SimpleDriver(SimpleApplication.build().appName("test").allocateStrategy(AllocateStrategyType.All));
+        Driver driver = Driver.a(Application.build().appName("test").allocateStrategy(AllocateStrategyType.All));
         driver.init();
         driver.start();
 

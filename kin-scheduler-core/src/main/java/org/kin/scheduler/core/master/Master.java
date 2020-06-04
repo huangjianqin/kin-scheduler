@@ -57,7 +57,7 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
     //心跳检测间隔(秒)
     private int heartbeatCheckInterval = heartbeatTime + 2000;
     private PinnedThreadSafeHandler<?> threadSafeHandler =
-            new PinnedThreadSafeHandler<>(ExecutionContext.fix(2, "Master", 1, "Master-schedule"));
+            new PinnedThreadSafeHandler<>(ExecutionContext.fix(2, "master", 1, "master-schedule"));
 
     public Master(String masterBackendHost, int masterBackendPort, String logPath, int heartbeatTime) {
         super("master");

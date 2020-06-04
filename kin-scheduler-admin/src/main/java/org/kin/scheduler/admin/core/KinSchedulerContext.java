@@ -1,10 +1,11 @@
 package org.kin.scheduler.admin.core;
 
+import org.kin.framework.utils.NetUtils;
 import org.kin.scheduler.admin.dao.JobInfoDao;
 import org.kin.scheduler.admin.dao.TaskInfoDao;
 import org.kin.scheduler.admin.dao.TaskLogDao;
 import org.kin.scheduler.admin.service.JobService;
-import org.kin.scheduler.core.driver.impl.SimpleApplication;
+import org.kin.scheduler.core.driver.Application;
 import org.kin.scheduler.core.master.Master;
 import org.kin.scheduler.core.master.executor.allocate.AllocateStrategyType;
 import org.springframework.beans.factory.InitializingBean;
@@ -27,19 +28,27 @@ import java.util.Objects;
 public class KinSchedulerContext implements InitializingBean, ApplicationListener<ContextRefreshedEvent> {
     private static KinSchedulerContext INSTANCE;
 
+    /** 应用名 */
     @Value("${application.name}")
     private String appName;
+    /** mail用户 */
     @Value("${spring.mail.username}")
     private String emailUserName;
+    /** scheduler并发 */
     @Value("${kin.scheduler.parallism}")
     private int schedulerParallism;
+    /** master host */
     @Value("${kin.scheduler.masterBackendHost}")
     private String masterBackendHost;
+    /** master port */
     @Value("${kin.scheduler.masterBackendPort}")
     private int masterBackendPort;
     /** 日志路径 */
     @Value("${kin.scheduler.logPath}")
     private String logPath;
+    /** driver绑定端口 */
+    @Value("${kin.scheduler.driverPort}")
+    private int driverPort;
 
     @Autowired
     private TaskInfoDao taskInfoDao;
@@ -104,7 +113,16 @@ public class KinSchedulerContext implements InitializingBean, ApplicationListene
         if (Objects.isNull(driver)) {
             synchronized (this) {
                 if (Objects.isNull(driver)) {
-                    driver = new KinDriver(SimpleApplication.build().appName(KinSchedulerContext.instance().getAppName()).allocateStrategy(AllocateStrategyType.All), master);
+                    driver = new KinDriver(
+                            Application.build()
+                                    .appName(getAppName())
+                                    .master(NetUtils.getIpPort(masterBackendHost, masterBackendPort))
+                                    .driverPort(driverPort)
+                                    .cpuCore(Integer.MAX_VALUE)
+                                    .allocateStrategy(AllocateStrategyType.All)
+                                    .oneExecutorPerWorker()
+                                    .dropResult()
+                    );
                     driver.init();
                     driver.start();
                 }
