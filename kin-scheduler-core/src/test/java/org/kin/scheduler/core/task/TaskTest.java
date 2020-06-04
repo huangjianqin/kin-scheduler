@@ -25,6 +25,7 @@ public abstract class TaskTest {
         taskDescription.setTaskId("task-test");
 
         TaskExecFuture<Serializable> taskExecFuture = driver.submitTask(taskDescription);
+        driver.awaitTermination();
         String taskId = taskExecFuture.getTaskSubmitResult().getTaskId();
         TaskExecFileContent log = driver.readLog(taskId, 0);
         TaskExecFileContent output = driver.readOutput(taskId, 0);
@@ -36,7 +37,6 @@ public abstract class TaskTest {
         System.out.println(output.getPath());
         System.out.println(output.getContent());
         System.out.println("-----------------------------------------------------------------------------------------------------------------------------------");
-        driver.awaitTermination();
         driver.stop();
     }
 
