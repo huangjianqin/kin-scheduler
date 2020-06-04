@@ -30,8 +30,7 @@ public class WorkerContext extends AbstractService implements WorkerBackend {
     }
 
     @Override
-    public void start() {
-        super.start();
+    public void serviceStart() {
         workerBackendReferenceConfig = References.reference(WorkerBackend.class)
                 .appName(getName())
                 .urls(workerInfo.getAddress());
@@ -39,7 +38,7 @@ public class WorkerContext extends AbstractService implements WorkerBackend {
     }
 
     @Override
-    public void stop() {
+    public void serviceStop() {
         super.stop();
         workerBackendReferenceConfig.disable();
     }

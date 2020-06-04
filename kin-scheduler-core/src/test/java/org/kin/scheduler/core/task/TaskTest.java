@@ -22,7 +22,6 @@ public abstract class TaskTest {
 
         TaskDescription<?> taskDescription = generateTaskDescription();
         taskDescription.setJobId("job-test");
-        taskDescription.setTaskId("task-test");
 
         TaskExecFuture<Serializable> taskExecFuture = driver.submitTask(taskDescription);
         driver.awaitTermination();

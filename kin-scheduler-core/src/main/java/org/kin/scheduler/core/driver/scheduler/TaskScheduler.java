@@ -50,8 +50,7 @@ public abstract class TaskScheduler<T> extends AbstractService implements Schedu
     }
 
     @Override
-    public void init() {
-        super.init();
+    public void serviceInit() {
         executors = Collections.emptyMap();
         taskSetManager = new TaskSetManager();
 
@@ -67,13 +66,12 @@ public abstract class TaskScheduler<T> extends AbstractService implements Schedu
     }
 
     @Override
-    public void start() {
-        super.start();
+    public void serviceStart() {
+
     }
 
     @Override
-    public void stop() {
-        super.stop();
+    public void serviceStop() {
         //取消所有未执行完的task
         for (TaskContext taskContext : taskSetManager.getAllUnFinishTask()) {
             String runningExecutorId = taskContext.getRunningExecutorId();

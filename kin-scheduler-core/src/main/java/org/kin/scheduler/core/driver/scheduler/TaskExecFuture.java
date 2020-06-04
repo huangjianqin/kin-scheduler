@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
  * 等待task执行的future
  */
 public class TaskExecFuture<R extends Serializable> implements Future<R> {
-    private static ExecutionContext CALLBACK_EXECUTORS = ExecutionContext.fix(SysUtils.CPU_NUM, "TaskSubmitFuture-Callback-Thread-");
+    public static ExecutionContext CALLBACK_EXECUTORS = ExecutionContext.fix(SysUtils.CPU_NUM, "TaskSubmitFuture-Callback-Thread-");
 
     static {
         JvmCloseCleaner.DEFAULT().add(CALLBACK_EXECUTORS::shutdown);

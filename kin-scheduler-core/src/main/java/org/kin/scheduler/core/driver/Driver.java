@@ -3,6 +3,7 @@ package org.kin.scheduler.core.driver;
 import org.kin.framework.JvmCloseCleaner;
 import org.kin.framework.service.AbstractService;
 import org.kin.framework.utils.NetUtils;
+import org.kin.kinrpc.cluster.Clusters;
 import org.kin.kinrpc.cluster.exception.CannotFindInvokerException;
 import org.kin.kinrpc.config.ReferenceConfig;
 import org.kin.kinrpc.config.References;
@@ -10,6 +11,7 @@ import org.kin.kinrpc.config.ServiceConfig;
 import org.kin.kinrpc.config.Services;
 import org.kin.scheduler.core.driver.exception.RegisterApplicationFailureException;
 import org.kin.scheduler.core.driver.scheduler.TaskContext;
+import org.kin.scheduler.core.driver.scheduler.TaskExecFuture;
 import org.kin.scheduler.core.driver.scheduler.TaskScheduler;
 import org.kin.scheduler.core.driver.transport.ApplicationRegisterInfo;
 import org.kin.scheduler.core.master.DriverMasterBackend;
@@ -45,8 +47,7 @@ public abstract class Driver extends AbstractService implements MasterDriverBack
     }
 
     @Override
-    public void init() {
-        super.init();
+    public void serviceInit() {
         driverMasterBackendReferenceConfig = References.reference(DriverMasterBackend.class)
                 .appName(getName().concat("-DriverMasterBackendReference"))
                 .urls(app.getMasterAddress());
@@ -69,9 +70,8 @@ public abstract class Driver extends AbstractService implements MasterDriverBack
     }
 
     @Override
-    public void start() {
-        //注册application
-        super.start();
+    public void serviceStart() {
+        //注册applications
         try {
             ApplicationDescription appDesc = new ApplicationDescription();
             appDesc.setAppName(app.getAppName());
@@ -100,8 +100,7 @@ public abstract class Driver extends AbstractService implements MasterDriverBack
     }
 
     @Override
-    public void stop() {
-        super.stop();
+    public void serviceStop() {
         //先通知master 应用stop
         if (Objects.nonNull(driverMasterBackend)) {
             try {
@@ -120,6 +119,8 @@ public abstract class Driver extends AbstractService implements MasterDriverBack
         }
 
         masterDriverServiceConfig.disable();
+        Clusters.shutdown();
+        TaskExecFuture.CALLBACK_EXECUTORS.shutdownNow();
         log.info("driver(appName={}, master={}) closed", app.getAppName(), app.getMasterAddress());
     }
 

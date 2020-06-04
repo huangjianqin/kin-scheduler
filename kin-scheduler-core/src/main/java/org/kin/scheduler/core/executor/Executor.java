@@ -86,7 +86,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
     }
 
     @Override
-    public void init() {
+    public void serviceInit() {
         super.init();
         this.executionContext = ExecutionContext.cache("executor-".concat(executorId).concat("-"));
         taskLoggerContext = new TaskLoggerContext(executorId);
@@ -116,7 +116,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
     }
 
     @Override
-    public void start() {
+    public void serviceStart() {
         super.start();
         taskLoggerContext.start();
         executorWorkerBackend.executorStateChanged(ExecutorStateChanged.running(appName, executorId));
@@ -230,7 +230,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
     }
 
     @Override
-    public void stop() {
+    public void serviceStop() {
         super.stop();
         executionContext.shutdown();
         taskLoggerContext.stop();

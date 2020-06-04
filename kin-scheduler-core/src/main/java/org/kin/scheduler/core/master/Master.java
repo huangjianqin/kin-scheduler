@@ -7,6 +7,7 @@ import org.kin.framework.concurrent.actor.PinnedThreadSafeHandler;
 import org.kin.framework.service.AbstractService;
 import org.kin.framework.utils.CollectionUtils;
 import org.kin.framework.utils.StringUtils;
+import org.kin.kinrpc.cluster.Clusters;
 import org.kin.kinrpc.cluster.exception.CannotFindInvokerException;
 import org.kin.kinrpc.config.ServiceConfig;
 import org.kin.kinrpc.config.Services;
@@ -69,8 +70,7 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
     //-------------------------------------------------------------------------------------------------
 
     @Override
-    public void init() {
-        super.init();
+    public void serviceInit() {
         masterBackendServiceConfig = Services.service(this, MasterBackend.class)
                 .appName(getName())
                 .bind(masterBackendHost, masterBackendPort)
@@ -95,17 +95,14 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
     }
 
     @Override
-    public void start() {
-        super.start();
-
+    public void serviceStart() {
         threadSafeHandler.scheduleAtFixedRate(ts -> checkHeartbeatTimeout(), heartbeatCheckInterval, heartbeatCheckInterval, TimeUnit.MILLISECONDS);
 
         log.info("Master '{}' started", getName());
     }
 
     @Override
-    public void stop() {
-        super.stop();
+    public void serviceStop() {
         threadSafeHandler.stop();
         masterBackendServiceConfig.disable();
         driverMasterBackendServiceConfig.disable();
@@ -116,7 +113,7 @@ public class Master extends AbstractService implements MasterBackend, DriverMast
             worker.stop();
         }
         workers.clear();
-
+        Clusters.shutdown();
         log.info("Master '{}' stopped", getName());
     }
 

@@ -8,6 +8,7 @@ import org.kin.framework.utils.CommandUtils;
 import org.kin.framework.utils.ExceptionUtils;
 import org.kin.framework.utils.NetUtils;
 import org.kin.framework.utils.StringUtils;
+import org.kin.kinrpc.cluster.Clusters;
 import org.kin.kinrpc.cluster.exception.CannotFindInvokerException;
 import org.kin.kinrpc.config.ReferenceConfig;
 import org.kin.kinrpc.config.References;
@@ -67,8 +68,7 @@ public class Worker extends AbstractService implements WorkerBackend, ExecutorWo
     }
 
     @Override
-    public void init() {
-        super.init();
+    public void serviceInit() {
         masterBackendReferenceConfig = References.reference(MasterBackend.class)
                 .appName(getName().concat("-MasterBackend"))
                 .urls(NetUtils.getIpPort(config.getMasterBackendHost(), config.getMasterBackendPort()));
@@ -118,9 +118,7 @@ public class Worker extends AbstractService implements WorkerBackend, ExecutorWo
     }
 
     @Override
-    public void start() {
-        super.start();
-
+    public void serviceStart() {
         registerWorker();
 
         heartbeatKeeper = Keeper.keep(this::sendHeartbeat);
@@ -129,11 +127,7 @@ public class Worker extends AbstractService implements WorkerBackend, ExecutorWo
     }
 
     @Override
-    public void stop() {
-        if (!isInState(State.STARTED)) {
-            return;
-        }
-        super.stop();
+    public void serviceStop() {
         //取消注册
         try {
             masterBackend.unregisterWorker(workerId);
@@ -154,7 +148,7 @@ public class Worker extends AbstractService implements WorkerBackend, ExecutorWo
         masterBackendReferenceConfig.disable();
         workerServiceConfig.disable();
         executorWorkerBackendServiceConfig.disable();
-
+        Clusters.shutdown();
         log.info("worker({}) stopped", workerId);
     }
 
