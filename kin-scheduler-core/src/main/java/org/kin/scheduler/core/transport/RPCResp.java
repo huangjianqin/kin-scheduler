@@ -6,7 +6,7 @@ import java.io.Serializable;
  * @author huangjianqin
  * @date 2020-02-06
  */
-public class RPCResult implements Serializable {
+public class RPCResp implements Serializable {
     private static final long serialVersionUID = 5197954993271710582L;
 
     /** 执行结果 */
@@ -14,30 +14,30 @@ public class RPCResult implements Serializable {
     /** 结果描述 */
     protected String desc;
 
-    public RPCResult() {
+    public RPCResp() {
     }
 
-    public RPCResult(boolean success) {
+    public RPCResp(boolean success) {
         this(success, "");
     }
 
-    public RPCResult(boolean success, String desc) {
+    public RPCResp(boolean success, String desc) {
         this.success = success;
         this.desc = desc;
     }
 
     //-------------------------------------------------------------------------------------
 
-    public static RPCResult success() {
+    public static RPCResp success() {
         return success("");
     }
 
-    public static RPCResult success(String desc) {
-        return new RPCResult(true, desc);
+    public static RPCResp success(String desc) {
+        return new RPCResp(true, desc);
     }
 
-    public static RPCResult failure(String desc) {
-        return new RPCResult(false, desc);
+    public static RPCResp failure(String desc) {
+        return new RPCResp(false, desc);
     }
 
     //-------------------------------------------------------------------------------------

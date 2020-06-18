@@ -1,5 +1,7 @@
 package org.kin.scheduler.core.task;
 
+import org.kin.kinrpc.message.core.RpcEndpointRef;
+
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -10,6 +12,7 @@ import java.util.Objects;
  * task信息的抽象
  */
 public class TaskDescription<PARAM extends Serializable> implements Serializable {
+    private RpcEndpointRef schedulerRef;
     private String jobId;
     private String taskId;
     /** 自定义Task参数类型 */
@@ -20,14 +23,6 @@ public class TaskDescription<PARAM extends Serializable> implements Serializable
     private int timeout = -1;
     //log文件名，发送者定义, 可以是重试次数1 2 3, 可以是自定义唯一Name
     private String logFileName;
-
-    public TaskDescription() {
-    }
-
-    public TaskDescription(String jobId, String taskId) {
-        this.jobId = jobId;
-        this.taskId = taskId;
-    }
 
     //--------------------------------------------------------------------------------------------
 
@@ -42,7 +37,12 @@ public class TaskDescription<PARAM extends Serializable> implements Serializable
         return newTaskDescription;
     }
 
-
+    public static <PARAM extends Serializable> TaskDescription<PARAM> of(String jobId, String taskId) {
+        TaskDescription<PARAM> newTaskDescription = new TaskDescription<>();
+        newTaskDescription.jobId = jobId;
+        newTaskDescription.taskId = taskId;
+        return newTaskDescription;
+    }
     //--------------------------------------------------------------------------------------------
 
     @Override
@@ -74,6 +74,14 @@ public class TaskDescription<PARAM extends Serializable> implements Serializable
     }
 
     //setter && getter
+
+    public RpcEndpointRef getSchedulerRef() {
+        return schedulerRef;
+    }
+
+    public void setSchedulerRef(RpcEndpointRef schedulerRef) {
+        this.schedulerRef = schedulerRef;
+    }
 
     public String getJobId() {
         return jobId;

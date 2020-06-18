@@ -20,32 +20,31 @@ public class TaskStatusChanged implements Serializable {
     private Serializable execResult;
     private String reason = "";
 
-    public TaskStatusChanged() {
-    }
-
-    public TaskStatusChanged(String taskId, TaskStatus status, String logFileName, Serializable execResult, String reason) {
-        this.taskId = taskId;
-        this.status = status;
-        this.logFileName = logFileName;
-        this.execResult = execResult;
-        this.reason = reason;
-    }
-
     //-------------------------------------------------------------------------------------------
+    public static TaskStatusChanged of(String taskId, TaskStatus status, String logFileName, Serializable execResult, String reason) {
+        TaskStatusChanged message = new TaskStatusChanged();
+        message.taskId = taskId;
+        message.status = status;
+        message.logFileName = logFileName;
+        message.execResult = execResult;
+        message.reason = reason;
+        return message;
+    }
+
     public static TaskStatusChanged finished(String taskId, String logFileName, String reason, Serializable execResult) {
-        return new TaskStatusChanged(taskId, TaskStatus.FINISHED, logFileName, execResult, "task finished");
+        return TaskStatusChanged.of(taskId, TaskStatus.FINISHED, logFileName, execResult, "task finished");
     }
 
     public static TaskStatusChanged fail(String taskId, String logFileName, String reason) {
-        return new TaskStatusChanged(taskId, TaskStatus.FAIL, logFileName, null, reason);
+        return TaskStatusChanged.of(taskId, TaskStatus.FAIL, logFileName, null, reason);
     }
 
     public static TaskStatusChanged cancelled(String taskId, String logFileName, String reason) {
-        return new TaskStatusChanged(taskId, TaskStatus.CANCELLED, logFileName, null, reason);
+        return TaskStatusChanged.of(taskId, TaskStatus.CANCELLED, logFileName, null, reason);
     }
 
     public static TaskStatusChanged running(String taskId, String logFileName) {
-        return new TaskStatusChanged(taskId, TaskStatus.RUNNING, logFileName, null, "");
+        return TaskStatusChanged.of(taskId, TaskStatus.RUNNING, logFileName, null, "");
     }
 
     //-------------------------------------------------------------------------------------------

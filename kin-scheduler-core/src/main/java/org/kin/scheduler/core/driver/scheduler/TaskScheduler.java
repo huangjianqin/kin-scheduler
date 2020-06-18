@@ -1,28 +1,28 @@
 package org.kin.scheduler.core.driver.scheduler;
 
-import org.kin.framework.service.AbstractService;
-import org.kin.kinrpc.cluster.exception.CannotFindInvokerException;
-import org.kin.kinrpc.config.ReferenceConfig;
-import org.kin.kinrpc.config.References;
-import org.kin.kinrpc.config.ServiceConfig;
-import org.kin.kinrpc.config.Services;
+import org.kin.kinrpc.message.core.RpcEnv;
+import org.kin.kinrpc.message.core.RpcMessageCallContext;
+import org.kin.kinrpc.message.core.ThreadSafeRpcEndpoint;
 import org.kin.scheduler.core.driver.Application;
-import org.kin.scheduler.core.driver.SchedulerBackend;
+import org.kin.scheduler.core.driver.ExecutorContext;
 import org.kin.scheduler.core.driver.route.RouteStrategy;
-import org.kin.scheduler.core.driver.transport.ExecutorRegisterInfo;
+import org.kin.scheduler.core.driver.transport.CancelTask;
+import org.kin.scheduler.core.driver.transport.KillExecutor;
+import org.kin.scheduler.core.driver.transport.SubmitTask;
 import org.kin.scheduler.core.driver.transport.TaskStatusChanged;
-import org.kin.scheduler.core.executor.ExecutorBackend;
-import org.kin.scheduler.core.executor.transport.TaskSubmitResult;
+import org.kin.scheduler.core.executor.transport.RegisterExecutor;
+import org.kin.scheduler.core.executor.transport.TaskSubmitResp;
+import org.kin.scheduler.core.master.transport.ExecutorStateUpdate;
 import org.kin.scheduler.core.task.TaskDescription;
 import org.kin.scheduler.core.task.domain.TaskStatus;
-import org.kin.scheduler.core.transport.RPCResult;
-import org.kin.scheduler.core.worker.ExecutorContext;
+import org.kin.scheduler.core.transport.RPCResp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 /**
@@ -31,11 +31,9 @@ import java.util.stream.Collectors;
  * <p>
  * 提供一种规范, 提供调度task的接口, 具体对外调度api由子类实现
  */
-public abstract class TaskScheduler<T> extends AbstractService implements SchedulerBackend {
+public abstract class TaskScheduler<T> extends ThreadSafeRpcEndpoint {
     private static final Logger log = LoggerFactory.getLogger(TaskScheduler.class);
 
-    /** SchedulerBackend服务配置 */
-    private ServiceConfig schedulerBackendServiceConfig;
     /** 已注册executors */
     private volatile Map<String, ExecutorContext> executors;
     /** application配置 */
@@ -43,99 +41,95 @@ public abstract class TaskScheduler<T> extends AbstractService implements Schedu
     /** task集合 */
     protected TaskSetManager taskSetManager;
     private short waiters;
+    private volatile boolean isStopped;
 
-    public TaskScheduler(Application app) {
-        super(app.getAppName().concat("-TaskScheduler"));
+    public TaskScheduler(RpcEnv rpcEnv, Application app) {
+        super(rpcEnv);
         this.app = app;
     }
 
     @Override
-    public void serviceInit() {
+    protected void onStart() {
+        if (isStopped) {
+            return;
+        }
+        super.onStart();
+
         executors = Collections.emptyMap();
         taskSetManager = new TaskSetManager();
+    }
 
-        schedulerBackendServiceConfig = Services.service(this, SchedulerBackend.class)
-                .appName(getName().concat("-ExecutorDriverService"))
-                .bind(app.getDriverPort())
-                .actorLike();
-        try {
-            schedulerBackendServiceConfig.export();
-        } catch (Exception e) {
-            log.error("executor driver service encounter error >>> ", e);
+    @Override
+    protected void onStop() {
+        if (isStopped) {
+            return;
         }
-    }
+        super.onStop();
 
-    @Override
-    public void serviceStart() {
-
-    }
-
-    @Override
-    public void serviceStop() {
+        isStopped = true;
         //取消所有未执行完的task
         for (TaskContext taskContext : taskSetManager.getAllUnFinishTask()) {
             String runningExecutorId = taskContext.getRunningExecutorId();
             ExecutorContext runningExecutorContext = executors.get(runningExecutorId);
             if (Objects.nonNull(runningExecutorContext)) {
-                try {
-                    runningExecutorContext.cancelTask(taskContext.getTaskDescription().getTaskId());
-                } catch (CannotFindInvokerException e) {
-
-                } catch (Exception e) {
-                    log.error("", e);
-                }
+                runningExecutorContext.ref().send(CancelTask.of(taskContext.getTaskDescription().getTaskId()));
             }
         }
         for (ExecutorContext executorContext : executors.values()) {
-            try {
-                executorContext.destroy();
-            } catch (CannotFindInvokerException e) {
-
-            } catch (Exception e) {
-                log.error("", e);
-            }
+            executorContext.ref().send(KillExecutor.INSTANCE);
         }
-        schedulerBackendServiceConfig.disable();
-    }
-
-    public abstract <R extends Serializable> TaskExecFuture<R> submitTask(T task);
-
-    protected final <R extends Serializable> TaskExecFuture<R> submitTask(ExecutorContext ec, TaskContext taskContext) {
-        if (!isInState(State.STARTED)) {
-            synchronized (this) {
-                try {
-                    wait();
-                } catch (InterruptedException e) {
-
-                }
-            }
-        }
-        TaskDescription taskDescription = taskContext.getTaskDescription();
-        taskContext.preExecute(ec.getWorkerId(), ec.getExecutorId());
-        TaskSubmitResult submitResult = ec.execTask(taskDescription);
-        if (Objects.nonNull(submitResult)) {
-            if (submitResult.isSuccess()) {
-                TaskExecFuture future = new TaskExecFuture(submitResult, this);
-                taskContext.submitTask(submitResult, future);
-                log.info("submitTask >>>> {}", taskContext.getTaskDescription());
-                return future;
-            } else {
-                taskContext.execFail();
-            }
-        }
-        return null;
     }
 
     @Override
-    public RPCResult registerExecutor(ExecutorRegisterInfo executorRegisterInfo) {
-        String workerId = executorRegisterInfo.getWorkerId();
-        String executorId = executorRegisterInfo.getExecutorId();
-        if (isInState(State.INITED) || isInState(State.STARTED)) {
-            ExecutorContext executorContext = new ExecutorContext(workerId, executorId);
-            ReferenceConfig<ExecutorBackend> executorBackendReferenceConfig = References.reference(ExecutorBackend.class)
-                    .appName(getName().concat("-").concat(executorId))
-                    .urls(executorRegisterInfo.getAddress());
-            executorContext.start(executorBackendReferenceConfig);
+    public void receive(RpcMessageCallContext context) {
+        super.receive(context);
+
+        Serializable message = context.getMessage();
+        if (message instanceof ExecutorStateUpdate) {
+            executorStatusChange(((ExecutorStateUpdate) message).getUnavailableExecutorIds());
+        } else if (message instanceof RegisterExecutor) {
+            registerExecutor((RegisterExecutor) message);
+        } else if (message instanceof TaskStatusChanged) {
+            taskStatusChange((TaskStatusChanged) message);
+        }
+    }
+
+    public void start() {
+        if (isStopped) {
+            return;
+        }
+
+        rpcEnv.register(app.getAppName(), this);
+    }
+
+    public void stop() {
+        if (isStopped) {
+            return;
+        }
+
+        rpcEnv.unregister(app.getAppName(), this);
+    }
+
+    //---------------------------------------------------------------------------------------------------------------------------------------------------
+    private void executorStatusChange(List<String> unavailableExecutorIds) {
+        if (!isStopped) {
+            //只管关闭无用Executor, 新Executor等待master分配好后, 新Executor会重新注册
+            Map<String, ExecutorContext> executorContexts = new HashMap<>(this.executors);
+            for (String unAvailableExecutorId : unavailableExecutorIds) {
+                ExecutorContext executorContext = executorContexts.remove(unAvailableExecutorId);
+                if (Objects.nonNull(executorContext)) {
+                    executorContext.ref().send(KillExecutor.INSTANCE);
+                }
+            }
+            this.executors = executorContexts;
+        }
+    }
+
+    private void registerExecutor(RegisterExecutor registerExecutor) {
+        String workerId = registerExecutor.getWorkerId();
+        String executorId = registerExecutor.getExecutorId();
+        if (!isStopped) {
+            ExecutorContext executorContext = new ExecutorContext(workerId, executorId, registerExecutor.getExecutorRef());
 
             Map<String, ExecutorContext> tmpExecutors = new HashMap<>(this.executors);
             tmpExecutors.put(executorId, executorContext);
@@ -147,15 +141,11 @@ public abstract class TaskScheduler<T> extends AbstractService implements Schedu
                     notifyAll();
                 }
             }
-            return RPCResult.success();
         }
-
-        return RPCResult.failure("");
     }
 
-    @Override
-    public final void taskStatusChange(TaskStatusChanged taskStatusChanged) {
-        if (isInState(State.STARTED)) {
+    private void taskStatusChange(TaskStatusChanged taskStatusChanged) {
+        if (!isStopped) {
             String taskId = taskStatusChanged.getTaskId();
             if (taskSetManager.hasTask(taskId)) {
                 TaskStatus state = taskStatusChanged.getStatus();
@@ -180,23 +170,7 @@ public abstract class TaskScheduler<T> extends AbstractService implements Schedu
         }
     }
 
-    public final boolean cancelTask(String taskId) {
-        return taskSetManager.cancelTask(taskId);
-    }
-
-    public final void executorStatusChange(List<String> unAvailableExecutorIds) {
-        if (isInState(State.INITED) || isInState(State.STARTED)) {
-            //只管关闭无用Executor, 新Executor等待master分配好后, 新Executor会重新注册
-            Map<String, ExecutorContext> executorContexts = new HashMap<>(this.executors);
-            for (String unAvailableExecutorId : unAvailableExecutorIds) {
-                ExecutorContext executorContext = executorContexts.remove(unAvailableExecutorId);
-                if (Objects.nonNull(executorContext)) {
-                    executorContext.destroy();
-                }
-            }
-            this.executors = executorContexts;
-        }
-    }
+    //---------------------------------------------------------------------------------------------------------------------------------------------------
 
     private void incrWaiter() {
         waiters++;
@@ -204,6 +178,56 @@ public abstract class TaskScheduler<T> extends AbstractService implements Schedu
 
     private void descWaiter() {
         waiters--;
+    }
+
+    //---------------------------------------------------------------------------------------------------------------------------------------------------
+
+    /**
+     * call线程
+     */
+    public abstract <R extends Serializable> TaskExecFuture<R> submitTask(T task);
+
+    /**
+     * call线程
+     */
+    protected final <R extends Serializable> TaskExecFuture<R> submitTask(ExecutorContext ec, TaskContext taskContext) {
+        if (!isStopped) {
+            synchronized (this) {
+                try {
+                    wait();
+                } catch (InterruptedException e) {
+
+                }
+            }
+        }
+        TaskDescription taskDescription = taskContext.getTaskDescription();
+        taskContext.preExecute(ec.getWorkerId(), ec.getExecutorId());
+        TaskSubmitResp submitResult = null;
+        try {
+            submitResult = (TaskSubmitResp) ec.ref().ask(SubmitTask.of(taskDescription)).get();
+            if (Objects.nonNull(submitResult)) {
+                if (submitResult.isSuccess()) {
+                    TaskExecFuture<R> future = new TaskExecFuture<>(submitResult, this);
+                    taskContext.submitTask(submitResult, future);
+                    log.info("submitTask >>>> {}", taskContext.getTaskDescription());
+                    return future;
+                } else {
+                    taskContext.execFail();
+                }
+            }
+        } catch (InterruptedException e) {
+
+        } catch (ExecutionException e) {
+            log.error("", e);
+        }
+        return null;
+    }
+
+    /**
+     * call线程
+     */
+    public final boolean cancelTask(String taskId) {
+        return taskSetManager.cancelTask(taskId);
     }
 
     /**
@@ -288,37 +312,43 @@ public abstract class TaskScheduler<T> extends AbstractService implements Schedu
             return taskContexts;
         }
 
-        public boolean isAllFinish() {
+        private boolean isAllFinish() {
             return taskContexts.values().stream().allMatch(TaskContext::isFinish);
         }
 
-        public TaskContext getTaskInfo(String taskId) {
+        private TaskContext getTaskInfo(String taskId) {
             return taskContexts.get(taskId);
         }
 
-        public boolean hasTask(String taskId) {
+        private boolean hasTask(String taskId) {
             return taskContexts.containsKey(taskId);
         }
 
-        public List<TaskContext> getAllUnFinishTask() {
+        private List<TaskContext> getAllUnFinishTask() {
             return taskContexts.values().stream().filter(TaskContext::isNotFinish).collect(Collectors.toList());
         }
 
-        public boolean cancelTask(String taskId) {
+        private boolean cancelTask(String taskId) {
             TaskContext taskContext = taskContexts.get(taskId);
             if (Objects.nonNull(taskContext) && taskContext.isNotFinish()) {
                 ExecutorContext runningExecutorContext = executors.get(taskContext.getRunningExecutorId());
                 if (Objects.nonNull(runningExecutorContext)) {
-                    RPCResult result = runningExecutorContext.cancelTask(taskContext.getTaskDescription().getTaskId());
+                    boolean askResult = false;
+                    try {
+                        RPCResp result = (RPCResp) runningExecutorContext.ref().ask(CancelTask.of(taskContext.getTaskDescription().getTaskId())).get();
+                        askResult = result.isSuccess();
+                    } catch (Exception e) {
+                        log.error("", e);
+                    }
                     taskFinish(taskId, TaskStatus.CANCELLED, null, "task cancelled");
-                    return result.isSuccess();
+                    return askResult;
                 }
             }
 
             return false;
         }
 
-        public void taskFinish(String taskId, TaskStatus taskStatus, Serializable result, String reason) {
+        private void taskFinish(String taskId, TaskStatus taskStatus, Serializable result, String reason) {
             TaskContext taskContext;
             if (!app.isDropResult()) {
                 taskContext = taskContexts.get(taskId);

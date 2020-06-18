@@ -15,33 +15,32 @@ public class ExecutorStateChanged implements Serializable {
     private String executorId;
     private ExecutorState state;
 
-    public ExecutorStateChanged() {
-    }
-
-    public ExecutorStateChanged(String appName, String executorId, ExecutorState state) {
-        this.appName = appName;
-        this.executorId = executorId;
-        this.state = state;
+    public static ExecutorStateChanged of(String appName, String executorId, ExecutorState state) {
+        ExecutorStateChanged message = new ExecutorStateChanged();
+        message.appName = appName;
+        message.executorId = executorId;
+        message.state = state;
+        return message;
     }
 
     public static ExecutorStateChanged launching(String appName, String executorId) {
-        return new ExecutorStateChanged(appName, executorId, ExecutorState.LAUNCHING);
+        return ExecutorStateChanged.of(appName, executorId, ExecutorState.LAUNCHING);
     }
 
     public static ExecutorStateChanged running(String appName, String executorId) {
-        return new ExecutorStateChanged(appName, executorId, ExecutorState.RUNNING);
+        return ExecutorStateChanged.of(appName, executorId, ExecutorState.RUNNING);
     }
 
     public static ExecutorStateChanged fail(String appName, String executorId) {
-        return new ExecutorStateChanged(appName, executorId, ExecutorState.FAIL);
+        return ExecutorStateChanged.of(appName, executorId, ExecutorState.FAIL);
     }
 
     public static ExecutorStateChanged kill(String appName, String executorId) {
-        return new ExecutorStateChanged(appName, executorId, ExecutorState.KILLED);
+        return ExecutorStateChanged.of(appName, executorId, ExecutorState.KILLED);
     }
 
     public static ExecutorStateChanged exit(String appName, String executorId) {
-        return new ExecutorStateChanged(appName, executorId, ExecutorState.EXIT);
+        return ExecutorStateChanged.of(appName, executorId, ExecutorState.EXIT);
     }
 
 

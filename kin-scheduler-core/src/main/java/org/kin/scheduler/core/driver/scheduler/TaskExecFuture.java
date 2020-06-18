@@ -3,7 +3,7 @@ package org.kin.scheduler.core.driver.scheduler;
 import org.kin.framework.JvmCloseCleaner;
 import org.kin.framework.concurrent.ExecutionContext;
 import org.kin.framework.utils.SysUtils;
-import org.kin.scheduler.core.executor.transport.TaskSubmitResult;
+import org.kin.scheduler.core.executor.transport.TaskSubmitResp;
 import org.kin.scheduler.core.task.domain.TaskStatus;
 
 import java.io.Serializable;
@@ -26,7 +26,7 @@ public class TaskExecFuture<R extends Serializable> implements Future<R> {
         JvmCloseCleaner.DEFAULT().add(CALLBACK_EXECUTORS::shutdown);
     }
 
-    private TaskSubmitResult taskSubmitResult;
+    private TaskSubmitResp taskSubmitResult;
     private TaskScheduler taskScheduler;
     private volatile R result;
     private volatile boolean done;
@@ -34,7 +34,7 @@ public class TaskExecFuture<R extends Serializable> implements Future<R> {
     private Collection<TaskExecCallback<R>> callbacks = new CopyOnWriteArrayList<>();
     private short waiters;
 
-    public TaskExecFuture(TaskSubmitResult taskSubmitResult, TaskScheduler taskScheduler) {
+    public TaskExecFuture(TaskSubmitResp taskSubmitResult, TaskScheduler taskScheduler) {
         this.taskSubmitResult = taskSubmitResult;
         this.taskScheduler = taskScheduler;
     }
@@ -103,7 +103,7 @@ public class TaskExecFuture<R extends Serializable> implements Future<R> {
         return this;
     }
 
-    public TaskSubmitResult getTaskSubmitResult() {
+    public TaskSubmitResp getTaskSubmitResult() {
         return taskSubmitResult;
     }
 }

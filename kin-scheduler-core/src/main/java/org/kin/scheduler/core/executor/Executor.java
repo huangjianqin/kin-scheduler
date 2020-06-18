@@ -3,30 +3,31 @@ package org.kin.scheduler.core.executor;
 import ch.qos.logback.classic.Logger;
 import com.google.common.base.Preconditions;
 import org.kin.framework.concurrent.ExecutionContext;
-import org.kin.framework.service.AbstractService;
 import org.kin.framework.utils.CollectionUtils;
 import org.kin.framework.utils.ExceptionUtils;
 import org.kin.framework.utils.NetUtils;
 import org.kin.framework.utils.StringUtils;
-import org.kin.kinrpc.config.ReferenceConfig;
-import org.kin.kinrpc.config.References;
-import org.kin.kinrpc.config.ServiceConfig;
-import org.kin.kinrpc.config.Services;
-import org.kin.scheduler.core.driver.SchedulerBackend;
-import org.kin.scheduler.core.driver.transport.ExecutorRegisterInfo;
+import org.kin.kinrpc.message.core.RpcEndpointRef;
+import org.kin.kinrpc.message.core.RpcEnv;
+import org.kin.kinrpc.message.core.RpcMessageCallContext;
+import org.kin.kinrpc.message.core.ThreadSafeRpcEndpoint;
+import org.kin.scheduler.core.driver.transport.CancelTask;
+import org.kin.scheduler.core.driver.transport.KillExecutor;
+import org.kin.scheduler.core.driver.transport.SubmitTask;
 import org.kin.scheduler.core.driver.transport.TaskStatusChanged;
 import org.kin.scheduler.core.executor.domain.ExecutorState;
 import org.kin.scheduler.core.executor.transport.ExecutorStateChanged;
-import org.kin.scheduler.core.executor.transport.TaskSubmitResult;
+import org.kin.scheduler.core.executor.transport.RegisterExecutor;
+import org.kin.scheduler.core.executor.transport.TaskSubmitResp;
 import org.kin.scheduler.core.log.LogUtils;
 import org.kin.scheduler.core.log.Loggers;
 import org.kin.scheduler.core.log.TaskLoggerContext;
 import org.kin.scheduler.core.task.TaskDescription;
 import org.kin.scheduler.core.task.handler.TaskHandler;
 import org.kin.scheduler.core.task.handler.TaskHandlers;
-import org.kin.scheduler.core.transport.RPCResult;
-import org.kin.scheduler.core.worker.ExecutorWorkerBackend;
+import org.kin.scheduler.core.transport.RPCResp;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.*;
@@ -37,95 +38,117 @@ import java.util.concurrent.locks.ReentrantLock;
  * @author huangjianqin
  * @date 2020-02-06
  */
-public class Executor extends AbstractService implements ExecutorBackend {
-    protected final String appName;
+public class Executor extends ThreadSafeRpcEndpoint {
+    private final String appName;
     /** 所属的workerId */
-    protected final String workerId;
-    protected final String executorId;
-    protected final String backendHost;
-    protected final int backendPort;
+    private final String workerId;
+    private final String executorId;
     /** Executor的线程池, task执行线程池 */
-    protected ExecutionContext executionContext;
+    private ExecutionContext executionContext;
     /** log路径 */
-    protected final String logPath;
+    private final String logPath;
     /** 日志信息 */
-    protected TaskLoggerContext taskLoggerContext;
+    private TaskLoggerContext taskLoggerContext;
     /** logger */
-    protected Logger log;
-    private ServiceConfig executorBackendServiceConfig;
-    /** driver地址 */
-    protected final String executorDriverBackendAddress;
-    protected ReferenceConfig<SchedulerBackend> schedulerBackendReferenceConfig;
-    /** driver引用配置 */
-    protected SchedulerBackend schedulerBackend;
-    /** worker地址 */
-    protected final String executorWorkerBackendAddress;
-    protected ReferenceConfig<ExecutorWorkerBackend> executorWorkerBackendReferenceConfig;
-    /** worker引用配置 */
-    protected ExecutorWorkerBackend executorWorkerBackend;
-    /** 是否内嵌在worker中 */
-    protected boolean isLocal;
+    private Logger log;
+    /** schduler client */
+    private RpcEndpointRef schedulerRef;
+    /** worker client */
+    private RpcEndpointRef workerRef;
+    /**
+     *
+     */
+    private volatile boolean isStopped;
 
     //--------------------------------------------------------------------
     /** 存储task执行runnable, 用于中断task执行 */
     private ConcurrentMap<String, List<TaskRunner>> taskId2TaskRunners = new ConcurrentHashMap<>();
 
-    public Executor(String appName, String workerId, String executorId,
-                    String backendHost, int backendPort, String logPath,
+    public Executor(RpcEnv rpcEnv, String appName, String workerId, String executorId,
+                    String logPath,
                     String executorDriverBackendAddress, String executorWorkerBackendAddress, boolean isLocal) {
-        super(executorId);
+        super(rpcEnv);
         this.appName = appName;
         this.workerId = workerId;
         this.executorId = executorId;
-        this.backendHost = backendHost;
-        this.backendPort = backendPort;
         this.logPath = logPath;
-        this.executorDriverBackendAddress = executorDriverBackendAddress;
-        this.executorWorkerBackendAddress = executorWorkerBackendAddress;
-        this.isLocal = isLocal;
+
+        Object[] schedulerHostPort = NetUtils.parseIpPort(executorDriverBackendAddress);
+        this.schedulerRef = rpcEnv.createEndpointRef(schedulerHostPort[0].toString(), (Integer) schedulerHostPort[1], appName);
+        Object[] workerHostPort = NetUtils.parseIpPort(executorWorkerBackendAddress);
+        this.workerRef = rpcEnv.createEndpointRef(workerHostPort[0].toString(), (Integer) workerHostPort[1], workerId);
+        ;
     }
 
     @Override
-    public void serviceInit() {
-        super.init();
-        this.executionContext = ExecutionContext.cache("executor-".concat(executorId));
+    protected void onStart() {
+        if (isStopped) {
+            return;
+        }
+        super.onStart();
+
+        executionContext = ExecutionContext.cache("executor-".concat(executorId));
         taskLoggerContext = new TaskLoggerContext(executorId);
         log = LogUtils.getExecutorLogger(logPath, workerId, executorId);
-
-        executorBackendServiceConfig = Services.service(this, ExecutorBackend.class)
-                .appName(getName())
-                .bind(backendHost, backendPort)
-                .actorLike();
-        try {
-            executorBackendServiceConfig.export();
-        } catch (Exception e) {
-            log.error("executor(" + executorId + ") init error", e);
-        }
-
-        executorWorkerBackendReferenceConfig = References.reference(ExecutorWorkerBackend.class)
-                .appName(getName().concat("-ExecutorWorkerBackend"))
-                .urls(executorWorkerBackendAddress);
-        executorWorkerBackend = executorWorkerBackendReferenceConfig.get();
-
-        schedulerBackendReferenceConfig = References.reference(SchedulerBackend.class)
-                .appName(getName().concat("-ExecutorDriverBackend"))
-                .urls(executorDriverBackendAddress);
-        schedulerBackend = schedulerBackendReferenceConfig.get();
-
-        executorWorkerBackend.executorStateChanged(ExecutorStateChanged.launching(appName, executorId));
-    }
-
-    @Override
-    public void serviceStart() {
-        super.start();
         taskLoggerContext.start();
-        executorWorkerBackend.executorStateChanged(ExecutorStateChanged.running(appName, executorId));
-        schedulerBackend.registerExecutor(new ExecutorRegisterInfo(workerId, executorId, NetUtils.getIpPort(backendHost, backendPort)));
+
+        workerRef.send(ExecutorStateChanged.running(appName, executorId));
+
+        schedulerRef.send(RegisterExecutor.of(workerId, executorId, ref()));
         log.info("executor({}) started", executorId);
     }
 
-    private TaskSubmitResult execTask0(TaskDescription taskDescription, Logger log) {
-        if (this.isInState(State.STARTED)) {
+    @Override
+    protected void onStop() {
+        if (isStopped) {
+            return;
+        }
+        super.onStop();
+
+        isStopped = true;
+        executionContext.shutdown();
+        taskLoggerContext.stop();
+
+        log.info("executor({}) closed", executorId);
+    }
+
+    @Override
+    public void receive(RpcMessageCallContext context) {
+        super.receive(context);
+
+        Serializable message = context.getMessage();
+        if (message instanceof SubmitTask) {
+            execTask((((SubmitTask) message).getTaskDescription()));
+        } else if (message instanceof CancelTask) {
+            cancelTask(context, (CancelTask) message);
+        } else if (message instanceof KillExecutor) {
+            stop();
+        }
+    }
+
+    public void start() {
+        if (isStopped) {
+            return;
+        }
+        rpcEnv.register(executorId, this);
+    }
+
+    public void stop() {
+        if (isStopped) {
+            return;
+        }
+        rpcEnv.unregister(executorId, this);
+    }
+
+    //-------------------------------------------------------------------------------------------------------------------------
+    private void execTask(TaskDescription taskDescription) {
+        TaskSubmitResp taskSubmitResp = execTask0(taskDescription, log);
+        log.info("exec task({}) finished, resulst >>>> {}", taskDescription.getTaskId(), taskSubmitResp);
+        taskDescription.getSchedulerRef().send(taskSubmitResp);
+    }
+
+    private TaskSubmitResp execTask0(TaskDescription taskDescription, Logger log) {
+        if (isStopped) {
             log.info("execing task({})", taskDescription);
 
             if (StringUtils.isBlank(taskDescription.getLogFileName())) {
@@ -142,7 +165,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
                         if (CollectionUtils.isNonEmpty(exTaskRunners)) {
                             //同一Task在同一Executor中执行
                             //保留原来执行中或者待执行的task
-                            return TaskSubmitResult.failure(taskDescription.getTaskId(), "Discard Later abort task");
+                            return TaskSubmitResp.failure(taskDescription.getTaskId(), "Discard Later abort task");
                         }
 
                         break;
@@ -176,47 +199,30 @@ public class Executor extends AbstractService implements ExecutorBackend {
 
                 String taskLogName = LogUtils.getTaskLogFileAbsoluteName(logPath, taskDescription.getJobId(), taskDescription.getTaskId(), taskDescription.getLogFileName());
                 String taskOutputName = LogUtils.getTaskOutputFileAbsoluteName(logPath, taskDescription.getJobId(), taskDescription.getTaskId(), taskDescription.getLogFileName());
-                return TaskSubmitResult.success(taskDescription.getTaskId(), taskLogName, taskOutputName);
+                return TaskSubmitResp.success(taskDescription.getTaskId(), taskLogName, taskOutputName);
             } catch (Exception e) {
                 cleanFinishedTask(taskDescription);
-                return TaskSubmitResult.failure(taskDescription.getTaskId(), ExceptionUtils.getExceptionDesc(e));
+                return TaskSubmitResp.failure(taskDescription.getTaskId(), ExceptionUtils.getExceptionDesc(e));
             }
         }
 
-        return TaskSubmitResult.failure(taskDescription.getTaskId(), String.format("executor(%s) stopped", executorId));
+        return TaskSubmitResp.failure(taskDescription.getTaskId(), String.format("executor(%s) stopped", executorId));
     }
 
-    @Override
-    public TaskSubmitResult execTask(TaskDescription taskDescription) {
-        TaskSubmitResult submitResult = execTask0(taskDescription, log);
-        log.info("exec task({}) finished, resulst >>>> {}", taskDescription.getTaskId(), submitResult);
-        return submitResult;
-    }
-
-    public RPCResult cancelTask0(String taskId) {
-        if (isInState(State.STARTED)) {
+    private void cancelTask(RpcMessageCallContext context, CancelTask cancelTask) {
+        String taskId = cancelTask.getTaskId();
+        log.info("task({}) cancel >>>>", taskId);
+        if (isStopped) {
             if (taskId2TaskRunners.containsKey(taskId)) {
                 for (TaskRunner taskRunner : taskId2TaskRunners.get(taskId)) {
                     taskRunner.interrupt();
                 }
                 taskId2TaskRunners.remove(taskId);
-                return RPCResult.success();
+                context.reply(RPCResp.success());
             }
-            return RPCResult.failure(String.format("executor(%s) has not run task(%s)", executorId, taskId));
+            context.reply(RPCResp.failure(String.format("executor(%s) has not run task(%s)", executorId, taskId)));
         }
-        return RPCResult.failure(String.format("executor(%s) stopped", executorId));
-    }
-
-    @Override
-    public RPCResult cancelTask(String taskId) {
-        log.info("task({}) cancel >>>>", taskId);
-        RPCResult result = cancelTask0(taskId);
-        return result;
-    }
-
-    @Override
-    public void destroy() {
-        stop();
+        context.reply(RPCResp.failure(String.format("executor(%s) stopped", executorId)));
     }
 
     /**
@@ -229,39 +235,18 @@ public class Executor extends AbstractService implements ExecutorBackend {
         }
     }
 
-    @Override
-    public void serviceStop() {
-        super.stop();
-        executionContext.shutdown();
-        taskLoggerContext.stop();
-
-        if (isLocal) {
-            try {
-                executorWorkerBackend.executorStateChanged(ExecutorStateChanged.exit(appName, executorId));
-            } catch (Exception e) {
-                log.error("", e);
-            }
-        }
-
-        executorBackendServiceConfig.disable();
-        executorWorkerBackendReferenceConfig.disable();
-        schedulerBackendReferenceConfig.disable();
-
-        log.info("executor({}) closed", executorId);
-
-        taskLoggerContext.stop();
-    }
+    //-----------------------------------------------------------------------------------------------------------------
 
     public void executorStateChanged(ExecutorState state) {
         switch (state) {
             case KILLED:
-                executorWorkerBackend.executorStateChanged(ExecutorStateChanged.kill(appName, executorId));
+                workerRef.send(ExecutorStateChanged.kill(appName, executorId));
                 break;
             case FAIL:
-                executorWorkerBackend.executorStateChanged(ExecutorStateChanged.fail(appName, executorId));
+                workerRef.send(ExecutorStateChanged.fail(appName, executorId));
                 break;
             case EXIT:
-                executorWorkerBackend.executorStateChanged(ExecutorStateChanged.exit(appName, executorId));
+                workerRef.send(ExecutorStateChanged.exit(appName, executorId));
                 break;
             default:
         }
@@ -275,7 +260,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
         private volatile boolean isStopped;
         private Thread currentThread;
 
-        public TaskRunner(TaskDescription taskDescription) {
+        private TaskRunner(TaskDescription taskDescription) {
             this.taskDescription = taskDescription;
         }
 
@@ -318,7 +303,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
                     Loggers.logger().info("task({}) execute error >>>> {}", taskDescription.getTaskId(), e);
                 }
 
-                schedulerBackend.taskStatusChange(execResult);
+                schedulerRef.send(execResult);
             } finally {
                 Loggers.removeAll();
                 isStopped = true;
@@ -347,7 +332,7 @@ public class Executor extends AbstractService implements ExecutorBackend {
                     taskHandler.exec(taskDescription));
         }
 
-        public void interrupt() {
+        private void interrupt() {
             lock.lock();
             try {
                 if (!isStopped) {

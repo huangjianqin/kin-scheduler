@@ -1,5 +1,9 @@
 package org.kin.scheduler.core.worker;
 
+import org.kin.framework.utils.SysUtils;
+import org.kin.kinrpc.message.core.RpcEnv;
+import org.kin.kinrpc.transport.serializer.SerializerType;
+import org.kin.kinrpc.transport.serializer.Serializers;
 import org.kin.scheduler.core.cfg.Config;
 import org.kin.scheduler.core.cfg.Configs;
 
@@ -20,11 +24,13 @@ public class WorkerRunner {
         if (args.length == 2) {
             Config config = Configs.getCfg();
             String workerId = args[0];
-            config.setWorkerBackendPort(Integer.valueOf(args[1]));
+            config.setWorkerBackendPort(Integer.parseInt(args[1]));
 
-            Worker worker = new Worker(workerId, config);
+            RpcEnv rpcEnv = new RpcEnv(config.getWorkerBackendHost(), config.getWorkerBackendPort(), SysUtils.getSuitableThreadNum(),
+                    Serializers.getSerializer(SerializerType.KRYO), false);
+            rpcEnv.startServer();
+            Worker worker = new Worker(rpcEnv, workerId, config);
             try {
-                worker.init();
                 worker.start();
                 synchronized (worker) {
                     try {
@@ -33,9 +39,9 @@ public class WorkerRunner {
 
                     }
                 }
-                int a = 1;
-            } finally {
                 worker.stop();
+            } finally {
+                rpcEnv.stop();
             }
 
         }

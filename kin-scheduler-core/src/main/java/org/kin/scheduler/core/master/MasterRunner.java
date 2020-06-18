@@ -1,5 +1,10 @@
 package org.kin.scheduler.core.master;
 
+import org.kin.framework.utils.SysUtils;
+import org.kin.kinrpc.message.core.RpcEnv;
+import org.kin.kinrpc.transport.serializer.SerializerType;
+import org.kin.kinrpc.transport.serializer.Serializers;
+
 /**
  * @author huangjianqin
  * @date 2020-02-06
@@ -12,9 +17,11 @@ public class MasterRunner {
             String logPath = args[2];
             int heartbeat = Integer.parseInt(args[3]);
 
-            Master master = new Master(masterBackendHost, masterBackendPort, logPath, heartbeat);
+            RpcEnv rpcEnv = new RpcEnv(masterBackendHost, masterBackendPort, SysUtils.getSuitableThreadNum(),
+                    Serializers.getSerializer(SerializerType.KRYO), false);
+            rpcEnv.startServer();
+            Master master = new Master(rpcEnv, logPath, heartbeat);
             try {
-                master.init();
                 master.start();
                 synchronized (master) {
                     try {
@@ -23,8 +30,9 @@ public class MasterRunner {
 
                     }
                 }
-            } finally {
                 master.stop();
+            } finally {
+                rpcEnv.stop();
             }
         }
     }

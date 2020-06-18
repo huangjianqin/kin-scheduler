@@ -1,10 +1,8 @@
 package org.kin.scheduler.core.master.domain;
 
-import org.kin.kinrpc.config.ReferenceConfig;
-import org.kin.kinrpc.config.References;
+import org.kin.kinrpc.message.core.RpcEndpointRef;
 import org.kin.scheduler.core.domain.WorkerResource;
 import org.kin.scheduler.core.driver.ApplicationDescription;
-import org.kin.scheduler.core.driver.MasterDriverBackend;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,36 +18,13 @@ public class ApplicationContext {
     private ApplicationDescription appDesc;
     /** 已用的 executor资源 */
     private List<ExecutorResource> usedExecutorResources;
-    /** executorDriverBackend url地址 */
-    private String executorDriverBackendAddress;
+    /** driver 引用 */
+    private RpcEndpointRef ref;
 
-    /** master -> driver 引用 */
-    private String masterDriverBackendAddress;
-    private ReferenceConfig<MasterDriverBackend> referenceConfig;
-    private MasterDriverBackend masterDriverBackend;
-
-    public ApplicationContext(ApplicationDescription appDesc, String executorDriverBackendAddress, String masterDriverBackendAddress) {
+    public ApplicationContext(ApplicationDescription appDesc, RpcEndpointRef ref) {
         this.appDesc = appDesc;
         this.usedExecutorResources = new CopyOnWriteArrayList<>();
-        this.executorDriverBackendAddress = executorDriverBackendAddress;
-        this.masterDriverBackendAddress = masterDriverBackendAddress;
-    }
-
-    public void init() {
-        referenceConfig = References
-                .reference(MasterDriverBackend.class)
-                .appName("Master".concat("-").concat(appDesc.getAppName()).concat("-").concat("MasterDriverBackend"))
-                .urls(masterDriverBackendAddress);
-        masterDriverBackend = referenceConfig.get();
-    }
-
-    public void stop() {
-        referenceConfig.disable();
-    }
-
-
-    public void executorStatusChange(List<String> newExecutorIds, List<String> unavailableExecutorIds) {
-        masterDriverBackend.executorStatusChange(newExecutorIds, unavailableExecutorIds);
+        this.ref = ref;
     }
 
     //------------------------------------------------------------------------------------------------------------------
@@ -100,8 +75,8 @@ public class ApplicationContext {
         return appDesc;
     }
 
-    public String getExecutorDriverBackendAddress() {
-        return executorDriverBackendAddress;
+    public RpcEndpointRef ref() {
+        return ref;
     }
 
     public List<ExecutorResource> getUsedExecutorResources() {

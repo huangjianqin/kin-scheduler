@@ -1,6 +1,6 @@
 package org.kin.scheduler.core.worker.transport;
 
-import org.kin.scheduler.core.transport.RPCResult;
+import org.kin.scheduler.core.transport.RPCResp;
 
 import java.io.Serializable;
 
@@ -8,7 +8,7 @@ import java.io.Serializable;
  * @author huangjianqin
  * @date 2020-03-08
  */
-public class TaskExecFileContent extends RPCResult implements Serializable {
+public class TaskExecFileContent extends RPCResp implements Serializable {
     private static final long serialVersionUID = 42L;
 
     public static TaskExecFileContent success(String workerId, String path, int fromLineNum, int toLineNum, String content, boolean isEnd) {

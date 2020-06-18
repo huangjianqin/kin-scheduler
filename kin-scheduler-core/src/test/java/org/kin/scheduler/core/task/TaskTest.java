@@ -14,8 +14,7 @@ import java.io.Serializable;
  */
 public abstract class TaskTest {
     protected void run() throws InterruptedException {
-        Driver driver = Driver.a(Application.build().appName("test").allocateStrategy(AllocateStrategyType.All));
-        driver.init();
+        Driver driver = Driver.common(Application.build().appName("test").allocateStrategy(AllocateStrategyType.All));
         driver.start();
 
         Thread.sleep(1000);

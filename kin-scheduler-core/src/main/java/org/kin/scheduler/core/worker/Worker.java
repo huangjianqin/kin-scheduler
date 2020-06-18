@@ -3,26 +3,25 @@ package org.kin.scheduler.core.worker;
 import ch.qos.logback.classic.Logger;
 import org.kin.framework.JvmCloseCleaner;
 import org.kin.framework.concurrent.keeper.Keeper;
-import org.kin.framework.service.AbstractService;
 import org.kin.framework.utils.CommandUtils;
 import org.kin.framework.utils.ExceptionUtils;
 import org.kin.framework.utils.NetUtils;
 import org.kin.framework.utils.StringUtils;
-import org.kin.kinrpc.cluster.Clusters;
-import org.kin.kinrpc.cluster.exception.CannotFindInvokerException;
-import org.kin.kinrpc.config.ReferenceConfig;
-import org.kin.kinrpc.config.References;
-import org.kin.kinrpc.config.ServiceConfig;
-import org.kin.kinrpc.config.Services;
+import org.kin.kinrpc.message.core.RpcEndpointRef;
+import org.kin.kinrpc.message.core.RpcEnv;
+import org.kin.kinrpc.message.core.RpcMessageCallContext;
+import org.kin.kinrpc.message.core.ThreadSafeRpcEndpoint;
 import org.kin.scheduler.core.cfg.Config;
+import org.kin.scheduler.core.driver.transport.ReadFile;
 import org.kin.scheduler.core.executor.Executor;
 import org.kin.scheduler.core.executor.transport.ExecutorStateChanged;
 import org.kin.scheduler.core.log.LogUtils;
 import org.kin.scheduler.core.log.Loggers;
-import org.kin.scheduler.core.master.MasterBackend;
-import org.kin.scheduler.core.master.transport.ExecutorLaunchInfo;
-import org.kin.scheduler.core.master.transport.WorkerHeartbeatResp;
-import org.kin.scheduler.core.master.transport.WorkerRegisterResult;
+import org.kin.scheduler.core.master.Master;
+import org.kin.scheduler.core.master.transport.LaunchExecutor;
+import org.kin.scheduler.core.master.transport.RegisterWorkerResp;
+import org.kin.scheduler.core.master.transport.UnRegisterWorkerResp;
+import org.kin.scheduler.core.master.transport.WorkerReRegister;
 import org.kin.scheduler.core.worker.transport.*;
 
 import java.io.*;
@@ -36,20 +35,14 @@ import java.util.concurrent.TimeUnit;
  * @author huangjianqin
  * @date 2020-02-06
  */
-public class Worker extends AbstractService implements WorkerBackend, ExecutorWorkerBackend {
+public class Worker extends ThreadSafeRpcEndpoint {
     private Logger log;
 
-    private String workerId;
+    private final String workerId;
     /** worker配置 */
     private final Config config;
-    /** RPC服务配置 */
-    private ServiceConfig workerServiceConfig;
-    /** executor -> worker RPC服务配置 */
-    private ServiceConfig executorWorkerBackendServiceConfig;
-    /** RPC引用配置 */
-    private ReferenceConfig<MasterBackend> masterBackendReferenceConfig;
-    /** master 的rpc接口 */
-    private MasterBackend masterBackend;
+    /** master client */
+    private final RpcEndpointRef masterRef;
     /** executor 的rpc接口 仅仅保存引用, 并不会操作实例 */
     private Map<String, Executor> embeddedExecutors = new HashMap<>();
     /**
@@ -59,66 +52,22 @@ public class Worker extends AbstractService implements WorkerBackend, ExecutorWo
     private int executorIdCounter = 1;
     //定时发送心跳
     private Keeper.KeeperStopper heartbeatKeeper;
+    private volatile boolean isStopped;
 
-    public Worker(String workerId, Config config) {
-        super("Worker-".concat(workerId));
+    public Worker(RpcEnv rpcEnv, String workerId, Config config) {
+        super(rpcEnv);
         this.workerId = workerId;
         this.config = config;
+        this.masterRef = rpcEnv.createEndpointRef(config.getWorkerBackendHost(), config.getWorkerBackendPort(), Master.DEFAULT_NAME);
         log = Loggers.worker(config.getLogPath(), workerId);
-    }
-
-    @Override
-    public void serviceInit() {
-        masterBackendReferenceConfig = References.reference(MasterBackend.class)
-                .appName(getName().concat("-MasterBackend"))
-                .urls(NetUtils.getIpPort(config.getMasterBackendHost(), config.getMasterBackendPort()));
-        masterBackend = masterBackendReferenceConfig.get();
-        try {
-            workerServiceConfig = Services.service(this, WorkerBackend.class)
-                    .appName(getName())
-                    .bind(config.getWorkerBackendHost(), config.getWorkerBackendPort())
-                    .actorLike();
-            workerServiceConfig.export();
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
-        }
-
-        try {
-            executorWorkerBackendServiceConfig = Services.service(this, ExecutorWorkerBackend.class)
-                    .appName(getName().concat("-ExecutorWorkerBackend"))
-                    .bind(config.getWorkerBackendHost(), config.getWorkerBackendPort())
-                    .actorLike();
-            executorWorkerBackendServiceConfig.export();
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
-        }
 
         JvmCloseCleaner.DEFAULT().add(JvmCloseCleaner.MAX_PRIORITY, this::stop);
     }
 
-    private WorkerRegisterInfo generateWorkerRegisterInfo() {
-        return new WorkerRegisterInfo(generateWorkerInfo());
-    }
-
-    private WorkerInfo generateWorkerInfo() {
-        return new WorkerInfo(workerId, NetUtils.getIpPort(config.getWorkerBackendHost(), config.getWorkerBackendPort()),
-                config.getCpuCore(), 0);
-    }
-
-    private void registerWorker() {
-        //注册worker
-        try {
-            WorkerRegisterResult registerResult = masterBackend.registerWorker(generateWorkerRegisterInfo());
-            if (!registerResult.isSuccess()) {
-                log.error("worker register error >>> {}".concat(registerResult.getDesc()));
-            }
-        } catch (Exception e) {
-
-        }
-    }
-
     @Override
-    public void serviceStart() {
+    protected void onStart() {
+        super.onStart();
+
         registerWorker();
 
         heartbeatKeeper = Keeper.keep(this::sendHeartbeat);
@@ -127,32 +76,93 @@ public class Worker extends AbstractService implements WorkerBackend, ExecutorWo
     }
 
     @Override
-    public void serviceStop() {
+    protected void onStop() {
+        super.onStop();
+
+        isStopped = true;
         //取消注册
-        try {
-            masterBackend.unregisterWorker(workerId);
-        } catch (CannotFindInvokerException e) {
-
-        } catch (Exception e) {
-            log.error("", e);
-        }
-        log.error("worker unregistered");
-        stop0();
-    }
-
-    private void stop0() {
+        unRegisterWorker();
         if (Objects.nonNull(heartbeatKeeper)) {
             heartbeatKeeper.stop();
         }
-        //关闭RPC 服务
-        masterBackendReferenceConfig.disable();
-        workerServiceConfig.disable();
-        executorWorkerBackendServiceConfig.disable();
-        Clusters.shutdown();
         log.info("worker({}) stopped", workerId);
     }
 
+    @Override
+    public void receive(RpcMessageCallContext context) {
+        super.receive(context);
+
+        Serializable message = context.getMessage();
+        if (message instanceof RegisterWorkerResp) {
+            registerWorkerResp((RegisterWorkerResp) message);
+        } else if (message instanceof UnRegisterWorkerResp) {
+            unRegisterWorkerResp();
+        } else if (message instanceof LaunchExecutor) {
+            launchExecutor((LaunchExecutor) message);
+        } else if (message instanceof ReadFile) {
+            readFile(context, (ReadFile) message);
+        } else if (message instanceof WorkerReRegister) {
+            registerWorker();
+        } else if (message instanceof ExecutorStateChanged) {
+            executorStateChanged((ExecutorStateChanged) message);
+        }
+    }
+
+    public void start() {
+        if (isStopped) {
+            return;
+        }
+        rpcEnv.register(workerId, this);
+    }
+
+    public void stop() {
+        if (isStopped) {
+            return;
+        }
+        rpcEnv.unregister(workerId, this);
+    }
+
+    //---------------------------------------WorkerBackend-------------------------------------------------------------------------
+
+    private void registerWorker() {
+        if (isStopped) {
+            return;
+        }
+        //注册worker
+        masterRef.send(RegisterWorker.of(WorkerInfo.of(workerId, config.getCpuCore(), 0), ref()));
+    }
+
+    private void registerWorkerResp(RegisterWorkerResp registerWorkerResp) {
+        if (isStopped) {
+            return;
+        }
+        if (!registerWorkerResp.isSuccess()) {
+            log.error("worker '{}' register error >>> {}", workerId, registerWorkerResp.getDesc());
+        } else {
+            log.info("worker '{}' registered", workerId);
+        }
+    }
+
+    private void unRegisterWorker() {
+        if (isStopped) {
+            return;
+        }
+        //取消注册worker
+        masterRef.send(UnRegisterWorker.of(workerId));
+    }
+
+    private void unRegisterWorkerResp() {
+        if (isStopped) {
+            return;
+        }
+        //取消注册worker
+        log.info("worker '{}' unRegistered", workerId);
+    }
+
     private void sendHeartbeat() {
+        if (isStopped) {
+            return;
+        }
         long heartbeatTime = config.getHeartbeatTime();
         try {
             long sleepTime = heartbeatTime - System.currentTimeMillis() % heartbeatTime;
@@ -160,19 +170,17 @@ public class Worker extends AbstractService implements WorkerBackend, ExecutorWo
                 TimeUnit.MILLISECONDS.sleep(sleepTime);
             }
         } catch (InterruptedException e) {
-
+            return;
         }
 
-        WorkerHeartbeatResp workerHeartbeatResp = masterBackend.workerHeartbeat(new WorkerHeartbeat(workerId));
-        if (workerHeartbeatResp.isReconnect()) {
-            //该worker还没注册, master通知注册
-            registerWorker();
-        }
+        masterRef.send(WorkerHeartbeat.of(workerId, ref()));
     }
 
-    @Override
-    public ExecutorLaunchResult launchExecutor(ExecutorLaunchInfo launchInfo) {
-        ExecutorLaunchResult result = launchExecutor0(launchInfo);
+    private void launchExecutor(LaunchExecutor launchInfo) {
+        if (isStopped) {
+            return;
+        }
+        LaunchExecutorResp result = launchExecutor0(launchInfo);
 
         //log
         if (result.isSuccess()) {
@@ -181,58 +189,32 @@ public class Worker extends AbstractService implements WorkerBackend, ExecutorWo
             log.error("lauch executor fail >>> {}", result.getDesc());
         }
 
-        return result;
+        masterRef.send(result);
     }
 
-    @Override
-    public TaskExecFileContent readFile(String path, int fromLineNum) {
-        if (StringUtils.isBlank(path)) {
-            return TaskExecFileContent.fail(workerId, path, fromLineNum, "path is blank");
+    private LaunchExecutorResp launchExecutor0(LaunchExecutor launchInfo) {
+        if (isStopped) {
+            return LaunchExecutorResp.failure("worker not start");
         }
 
-        File logFile = new File(path);
-        if (!logFile.exists()) {
-            return TaskExecFileContent.fail(workerId, path, fromLineNum, "read file fail, file not found");
-        }
-
-        StringBuffer logContentBuffer = new StringBuffer();
-        int toLineNum = 0;
-        try (LineNumberReader reader = new LineNumberReader(new InputStreamReader(new FileInputStream(logFile), StandardCharsets.UTF_8))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                toLineNum = reader.getLineNumber();
-                if (toLineNum >= fromLineNum) {
-                    logContentBuffer.append(line).append("\n");
-                }
-            }
-        } catch (IOException e) {
-            log.error("read log file encounter error >>>>", e);
-            return TaskExecFileContent.fail(workerId, path, fromLineNum, ExceptionUtils.getExceptionDesc(e));
-        }
-        return TaskExecFileContent.success(workerId, path, fromLineNum, toLineNum, logContentBuffer.toString(), fromLineNum == toLineNum);
-    }
-
-    private ExecutorLaunchResult launchExecutor0(ExecutorLaunchInfo launchInfo) {
-        if (!isInState(State.STARTED)) {
-            return ExecutorLaunchResult.failure("worker not start");
-        }
-
-        ExecutorLaunchResult result;
+        LaunchExecutorResp result;
 
         String appName = launchInfo.getAppName();
+        int cpuCore = launchInfo.getCpuCore();
+
         String executorWorkerBackendAddress = NetUtils.getIpPort(config.getWorkerBackendHost(), config.getWorkerBackendPort());
         int executorBackendPort = getAvailableExecutorBackendPort();
         if (executorBackendPort > 0) {
             String executorId = workerId.concat("-Executor-").concat(String.valueOf(executorIdCounter++));
             if (config.isAllowEmbeddedExecutor()) {
-                Executor executor = new Executor(appName, workerId, executorId, config.getWorkerBackendHost(), executorBackendPort, config.getLogPath(),
+                Executor executor = new Executor(rpcEnv, appName, workerId, executorId, config.getLogPath(),
                         launchInfo.getExecutorDriverBackendAddress(), executorWorkerBackendAddress, true);
-                executor.init();
                 executor.start();
 
                 embeddedExecutors.put(executorId, executor);
 
-                result = ExecutorLaunchResult.success(executorId, NetUtils.getIpPort(config.getWorkerBackendHost(), executorBackendPort));
+                result = LaunchExecutorResp.success(appName, executorId, workerId, cpuCore,
+                        NetUtils.getIpPort(config.getWorkerBackendHost(), executorBackendPort));
             } else {
                 //启动新jvm来启动Executor
                 //TODO 通过启动进程控制CPU使用数
@@ -247,13 +229,14 @@ public class Worker extends AbstractService implements WorkerBackend, ExecutorWo
                     reason = ExceptionUtils.getExceptionDesc(e);
                 }
                 if (commandExecResult == 0) {
-                    result = ExecutorLaunchResult.success(executorId, NetUtils.getIpPort(config.getWorkerBackendHost(), executorBackendPort));
+                    result = LaunchExecutorResp.success(appName, executorId, workerId, cpuCore,
+                            NetUtils.getIpPort(config.getWorkerBackendHost(), executorBackendPort));
                 } else {
-                    result = ExecutorLaunchResult.failure("executor launch fail >>>>>".concat(System.lineSeparator()).concat(reason));
+                    result = LaunchExecutorResp.failure("executor launch fail >>>>>".concat(System.lineSeparator()).concat(reason));
                 }
             }
         } else {
-            result = ExecutorLaunchResult.failure("can not find available port for executor");
+            result = LaunchExecutorResp.failure("can not find available port for executor");
         }
 
         return result;
@@ -273,18 +256,47 @@ public class Worker extends AbstractService implements WorkerBackend, ExecutorWo
         return NetUtils.isPortInRange(executorBackendPort) ? executorBackendPort : -1;
     }
 
-    @Override
-    public void reconnect2Master() {
-        registerWorker();
+
+    private void readFile(RpcMessageCallContext context, ReadFile readFile) {
+        if (isStopped) {
+            return;
+        }
+        String path = readFile.getPath();
+        int fromLineNum = readFile.getFromLineNum();
+
+        if (StringUtils.isBlank(path)) {
+            context.reply(TaskExecFileContent.fail(workerId, path, fromLineNum, "path is blank"));
+        }
+
+        File logFile = new File(path);
+        if (!logFile.exists()) {
+            context.reply(TaskExecFileContent.fail(workerId, path, fromLineNum, "read file fail, file not found"));
+        }
+
+        StringBuffer logContentBuffer = new StringBuffer();
+        int toLineNum = 0;
+        try (LineNumberReader reader = new LineNumberReader(new InputStreamReader(new FileInputStream(logFile), StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                toLineNum = reader.getLineNumber();
+                if (toLineNum >= fromLineNum) {
+                    logContentBuffer.append(line).append("\n");
+                }
+            }
+        } catch (IOException e) {
+            log.error("read log file encounter error >>>>", e);
+            context.reply(TaskExecFileContent.fail(workerId, path, fromLineNum, ExceptionUtils.getExceptionDesc(e)));
+        }
+        context.reply(TaskExecFileContent.success(workerId, path, fromLineNum, toLineNum, logContentBuffer.toString(), fromLineNum == toLineNum));
     }
 
-    @Override
-    public void executorStateChanged(ExecutorStateChanged executorStateChanged) {
-        if (!isInState(State.STARTED)) {
+    private void executorStateChanged(ExecutorStateChanged executorStateChanged) {
+        if (isStopped) {
             return;
         }
 
-        embeddedExecutors.remove(executorStateChanged.getExecutorId());
-        masterBackend.executorStateChanged(executorStateChanged);
+        Executor invalidExecutor = embeddedExecutors.remove(executorStateChanged.getExecutorId());
+        invalidExecutor.stop();
+        masterRef.send(executorStateChanged);
     }
 }

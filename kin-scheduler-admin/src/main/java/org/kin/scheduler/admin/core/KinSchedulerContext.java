@@ -1,6 +1,10 @@
 package org.kin.scheduler.admin.core;
 
 import org.kin.framework.utils.NetUtils;
+import org.kin.framework.utils.SysUtils;
+import org.kin.kinrpc.message.core.RpcEnv;
+import org.kin.kinrpc.transport.serializer.SerializerType;
+import org.kin.kinrpc.transport.serializer.Serializers;
 import org.kin.scheduler.admin.dao.JobInfoDao;
 import org.kin.scheduler.admin.dao.TaskInfoDao;
 import org.kin.scheduler.admin.dao.TaskLogDao;
@@ -64,7 +68,9 @@ public class KinSchedulerContext implements InitializingBean, ApplicationListene
     private JobInfoDao jobInfoDao;
 
     private Master master;
+    private RpcEnv masterRpcEnv;
     private KinDriver driver;
+    private RpcEnv driverRpcEnv;
 
     public static KinSchedulerContext instance() {
         return INSTANCE;
@@ -84,13 +90,17 @@ public class KinSchedulerContext implements InitializingBean, ApplicationListene
                 int masterBackendPort = KinSchedulerContext.instance().getMasterBackendPort();
                 String logPath = KinSchedulerContext.instance().getLogPath();
 
+                masterRpcEnv = new RpcEnv(masterBackendHost, masterBackendPort, SysUtils.getSuitableThreadNum(),
+                        Serializers.getSerializer(SerializerType.KRYO), false);
+                masterRpcEnv.startServer();
+
                 //TODO 定心跳间隔
-                master = new Master(masterBackendHost, masterBackendPort, logPath, 3);
+                master = new Master(masterRpcEnv, logPath, 3);
                 try {
-                    master.init();
                     master.start();
                 } finally {
                     master.stop();
+                    masterRpcEnv.stop();
                 }
             }, "Master-Thread");
             masterThread.start();
@@ -99,13 +109,15 @@ public class KinSchedulerContext implements InitializingBean, ApplicationListene
 
     @PreDestroy
     public void shutdown() {
-        driver.close();
+        driver.stop();
+        driverRpcEnv.stop();
         try {
             Thread.sleep(500);
         } catch (InterruptedException e) {
 
         }
         master.stop();
+        masterRpcEnv.stop();
     }
 
     public KinDriver getDriver() {
@@ -113,7 +125,11 @@ public class KinSchedulerContext implements InitializingBean, ApplicationListene
         if (Objects.isNull(driver)) {
             synchronized (this) {
                 if (Objects.isNull(driver)) {
+                    driverRpcEnv = new RpcEnv(NetUtils.getIp(), driverPort, SysUtils.getSuitableThreadNum(),
+                            Serializers.getSerializer(SerializerType.KRYO), false);
+                    driverRpcEnv.startServer();
                     driver = new KinDriver(
+                            driverRpcEnv,
                             Application.build()
                                     .appName(getAppName())
                                     .master(NetUtils.getIpPort(masterBackendHost, masterBackendPort))
@@ -123,7 +139,6 @@ public class KinSchedulerContext implements InitializingBean, ApplicationListene
                                     .oneExecutorPerWorker()
                                     .dropResult()
                     );
-                    driver.init();
                     driver.start();
                 }
             }

@@ -1,5 +1,6 @@
 package org.kin.scheduler.admin.core;
 
+import org.kin.kinrpc.message.core.RpcEnv;
 import org.kin.scheduler.admin.entity.TaskLog;
 import org.kin.scheduler.core.driver.Application;
 import org.kin.scheduler.core.driver.Driver;
@@ -14,8 +15,8 @@ import java.util.Objects;
  * @date 2020-03-10
  */
 public class KinDriver extends Driver {
-    public KinDriver(Application app) {
-        super(app, new KinTaskScheduler(app));
+    public KinDriver(RpcEnv rpcEnv, Application app) {
+        super(rpcEnv, app, new KinTaskScheduler(rpcEnv, app));
     }
 
     public <R extends Serializable> TaskExecFuture<R> submitTask(TaskInfoDTO dto) {
@@ -25,7 +26,7 @@ public class KinDriver extends Driver {
     public TaskExecFileContent readLog(int logId, int fromLineNum) {
         TaskLog taskLog = KinSchedulerContext.instance().getTaskLogDao().load(logId);
         if (Objects.nonNull(taskLog)) {
-            return driverMasterBackend.readFile(taskLog.getWorkerId(), taskLog.getLogPath(), fromLineNum);
+            return readFile(taskLog.getWorkerId(), taskLog.getLogPath(), fromLineNum);
         }
 
         return null;
@@ -34,7 +35,7 @@ public class KinDriver extends Driver {
     public TaskExecFileContent readOutput(int logId, int fromLineNum) {
         TaskLog taskLog = KinSchedulerContext.instance().getTaskLogDao().load(logId);
         if (Objects.nonNull(taskLog)) {
-            return driverMasterBackend.readFile(taskLog.getWorkerId(), taskLog.getOutputPath(), fromLineNum);
+            return readFile(taskLog.getWorkerId(), taskLog.getOutputPath(), fromLineNum);
         }
 
         return null;

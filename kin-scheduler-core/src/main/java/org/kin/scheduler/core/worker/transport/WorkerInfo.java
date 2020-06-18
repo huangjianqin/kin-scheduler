@@ -11,18 +11,15 @@ public class WorkerInfo implements Serializable {
     private static final long serialVersionUID = -4507523138506740303L;
 
     private String workerId;
-    private String address;
     private int maxCpuCore;
     private long maxMemory;
 
-    public WorkerInfo() {
-    }
-
-    public WorkerInfo(String workerId, String address, int maxCpuCore, long maxMemory) {
-        this.workerId = workerId;
-        this.address = address;
-        this.maxCpuCore = maxCpuCore;
-        this.maxMemory = maxMemory;
+    public static WorkerInfo of(String workerId, int maxCpuCore, long maxMemory) {
+        WorkerInfo workerInfo = new WorkerInfo();
+        workerInfo.workerId = workerId;
+        workerInfo.maxCpuCore = maxCpuCore;
+        workerInfo.maxMemory = maxMemory;
+        return workerInfo;
     }
 
     //setter && getter
@@ -33,14 +30,6 @@ public class WorkerInfo implements Serializable {
 
     public void setWorkerId(String workerId) {
         this.workerId = workerId;
-    }
-
-    public String getAddress() {
-        return address;
-    }
-
-    public void setAddress(String address) {
-        this.address = address;
     }
 
     public int getMaxCpuCore() {

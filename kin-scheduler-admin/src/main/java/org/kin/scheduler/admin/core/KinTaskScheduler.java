@@ -1,9 +1,11 @@
 package org.kin.scheduler.admin.core;
 
+import org.kin.kinrpc.message.core.RpcEnv;
 import org.kin.scheduler.admin.domain.Constants;
 import org.kin.scheduler.admin.domain.TaskType;
 import org.kin.scheduler.admin.entity.TaskLog;
 import org.kin.scheduler.core.driver.Application;
+import org.kin.scheduler.core.driver.ExecutorContext;
 import org.kin.scheduler.core.driver.route.RouteStrategies;
 import org.kin.scheduler.core.driver.route.RouteStrategy;
 import org.kin.scheduler.core.driver.scheduler.TaskContext;
@@ -11,7 +13,6 @@ import org.kin.scheduler.core.driver.scheduler.TaskExecFuture;
 import org.kin.scheduler.core.driver.scheduler.TaskScheduler;
 import org.kin.scheduler.core.task.TaskDescription;
 import org.kin.scheduler.core.task.TaskExecStrategy;
-import org.kin.scheduler.core.worker.ExecutorContext;
 
 import java.io.Serializable;
 import java.util.Collections;
@@ -25,8 +26,8 @@ import java.util.stream.Collectors;
  * @date 2020-03-10
  */
 public class KinTaskScheduler extends TaskScheduler<TaskInfoDTO> {
-    public KinTaskScheduler(Application app) {
-        super(app);
+    public KinTaskScheduler(RpcEnv rpcEnv, Application app) {
+        super(rpcEnv, app);
     }
 
     @Override
@@ -48,7 +49,7 @@ public class KinTaskScheduler extends TaskScheduler<TaskInfoDTO> {
         taskLog.setTriggerTime(new Date());
         KinSchedulerContext.instance().getTaskLogDao().save(taskLog);
 
-        TaskDescription taskDescription = new TaskDescription(String.valueOf(dto.getJobId()), String.valueOf(dto.getTaskId()));
+        TaskDescription taskDescription = TaskDescription.of(String.valueOf(dto.getJobId()), String.valueOf(dto.getTaskId()));
         taskDescription.setTimeout(dto.getExecTimeout());
         taskDescription.setExecStrategy(TaskExecStrategy.getByName(dto.getExecStrategy()));
         taskDescription.setParam(TaskType.getByName(dto.getType()).parseParam(dto.getParam()));

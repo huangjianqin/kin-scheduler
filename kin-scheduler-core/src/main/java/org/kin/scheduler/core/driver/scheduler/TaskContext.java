@@ -1,7 +1,7 @@
 package org.kin.scheduler.core.driver.scheduler;
 
 import org.kin.framework.utils.CollectionUtils;
-import org.kin.scheduler.core.executor.transport.TaskSubmitResult;
+import org.kin.scheduler.core.executor.transport.TaskSubmitResp;
 import org.kin.scheduler.core.task.TaskDescription;
 import org.kin.scheduler.core.task.domain.TaskStatus;
 
@@ -42,7 +42,7 @@ public class TaskContext {
         this.taskDescription = taskDescription;
     }
 
-    public void submitTask(TaskSubmitResult submitResult, TaskExecFuture future) {
+    public void submitTask(TaskSubmitResp submitResult, TaskExecFuture future) {
         this.logPath = submitResult.getLogPath();
         this.outputPath = submitResult.getOutputPath();
         this.future = future;
