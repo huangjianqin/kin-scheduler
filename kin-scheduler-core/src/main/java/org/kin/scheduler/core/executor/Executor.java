@@ -77,7 +77,6 @@ public class Executor extends ThreadSafeRpcEndpoint {
         this.schedulerRef = rpcEnv.createEndpointRef(schedulerHostPort[0].toString(), (Integer) schedulerHostPort[1], appName);
         Object[] workerHostPort = NetUtils.parseIpPort(executorWorkerBackendAddress);
         this.workerRef = rpcEnv.createEndpointRef(workerHostPort[0].toString(), (Integer) workerHostPort[1], workerId);
-        ;
     }
 
     @Override
@@ -106,6 +105,10 @@ public class Executor extends ThreadSafeRpcEndpoint {
         super.onStop();
 
         isStopped = true;
+
+        //移除与scheduler的通信
+        rpcEnv.removeOutBox(schedulerRef.getEndpointAddress().getRpcAddress());
+
         executionContext.shutdown();
         taskLoggerContext.stop();
 
@@ -118,7 +121,7 @@ public class Executor extends ThreadSafeRpcEndpoint {
 
         Serializable message = context.getMessage();
         if (message instanceof SubmitTask) {
-            execTask((((SubmitTask) message).getTaskDescription()));
+            execTask(context, (((SubmitTask) message).getTaskDescription()));
         } else if (message instanceof CancelTask) {
             cancelTask(context, (CancelTask) message);
         } else if (message instanceof KillExecutor) {
@@ -141,14 +144,14 @@ public class Executor extends ThreadSafeRpcEndpoint {
     }
 
     //-------------------------------------------------------------------------------------------------------------------------
-    private void execTask(TaskDescription taskDescription) {
+    private void execTask(RpcMessageCallContext context, TaskDescription taskDescription) {
         TaskSubmitResp taskSubmitResp = execTask0(taskDescription, log);
         log.info("exec task({}) finished, resulst >>>> {}", taskDescription.getTaskId(), taskSubmitResp);
-        taskDescription.getSchedulerRef().send(taskSubmitResp);
+        context.reply(taskSubmitResp);
     }
 
     private TaskSubmitResp execTask0(TaskDescription taskDescription, Logger log) {
-        if (isStopped) {
+        if (!isStopped) {
             log.info("execing task({})", taskDescription);
 
             if (StringUtils.isBlank(taskDescription.getLogFileName())) {
@@ -212,15 +215,17 @@ public class Executor extends ThreadSafeRpcEndpoint {
     private void cancelTask(RpcMessageCallContext context, CancelTask cancelTask) {
         String taskId = cancelTask.getTaskId();
         log.info("task({}) cancel >>>>", taskId);
-        if (isStopped) {
+        if (!isStopped) {
             if (taskId2TaskRunners.containsKey(taskId)) {
                 for (TaskRunner taskRunner : taskId2TaskRunners.get(taskId)) {
                     taskRunner.interrupt();
                 }
                 taskId2TaskRunners.remove(taskId);
                 context.reply(RPCResp.success());
+                return;
             }
             context.reply(RPCResp.failure(String.format("executor(%s) has not run task(%s)", executorId, taskId)));
+            return;
         }
         context.reply(RPCResp.failure(String.format("executor(%s) stopped", executorId)));
     }

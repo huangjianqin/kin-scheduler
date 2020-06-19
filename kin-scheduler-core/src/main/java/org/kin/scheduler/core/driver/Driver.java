@@ -45,8 +45,9 @@ public class Driver {
 
     //---------------------------------------------------------------------------------------------------------------------
     public static Driver common(Application app) {
-        RpcEnv rpcEnv = new RpcEnv(NetUtils.getIp(), app.getDriverPort(), SysUtils.getSuitableThreadNum(),
+        RpcEnv rpcEnv = new RpcEnv("0.0.0.0", app.getDriverPort(), SysUtils.getSuitableThreadNum(),
                 Serializers.getSerializer(SerializerType.KRYO), false);
+        rpcEnv.startServer();
         return new Driver(rpcEnv, app, new DefaultTaskScheduler(rpcEnv, app));
     }
 
@@ -82,7 +83,6 @@ public class Driver {
                 throw new RegisterApplicationFailureException(registerApplicationResp.getDesc());
             }
         } catch (Exception e) {
-            stop();
             throw new RegisterApplicationFailureException(e.getMessage());
         }
         log.info("driver(appName={}, master={}) started", app.getAppName(), app.getMasterAddress());
@@ -102,7 +102,7 @@ public class Driver {
             taskScheduler.stop();
         }
 
-        TaskExecFuture.CALLBACK_EXECUTORS.shutdownNow();
+        TaskExecFuture.CALLBACK_EXECUTORS.shutdown();
         rpcEnv.stop();
         log.info("driver(appName={}, master={}) closed", app.getAppName(), app.getMasterAddress());
     }

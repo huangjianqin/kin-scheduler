@@ -1,7 +1,5 @@
 package org.kin.scheduler.core.task;
 
-import org.kin.kinrpc.message.core.RpcEndpointRef;
-
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -12,7 +10,6 @@ import java.util.Objects;
  * task信息的抽象
  */
 public class TaskDescription<PARAM extends Serializable> implements Serializable {
-    private RpcEndpointRef schedulerRef;
     private String jobId;
     private String taskId;
     /** 自定义Task参数类型 */
@@ -74,15 +71,6 @@ public class TaskDescription<PARAM extends Serializable> implements Serializable
     }
 
     //setter && getter
-
-    public RpcEndpointRef getSchedulerRef() {
-        return schedulerRef;
-    }
-
-    public void setSchedulerRef(RpcEndpointRef schedulerRef) {
-        this.schedulerRef = schedulerRef;
-    }
-
     public String getJobId() {
         return jobId;
     }

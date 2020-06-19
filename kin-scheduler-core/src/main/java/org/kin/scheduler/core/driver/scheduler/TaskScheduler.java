@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 public abstract class TaskScheduler<T> extends ThreadSafeRpcEndpoint {
     private static final Logger log = LoggerFactory.getLogger(TaskScheduler.class);
 
-    /** 已注册executors */
+    /** 已注册executors, copy-on-write方式更新 */
     private volatile Map<String, ExecutorContext> executors;
     /** application配置 */
     protected Application app;
@@ -77,6 +77,7 @@ public abstract class TaskScheduler<T> extends ThreadSafeRpcEndpoint {
         }
         for (ExecutorContext executorContext : executors.values()) {
             executorContext.ref().send(KillExecutor.INSTANCE);
+            log.info("kill worker '{}'s executor '{}' address: {}", executorContext.getWorkerId(), executorContext.getExecutorId(), executorContext.getExecutorAddress());
         }
     }
 
@@ -135,9 +136,9 @@ public abstract class TaskScheduler<T> extends ThreadSafeRpcEndpoint {
             tmpExecutors.put(executorId, executorContext);
             executors = tmpExecutors;
             log.info("executor('{}') registered", executorId);
-            if (waiters > 0) {
-                //等待所有executor都注册完才开始调度task
-                synchronized (this) {
+            //等待所有executor都注册完才开始调度task
+            synchronized (this) {
+                if (waiters > 0) {
                     notifyAll();
                 }
             }
@@ -180,6 +181,23 @@ public abstract class TaskScheduler<T> extends ThreadSafeRpcEndpoint {
         waiters--;
     }
 
+    private void waitForExecutors() {
+        if (executors.size() <= 0) {
+            synchronized (this) {
+                if (executors.size() <= 0) {
+                    incrWaiter();
+                    try {
+                        wait();
+                    } catch (InterruptedException e) {
+
+                    } finally {
+                        descWaiter();
+                    }
+                }
+            }
+        }
+    }
+
     //---------------------------------------------------------------------------------------------------------------------------------------------------
 
     /**
@@ -192,13 +210,7 @@ public abstract class TaskScheduler<T> extends ThreadSafeRpcEndpoint {
      */
     protected final <R extends Serializable> TaskExecFuture<R> submitTask(ExecutorContext ec, TaskContext taskContext) {
         if (!isStopped) {
-            synchronized (this) {
-                try {
-                    wait();
-                } catch (InterruptedException e) {
-
-                }
-            }
+            waitForExecutors();
         }
         TaskDescription taskDescription = taskContext.getTaskDescription();
         taskContext.preExecute(ec.getWorkerId(), ec.getExecutorId());
@@ -234,20 +246,7 @@ public abstract class TaskScheduler<T> extends ThreadSafeRpcEndpoint {
      * @return 可用Executor
      */
     protected final Collection<ExecutorContext> getAvailableExecutors() {
-        if (executors.size() <= 0) {
-            synchronized (this) {
-                if (executors.size() <= 0) {
-                    incrWaiter();
-                    try {
-                        wait();
-                    } catch (InterruptedException e) {
-
-                    } finally {
-                        descWaiter();
-                    }
-                }
-            }
-        }
+        waitForExecutors();
         return executors.values();
     }
 

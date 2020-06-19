@@ -58,7 +58,7 @@ public class Worker extends ThreadSafeRpcEndpoint {
         super(rpcEnv);
         this.workerId = workerId;
         this.config = config;
-        this.masterRef = rpcEnv.createEndpointRef(config.getWorkerBackendHost(), config.getWorkerBackendPort(), Master.DEFAULT_NAME);
+        this.masterRef = rpcEnv.createEndpointRef(config.getMasterBackendHost(), config.getMasterBackendPort(), Master.DEFAULT_NAME);
         log = Loggers.worker(config.getLogPath(), workerId);
 
         JvmCloseCleaner.DEFAULT().add(JvmCloseCleaner.MAX_PRIORITY, this::stop);
@@ -266,11 +266,13 @@ public class Worker extends ThreadSafeRpcEndpoint {
 
         if (StringUtils.isBlank(path)) {
             context.reply(TaskExecFileContent.fail(workerId, path, fromLineNum, "path is blank"));
+            return;
         }
 
         File logFile = new File(path);
         if (!logFile.exists()) {
             context.reply(TaskExecFileContent.fail(workerId, path, fromLineNum, "read file fail, file not found"));
+            return;
         }
 
         StringBuffer logContentBuffer = new StringBuffer();
@@ -286,6 +288,7 @@ public class Worker extends ThreadSafeRpcEndpoint {
         } catch (IOException e) {
             log.error("read log file encounter error >>>>", e);
             context.reply(TaskExecFileContent.fail(workerId, path, fromLineNum, ExceptionUtils.getExceptionDesc(e)));
+            return;
         }
         context.reply(TaskExecFileContent.success(workerId, path, fromLineNum, toLineNum, logContentBuffer.toString(), fromLineNum == toLineNum));
     }
@@ -294,9 +297,10 @@ public class Worker extends ThreadSafeRpcEndpoint {
         if (isStopped) {
             return;
         }
-
-        Executor invalidExecutor = embeddedExecutors.remove(executorStateChanged.getExecutorId());
-        invalidExecutor.stop();
         masterRef.send(executorStateChanged);
+        if (executorStateChanged.getState().isFinished()) {
+            Executor invalidExecutor = embeddedExecutors.remove(executorStateChanged.getExecutorId());
+            invalidExecutor.stop();
+        }
     }
 }

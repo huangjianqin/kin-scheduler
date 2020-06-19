@@ -154,6 +154,7 @@ public class Master extends ThreadSafeRpcEndpoint {
             RpcEndpointRef workerRef = registerWorker.getWorkerRef();
             if (isStopped) {
                 workerRef.send(RegisterWorkerResp.failure("master not started"));
+                return;
             }
 
             String workerId = workerInfo.getWorkerId();
@@ -274,6 +275,7 @@ public class Master extends ThreadSafeRpcEndpoint {
     private void registerApplication(RpcMessageCallContext context, RegisterApplication registerApplication) {
         if (isStopped) {
             context.reply(RegisterApplicationResp.failure("master not started"));
+            return;
         }
 
         ApplicationDescription appDesc = registerApplication.getAppDesc();
@@ -281,10 +283,12 @@ public class Master extends ThreadSafeRpcEndpoint {
         String appName = appDesc.getAppName();
         if (drivers.containsKey(appName)) {
             context.reply(RegisterApplicationResp.failure(String.format("application '%s' has registered", appName)));
+            return;
         }
 
         if (Objects.isNull(registerApplication.getAppDesc().getAllocateStrategy())) {
             context.reply(RegisterApplicationResp.failure("unknown allocate strategy type"));
+            return;
         }
 
         ApplicationContext driver = new ApplicationContext(appDesc, registerApplication.getDriverRef());
