@@ -10,6 +10,7 @@ import org.kin.kinrpc.message.core.RpcEndpointRef;
 import org.kin.kinrpc.message.core.RpcEnv;
 import org.kin.kinrpc.message.core.RpcMessageCallContext;
 import org.kin.kinrpc.message.core.ThreadSafeRpcEndpoint;
+import org.kin.scheduler.core.cfg.Config;
 import org.kin.scheduler.core.domain.WorkerResource;
 import org.kin.scheduler.core.driver.ApplicationDescription;
 import org.kin.scheduler.core.driver.transport.ApplicationEnd;
@@ -60,16 +61,16 @@ public class Master extends ThreadSafeRpcEndpoint {
     private ExecutionContext commonWorkers;
     private volatile boolean isStopped;
 
-    public Master(RpcEnv rpcEnv, String logPath, int heartbeatTime) {
-        this(DEFAULT_NAME, rpcEnv, logPath, heartbeatTime);
+    public Master(RpcEnv rpcEnv, Config config) {
+        this(DEFAULT_NAME, rpcEnv, config);
     }
 
-    public Master(String name, RpcEnv rpcEnv, String logPath, int heartbeatTime) {
+    public Master(String name, RpcEnv rpcEnv, Config config) {
         super(rpcEnv);
         this.name = name;
-        this.heartbeatTime = heartbeatTime;
+        this.heartbeatTime = config.getHeartbeatTime();
         this.heartbeatCheckInterval = heartbeatTime + 2000;
-        log = Loggers.master(logPath, name);
+        log = Loggers.master(config.getLogPath(), name);
         commonWorkers = ExecutionContext.fix(
                 SysUtils.getSuitableThreadNum(), name.concat("-common"), 2, name.concat("-common-schedule"));
     }
