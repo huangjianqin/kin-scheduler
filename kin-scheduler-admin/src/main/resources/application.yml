@@ -74,8 +74,7 @@ mybatis:
 
 kin:
   scheduler:
-    masterHost: 0.0.0.0
-    masterPort: 46668
+    host: 0.0.0.0
+    port: 46668
     logPath: logs
-    driverPort: 46000
 

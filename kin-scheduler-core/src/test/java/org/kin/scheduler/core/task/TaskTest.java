@@ -17,7 +17,7 @@ public abstract class TaskTest {
         Driver driver = Driver.common(Application.build().appName("test").allocateStrategy(AllocateStrategyType.All));
         driver.start();
 
-        Thread.sleep(500);
+        Thread.sleep(200);
 
         TaskDescription<?> taskDescription = generateTaskDescription();
         taskDescription.setJobId("job-test");

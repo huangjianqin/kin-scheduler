@@ -9,6 +9,7 @@ import org.kin.scheduler.admin.dao.JobInfoDao;
 import org.kin.scheduler.admin.dao.TaskInfoDao;
 import org.kin.scheduler.admin.dao.TaskLogDao;
 import org.kin.scheduler.admin.service.JobService;
+import org.kin.scheduler.core.cfg.Config;
 import org.kin.scheduler.core.driver.Application;
 import org.kin.scheduler.core.master.Master;
 import org.kin.scheduler.core.master.executor.allocate.AllocateStrategyType;
@@ -41,18 +42,15 @@ public class KinSchedulerContext implements InitializingBean, ApplicationListene
     /** scheduler并发 */
     @Value("${kin.scheduler.parallism}")
     private int schedulerParallism;
-    /** master host */
-    @Value("${kin.scheduler.masterHost}")
-    private String masterHost;
-    /** master port */
-    @Value("${kin.scheduler.masterPort}")
-    private int masterPort;
+    /** host */
+    @Value("${kin.scheduler.host}")
+    private String host;
+    /** port */
+    @Value("${kin.scheduler.port}")
+    private int port;
     /** 日志路径 */
     @Value("${kin.scheduler.logPath}")
     private String logPath;
-    /** driver绑定端口 */
-    @Value("${kin.scheduler.driverPort}")
-    private int driverPort;
 
     @Autowired
     private TaskInfoDao taskInfoDao;
@@ -68,9 +66,8 @@ public class KinSchedulerContext implements InitializingBean, ApplicationListene
     private JobInfoDao jobInfoDao;
 
     private Master master;
-    private RpcEnv masterRpcEnv;
+    private RpcEnv rpcEnv;
     private KinDriver driver;
-    private RpcEnv driverRpcEnv;
 
     public static KinSchedulerContext instance() {
         return INSTANCE;
@@ -84,40 +81,31 @@ public class KinSchedulerContext implements InitializingBean, ApplicationListene
     @Override
     public void onApplicationEvent(ContextRefreshedEvent refreshedEvent) {
         if (refreshedEvent.getApplicationContext().getParent() == null) {
-            //spring 容器初始化后, 初始化master
-            Thread masterThread = new Thread(() -> {
-                String masterHost = KinSchedulerContext.instance().getMasterHost();
-                int masterPort = KinSchedulerContext.instance().getMasterPort();
-                String logPath = KinSchedulerContext.instance().getLogPath();
+            //spring 容器初始化后, 初始化rpc环境和master
+            rpcEnv = new RpcEnv(host, port, SysUtils.getSuitableThreadNum(),
+                    Serializers.getSerializer(SerializerType.KRYO), false);
+            rpcEnv.startServer();
 
-                masterRpcEnv = new RpcEnv(masterHost, masterPort, SysUtils.getSuitableThreadNum(),
-                        Serializers.getSerializer(SerializerType.KRYO), false);
-                masterRpcEnv.startServer();
+            Config config = new Config();
+            config.setMasterHost(host);
+            config.setMasterPort(port);
+            config.setLogPath(logPath);
 
-                //TODO 定心跳间隔
-                master = new Master(masterRpcEnv, logPath, 3);
-                try {
-                    master.start();
-                } finally {
-                    master.stop();
-                    masterRpcEnv.stop();
-                }
-            }, "Master-Thread");
-            masterThread.start();
+            master = new Master(rpcEnv, config);
+            master.start();
         }
     }
 
     @PreDestroy
     public void shutdown() {
         driver.stop();
-        driverRpcEnv.stop();
+        master.stop();
         try {
-            Thread.sleep(500);
+            Thread.sleep(300);
         } catch (InterruptedException e) {
 
         }
-        master.stop();
-        masterRpcEnv.stop();
+        rpcEnv.stop();
     }
 
     public KinDriver getDriver() {
@@ -125,15 +113,12 @@ public class KinSchedulerContext implements InitializingBean, ApplicationListene
         if (Objects.isNull(driver)) {
             synchronized (this) {
                 if (Objects.isNull(driver)) {
-                    driverRpcEnv = new RpcEnv(NetUtils.getIp(), driverPort, SysUtils.getSuitableThreadNum(),
-                            Serializers.getSerializer(SerializerType.KRYO), false);
-                    driverRpcEnv.startServer();
                     driver = new KinDriver(
-                            driverRpcEnv,
+                            rpcEnv,
                             Application.build()
                                     .appName(getAppName())
-                                    .master(NetUtils.getIpPort(masterHost, masterPort))
-                                    .driverPort(driverPort)
+                                    .master(NetUtils.getIpPort(host, port))
+                                    .driverPort(port)
                                     .cpuCore(Integer.MAX_VALUE)
                                     .allocateStrategy(AllocateStrategyType.All)
                                     .oneExecutorPerWorker()
@@ -146,6 +131,7 @@ public class KinSchedulerContext implements InitializingBean, ApplicationListene
         return driver;
     }
 
+    //--------------------------------------------------------------------------------------------------------------------------------------------------
     public String getAppName() {
         return appName;
     }
@@ -202,20 +188,20 @@ public class KinSchedulerContext implements InitializingBean, ApplicationListene
         this.dataSource = dataSource;
     }
 
-    public String getMasterHost() {
-        return masterHost;
+    public String getHost() {
+        return host;
     }
 
-    public void setMasterHost(String masterHost) {
-        this.masterHost = masterHost;
+    public void setHost(String host) {
+        this.host = host;
     }
 
-    public int getMasterPort() {
-        return masterPort;
+    public int getPort() {
+        return port;
     }
 
-    public void setMasterPort(int masterPort) {
-        this.masterPort = masterPort;
+    public void setPort(int port) {
+        this.port = port;
     }
 
     public String getLogPath() {
