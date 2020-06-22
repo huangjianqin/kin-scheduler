@@ -1,10 +1,10 @@
 package org.kin.scheduler.core.task;
 
 /**
+ * task的执行策略
+ *
  * @author huangjianqin
  * @date 2020-02-06
- * <p>
- * task的执行策略
  */
 public enum TaskExecStrategy {
     //串行
@@ -21,6 +21,9 @@ public enum TaskExecStrategy {
         this.desc = desc;
     }
 
+    /**
+     * 根据类型名称获取类型实例
+     */
     public static TaskExecStrategy getByName(String strategy) {
         for (TaskExecStrategy execStrategy : VALUES) {
             if (execStrategy.name().equals(strategy)) {

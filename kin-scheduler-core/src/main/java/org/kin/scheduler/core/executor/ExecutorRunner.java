@@ -7,10 +7,10 @@ import org.kin.kinrpc.transport.serializer.Serializers;
 import org.kin.scheduler.core.executor.domain.ExecutorState;
 
 /**
+ * worker以commandline方式启动Executor
+ *
  * @author huangjianqin
  * @date 2020-02-06
- * <p>
- * worker以commandline方式启动Executor
  */
 public class ExecutorRunner {
     public static void main(String[] args) {
@@ -18,15 +18,18 @@ public class ExecutorRunner {
             String appName = args[0];
             String workerId = args[1];
             String executorId = args[2];
-            String backendHost = args[3];
-            int backendPort = Integer.valueOf(args[4]);
+            String host = args[3];
+            int port = Integer.parseInt(args[4]);
             String logBasePath = args[5];
             String driverAddress = args[6];
             String workerAddress = args[7];
 
-            RpcEnv rpcEnv = new RpcEnv(backendHost, backendPort, SysUtils.getSuitableThreadNum(),
+            //创建rpc env
+            RpcEnv rpcEnv = new RpcEnv(host, port, SysUtils.getSuitableThreadNum(),
                     Serializers.getSerializer(SerializerType.KRYO), false);
+            //启动server
             rpcEnv.startServer();
+            //创建executor
             Executor executor = new Executor(rpcEnv, appName, workerId, executorId, logBasePath, driverAddress, workerAddress, false);
             try {
                 executor.start();
@@ -46,6 +49,7 @@ public class ExecutorRunner {
                 //更新状态executor
                 executor.executorStateChanged(ExecutorState.FAIL);
             } finally {
+                //executor stop
                 executor.stop();
                 rpcEnv.stop();
             }

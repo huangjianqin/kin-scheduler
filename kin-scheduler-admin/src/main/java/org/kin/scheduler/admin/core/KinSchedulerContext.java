@@ -42,11 +42,11 @@ public class KinSchedulerContext implements InitializingBean, ApplicationListene
     @Value("${kin.scheduler.parallism}")
     private int schedulerParallism;
     /** master host */
-    @Value("${kin.scheduler.masterBackendHost}")
-    private String masterBackendHost;
+    @Value("${kin.scheduler.masterHost}")
+    private String masterHost;
     /** master port */
-    @Value("${kin.scheduler.masterBackendPort}")
-    private int masterBackendPort;
+    @Value("${kin.scheduler.masterPort}")
+    private int masterPort;
     /** 日志路径 */
     @Value("${kin.scheduler.logPath}")
     private String logPath;
@@ -86,11 +86,11 @@ public class KinSchedulerContext implements InitializingBean, ApplicationListene
         if (refreshedEvent.getApplicationContext().getParent() == null) {
             //spring 容器初始化后, 初始化master
             Thread masterThread = new Thread(() -> {
-                String masterBackendHost = KinSchedulerContext.instance().getMasterBackendHost();
-                int masterBackendPort = KinSchedulerContext.instance().getMasterBackendPort();
+                String masterHost = KinSchedulerContext.instance().getMasterHost();
+                int masterPort = KinSchedulerContext.instance().getMasterPort();
                 String logPath = KinSchedulerContext.instance().getLogPath();
 
-                masterRpcEnv = new RpcEnv(masterBackendHost, masterBackendPort, SysUtils.getSuitableThreadNum(),
+                masterRpcEnv = new RpcEnv(masterHost, masterPort, SysUtils.getSuitableThreadNum(),
                         Serializers.getSerializer(SerializerType.KRYO), false);
                 masterRpcEnv.startServer();
 
@@ -132,7 +132,7 @@ public class KinSchedulerContext implements InitializingBean, ApplicationListene
                             driverRpcEnv,
                             Application.build()
                                     .appName(getAppName())
-                                    .master(NetUtils.getIpPort(masterBackendHost, masterBackendPort))
+                                    .master(NetUtils.getIpPort(masterHost, masterPort))
                                     .driverPort(driverPort)
                                     .cpuCore(Integer.MAX_VALUE)
                                     .allocateStrategy(AllocateStrategyType.All)
@@ -202,20 +202,20 @@ public class KinSchedulerContext implements InitializingBean, ApplicationListene
         this.dataSource = dataSource;
     }
 
-    public String getMasterBackendHost() {
-        return masterBackendHost;
+    public String getMasterHost() {
+        return masterHost;
     }
 
-    public void setMasterBackendHost(String masterBackendHost) {
-        this.masterBackendHost = masterBackendHost;
+    public void setMasterHost(String masterHost) {
+        this.masterHost = masterHost;
     }
 
-    public int getMasterBackendPort() {
-        return masterBackendPort;
+    public int getMasterPort() {
+        return masterPort;
     }
 
-    public void setMasterBackendPort(int masterBackendPort) {
-        this.masterBackendPort = masterBackendPort;
+    public void setMasterPort(int masterPort) {
+        this.masterPort = masterPort;
     }
 
     public String getLogPath() {

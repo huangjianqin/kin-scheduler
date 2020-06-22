@@ -5,14 +5,18 @@ import org.kin.kinrpc.message.core.RpcEndpointRef;
 import java.io.Serializable;
 
 /**
+ * executor注册消息
+ *
  * @author huangjianqin
  * @date 2020-03-09
  */
 public class RegisterExecutor implements Serializable {
     private static final long serialVersionUID = 5953742842842847510L;
-
+    /** worker id */
     private String workerId;
+    /** executor id */
     private String executorId;
+    /** executor client ref */
     private RpcEndpointRef executorRef;
 
     public static RegisterExecutor of(String workerId, String executorId, RpcEndpointRef executorRef) {

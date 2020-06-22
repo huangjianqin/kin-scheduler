@@ -1,6 +1,8 @@
 package org.kin.scheduler.core.master.executor.allocate;
 
 /**
+ * application资源分配策略类型
+ *
  * @author huangjianqin
  * @date 2020-03-03
  */
@@ -38,6 +40,9 @@ public enum AllocateStrategyType {
     //------------------------------------------------------
     public static AllocateStrategyType[] VALUES = values();
 
+    /**
+     * 根据类型名字获取 资源分配策略类型
+     */
     public static AllocateStrategyType getByName(String name) {
         for (AllocateStrategyType strategy : VALUES) {
             if (strategy.name().toLowerCase().equals(name.toLowerCase())) {

@@ -5,11 +5,14 @@ import org.kin.scheduler.core.task.TaskDescription;
 import java.io.Serializable;
 
 /**
+ * task submit消息
+ *
  * @author huangjianqin
  * @date 2020-06-18
  */
 public class SubmitTask implements Serializable {
     private static final long serialVersionUID = -7232876834490326118L;
+    /** task描述 */
     private TaskDescription taskDescription;
 
     public static SubmitTask of(TaskDescription taskDescription) {

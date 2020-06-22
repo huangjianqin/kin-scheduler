@@ -5,25 +5,30 @@ import org.kin.kinrpc.message.core.RpcEndpointRef;
 import java.io.Serializable;
 
 /**
+ * master通知worker启动executor消息
+ *
  * @author huangjianqin
  * @date 2020-02-09
  */
 public class LaunchExecutor implements Serializable {
     private static final long serialVersionUID = 1093338883206802042L;
-
+    /** master client ref */
     private RpcEndpointRef masterRef;
+    /** application name */
     private String appName;
-    private String executorDriverBackendAddress;
+    /** scheduler endpoint地址 */
+    private String executorSchedulerAddress;
+    /** executor所需cpu核心数 */
     private int cpuCore;
 
     public LaunchExecutor() {
     }
 
-    public static LaunchExecutor of(RpcEndpointRef masterRef, String appName, String executorDriverBackendAddress, int cpuCore) {
+    public static LaunchExecutor of(RpcEndpointRef masterRef, String appName, String executorSchedulerAddress, int cpuCore) {
         LaunchExecutor message = new LaunchExecutor();
         message.masterRef = masterRef;
         message.appName = appName;
-        message.executorDriverBackendAddress = executorDriverBackendAddress;
+        message.executorSchedulerAddress = executorSchedulerAddress;
         message.cpuCore = cpuCore;
         return message;
     }
@@ -44,12 +49,12 @@ public class LaunchExecutor implements Serializable {
         this.appName = appName;
     }
 
-    public String getExecutorDriverBackendAddress() {
-        return executorDriverBackendAddress;
+    public String getExecutorSchedulerAddress() {
+        return executorSchedulerAddress;
     }
 
-    public void setExecutorDriverBackendAddress(String executorDriverBackendAddress) {
-        this.executorDriverBackendAddress = executorDriverBackendAddress;
+    public void setExecutorSchedulerAddress(String executorSchedulerAddress) {
+        this.executorSchedulerAddress = executorSchedulerAddress;
     }
 
     public int getCpuCore() {

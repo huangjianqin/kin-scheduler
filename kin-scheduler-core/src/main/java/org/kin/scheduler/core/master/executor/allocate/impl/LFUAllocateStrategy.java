@@ -10,6 +10,9 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * 基于LFU(最近最少使用)的资源分配策略
+ * 选择最不常使用的
+ *
  * @author huangjianqin
  * @date 2020-03-03
  */
@@ -53,13 +56,13 @@ public class LFUAllocateStrategy implements AllocateStrategy {
                 }
 
                 List<Map.Entry<String, Integer>> entries = new ArrayList<>(lfuMap.entrySet());
-                entries.sort(Comparator.comparingInt(Map.Entry::getValue));
+                if (CollectionUtils.isNonEmpty(entries)) {
+                    entries.sort(Comparator.comparingInt(Map.Entry::getValue));
 
-                String selectedWorkerId = entries.get(0).getKey();
-                lfuMap.put(selectedWorkerId, entries.get(0).getValue() + 1);
-
-                WorkerContext selectedWorkerContext = workerId2Context.get(selectedWorkerId);
-                return Collections.singletonList(selectedWorkerContext);
+                    String selectedWorkerId = entries.get(0).getKey();
+                    lfuMap.put(selectedWorkerId, entries.get(0).getValue() + 1);
+                    return Collections.singletonList(workerId2Context.get(selectedWorkerId));
+                }
             }
         }
         return null;

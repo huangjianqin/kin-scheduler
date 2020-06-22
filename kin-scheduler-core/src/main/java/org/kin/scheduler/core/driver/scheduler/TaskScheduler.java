@@ -5,6 +5,7 @@ import org.kin.kinrpc.message.core.RpcMessageCallContext;
 import org.kin.kinrpc.message.core.ThreadSafeRpcEndpoint;
 import org.kin.scheduler.core.driver.Application;
 import org.kin.scheduler.core.driver.ExecutorContext;
+import org.kin.scheduler.core.driver.exception.TaskRepeatSubmitException;
 import org.kin.scheduler.core.driver.route.RouteStrategy;
 import org.kin.scheduler.core.driver.transport.CancelTask;
 import org.kin.scheduler.core.driver.transport.KillExecutor;
@@ -40,6 +41,7 @@ public abstract class TaskScheduler<T> extends ThreadSafeRpcEndpoint {
     protected Application app;
     /** task集合 */
     protected TaskSetManager taskSetManager;
+    /** 阻塞等待executor足够分配task执行的线程数 */
     private short waiters;
     private volatile boolean isStopped;
 
@@ -75,6 +77,7 @@ public abstract class TaskScheduler<T> extends ThreadSafeRpcEndpoint {
                 runningExecutorContext.ref().send(CancelTask.of(taskContext.getTaskDescription().getTaskId()));
             }
         }
+        //kill executor
         for (ExecutorContext executorContext : executors.values()) {
             executorContext.ref().send(KillExecutor.INSTANCE);
             log.info("kill worker '{}'s executor '{}' address: {}", executorContext.getWorkerId(), executorContext.getExecutorId(), executorContext.getExecutorAddress());
@@ -112,6 +115,10 @@ public abstract class TaskScheduler<T> extends ThreadSafeRpcEndpoint {
     }
 
     //---------------------------------------------------------------------------------------------------------------------------------------------------
+
+    /**
+     * master通知executor status change
+     */
     private void executorStatusChange(List<String> unavailableExecutorIds) {
         if (!isStopped) {
             //只管关闭无用Executor, 新Executor等待master分配好后, 新Executor会重新注册
@@ -126,6 +133,9 @@ public abstract class TaskScheduler<T> extends ThreadSafeRpcEndpoint {
         }
     }
 
+    /**
+     * executor 往scheduler注册
+     */
     private void registerExecutor(RegisterExecutor registerExecutor) {
         String workerId = registerExecutor.getWorkerId();
         String executorId = registerExecutor.getExecutorId();
@@ -136,7 +146,7 @@ public abstract class TaskScheduler<T> extends ThreadSafeRpcEndpoint {
             tmpExecutors.put(executorId, executorContext);
             executors = tmpExecutors;
             log.info("executor('{}') registered", executorId);
-            //等待所有executor都注册完才开始调度task
+            //有可用executor就释放等待足够executor线程
             synchronized (this) {
                 if (waiters > 0) {
                     notifyAll();
@@ -145,6 +155,9 @@ public abstract class TaskScheduler<T> extends ThreadSafeRpcEndpoint {
         }
     }
 
+    /**
+     * executor 往scheduler通知task status变化
+     */
     private void taskStatusChange(TaskStatusChanged taskStatusChanged) {
         if (!isStopped) {
             String taskId = taskStatusChanged.getTaskId();
@@ -153,18 +166,20 @@ public abstract class TaskScheduler<T> extends ThreadSafeRpcEndpoint {
 
                 TaskContext taskInfo = taskSetManager.getTaskInfo(taskId);
                 if (state == TaskStatus.LOST) {
+                    //task丢失
                     //移除该executor
-                    String executorId = taskInfo.getExecingTaskExecutorId();
+                    String executorId = taskInfo.getRunningTaskExecutorId();
                     executorStatusChange(Collections.singletonList(executorId));
                 }
                 if (state.isFinished()) {
+                    //task完成
                     Serializable execResult = taskStatusChanged.getExecResult();
                     String reason = taskStatusChanged.getReason();
 
-                    //TODO 考虑重试
                     taskSetManager.taskFinish(taskId, state, execResult, reason);
                     log.info("Task(taskId={}) finished, state: {}, reason: {}, result >>>> {}", taskId, state, reason, execResult);
                 }
+                //TODO 考虑重试
             } else {
                 log.error("unknown taskId '{}'", taskId);
             }
@@ -201,11 +216,13 @@ public abstract class TaskScheduler<T> extends ThreadSafeRpcEndpoint {
     //---------------------------------------------------------------------------------------------------------------------------------------------------
 
     /**
+     * 提交task执行, 交给子类自定义实现
      * call线程
      */
     public abstract <R extends Serializable> TaskExecFuture<R> submitTask(T task);
 
     /**
+     * 提交task执行, 通用接口
      * call线程
      */
     protected final <R extends Serializable> TaskExecFuture<R> submitTask(ExecutorContext ec, TaskContext taskContext) {
@@ -213,7 +230,7 @@ public abstract class TaskScheduler<T> extends ThreadSafeRpcEndpoint {
             waitForExecutors();
         }
         TaskDescription taskDescription = taskContext.getTaskDescription();
-        taskContext.preExecute(ec.getWorkerId(), ec.getExecutorId());
+        taskContext.preSubmit(ec.getWorkerId(), ec.getExecutorId());
         TaskSubmitResp submitResult = null;
         try {
             submitResult = (TaskSubmitResp) ec.ref().ask(SubmitTask.of(taskDescription)).get();
@@ -236,6 +253,7 @@ public abstract class TaskScheduler<T> extends ThreadSafeRpcEndpoint {
     }
 
     /**
+     * 取消task
      * call线程
      */
     public final boolean cancelTask(String taskId) {
@@ -295,38 +313,56 @@ public abstract class TaskScheduler<T> extends ThreadSafeRpcEndpoint {
 
     //-----------------------------------------------------------------------------------------------------------------
     public class TaskSetManager {
+        /** key -> task id, value -> task上下文 */
         private Map<String, TaskContext> taskContexts = new ConcurrentHashMap<>();
 
-        public List<TaskContext> init(Collection<TaskDescription> taskDescriptions) {
-            List<TaskContext> taskContexts = new ArrayList<>();
-            synchronized (this) {
-                for (TaskDescription taskDescription : taskDescriptions) {
-                    TaskContext taskContext = new TaskContext(taskDescription);
-                    this.taskContexts.put(taskDescription.getTaskId(), taskContext);
-
-                    taskContexts.add(taskContext);
-                }
+        /**
+         * 初始化TaskContext
+         *
+         * @param taskDescriptions task描述
+         */
+        public TaskContext init(TaskDescription taskDescription) {
+            TaskContext taskContext = new TaskContext(taskDescription);
+            TaskContext oldContext = taskContexts.putIfAbsent(taskDescription.getTaskId(), taskContext);
+            if (Objects.nonNull(oldContext)) {
+                //已存在相同task id的task上下文
+                throw new TaskRepeatSubmitException(taskDescription.getJobId(), taskDescription.getTaskId());
             }
 
-            return taskContexts;
+            return taskContext;
         }
 
+        /**
+         * @return 是否所有submitted task已完成
+         */
         private boolean isAllFinish() {
             return taskContexts.values().stream().allMatch(TaskContext::isFinish);
         }
 
+        /**
+         * 根据task id获取task 上下文
+         */
         private TaskContext getTaskInfo(String taskId) {
             return taskContexts.get(taskId);
         }
 
+        /**
+         * 是否包含指定task id的task 上下文
+         */
         private boolean hasTask(String taskId) {
             return taskContexts.containsKey(taskId);
         }
 
+        /**
+         * @return 所有未完成的task 上下文
+         */
         private List<TaskContext> getAllUnFinishTask() {
             return taskContexts.values().stream().filter(TaskContext::isNotFinish).collect(Collectors.toList());
         }
 
+        /**
+         * 取消指定task id的task
+         */
         private boolean cancelTask(String taskId) {
             TaskContext taskContext = taskContexts.get(taskId);
             if (Objects.nonNull(taskContext) && taskContext.isNotFinish()) {
@@ -347,6 +383,9 @@ public abstract class TaskScheduler<T> extends ThreadSafeRpcEndpoint {
             return false;
         }
 
+        /**
+         * task 完成时调用
+         */
         private void taskFinish(String taskId, TaskStatus taskStatus, Serializable result, String reason) {
             TaskContext taskContext;
             if (!app.isDropResult()) {
@@ -363,6 +402,9 @@ public abstract class TaskScheduler<T> extends ThreadSafeRpcEndpoint {
             }
         }
 
+        /**
+         * 尝试释放等待所有task完成的线程
+         */
         private void tryTermination() {
             if (isAllFinish()) {
                 synchronized (this) {

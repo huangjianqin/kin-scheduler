@@ -23,6 +23,7 @@ import org.kin.scheduler.core.master.domain.ExecutorResource;
 import org.kin.scheduler.core.master.domain.WorkerContext;
 import org.kin.scheduler.core.master.executor.allocate.AllocateStrategy;
 import org.kin.scheduler.core.master.transport.*;
+import org.kin.scheduler.core.worker.domain.WorkerInfo;
 import org.kin.scheduler.core.worker.transport.*;
 
 import java.io.Serializable;
@@ -40,6 +41,7 @@ public class Master extends ThreadSafeRpcEndpoint {
     public static final String DEFAULT_NAME = "Master";
 
     //-------------------------------------------------------------------------------------------------
+    /** master name */
     private final String name;
     /** 已注册的worker */
     private Map<String, WorkerContext> workers = new ConcurrentHashMap<>();
@@ -50,9 +52,9 @@ public class Master extends ThreadSafeRpcEndpoint {
      * 等待资源分配的应用
      */
     private volatile List<ApplicationContext> waitingDrivers = new ArrayList<>();
-    //心跳时间(秒)
+    /** 心跳时间(秒) */
     private final int heartbeatTime;
-    //心跳检测间隔(秒)
+    /** 心跳检测间隔(秒) */
     private final int heartbeatCheckInterval;
     /** 负责执行会阻塞的任务 or 调度心跳 */
     private ExecutionContext commonWorkers;
@@ -92,11 +94,11 @@ public class Master extends ThreadSafeRpcEndpoint {
         super.onStart();
 
         rpcEnv.startServer();
-
-        JvmCloseCleaner.DEFAULT().add(JvmCloseCleaner.MAX_PRIORITY, this::stop);
-
+        //定时心跳超时检查
         commonWorkers.scheduleAtFixedRate(() -> send2Self(CheckHeartbeatTimeout.INSTANCE),
                 heartbeatCheckInterval, heartbeatCheckInterval, TimeUnit.MILLISECONDS);
+
+        JvmCloseCleaner.DEFAULT().add(JvmCloseCleaner.MAX_PRIORITY, this::stop);
 
         log.info("Master '{}' started", name);
     }
@@ -115,7 +117,7 @@ public class Master extends ThreadSafeRpcEndpoint {
     public void receive(RpcMessageCallContext context) {
         super.receive(context);
         Serializable message = context.getMessage();
-        //master backend相关
+        //master endpoint相关
         if (message instanceof RegisterWorker) {
             registerWorker((RegisterWorker) message);
         } else if (message instanceof UnRegisterWorker) {
@@ -129,7 +131,7 @@ public class Master extends ThreadSafeRpcEndpoint {
         } else if (message instanceof LaunchExecutorResp) {
             launchExecutorResult((LaunchExecutorResp) message);
         }
-        //driver backend相关
+        //scheduler endpoint相关
         else if (message instanceof RegisterApplication) {
             registerApplication(context, (RegisterApplication) message);
         } else if (message instanceof ApplicationEnd) {
@@ -140,7 +142,7 @@ public class Master extends ThreadSafeRpcEndpoint {
 
     }
 
-    //------------------------------------------------------------MasterBackend-------------------------------------------------------------------
+    //------------------------------------------------------------Master endpoint-------------------------------------------------------------------
 
     /**
      * 注册worker, 成功注册的worker才是有效的worker
@@ -191,7 +193,7 @@ public class Master extends ThreadSafeRpcEndpoint {
 
 
     /**
-     * 定时往master发送心跳
+     * worker定时往master发送心跳
      * 1. 移除超时worker
      * 2. 发现心跳worker还没注册, 通知其注册
      */
@@ -209,7 +211,7 @@ public class Master extends ThreadSafeRpcEndpoint {
     }
 
     /**
-     * executor状态变化
+     * worker executor状态变化
      *
      * @param executorStateChanged executor状态信息
      */
@@ -250,6 +252,9 @@ public class Master extends ThreadSafeRpcEndpoint {
         }
     }
 
+    /**
+     * 移除无效worker相关executor资源占用
+     */
     private void executorStateChanged(String unAvailableWorkerId) {
         for (ApplicationContext driver : drivers.values()) {
             //无用Executor
@@ -265,10 +270,10 @@ public class Master extends ThreadSafeRpcEndpoint {
         scheduleResource();
     }
 
-    //-------------------------------------------------------------driver backend 相关-------------------------------------------
+    //-------------------------------------------------------------driver endpoint 相关-------------------------------------------
 
     /**
-     * 往master注册app
+     * scheduler往master注册app
      *
      * @param registerApplication 请求
      */
@@ -291,13 +296,16 @@ public class Master extends ThreadSafeRpcEndpoint {
             return;
         }
 
-        ApplicationContext driver = new ApplicationContext(appDesc, registerApplication.getDriverRef());
+        ApplicationContext driver = new ApplicationContext(appDesc, registerApplication.getSchedulerRef());
         drivers.put(appName, driver);
         context.reply(RegisterApplicationResp.success());
         log.info("application '{}' registered", appName);
         scheduleResource(driver);
     }
 
+    /**
+     * application分配资源
+     */
     private void scheduleResource(ApplicationContext driver) {
         ApplicationDescription appDesc = driver.getAppDesc();
         AllocateStrategy allocateStrategy = appDesc.getAllocateStrategy();
@@ -360,6 +368,9 @@ public class Master extends ThreadSafeRpcEndpoint {
         tryWaitingResource(driver);
     }
 
+    /**
+     * worker 启动executor结果返回
+     */
     private void launchExecutorResult(LaunchExecutorResp launchResult) {
         String executorId = launchResult.getExecutorId();
         String appName = launchResult.getAppName();
@@ -377,13 +388,16 @@ public class Master extends ThreadSafeRpcEndpoint {
             ApplicationContext driver = drivers.get(appName);
             if (Objects.nonNull(driver)) {
                 //修改driver已使用资源
-                driver.useExecutorResource(executorId, new WorkerResource(workerId, minAllocateCpuCore));
+                driver.useExecutorResource(executorId, WorkerResource.of(workerId, minAllocateCpuCore));
             }
         } else {
             log.warn("launchExecutor error >>>>> app '{}', worker '{}'>>>>{}", appName, workerId, launchResult.getDesc());
         }
     }
 
+    /**
+     * 给资源不足的scheduler分配资源
+     */
     private void scheduleResource() {
         List<ApplicationContext> waitingDrivers = new ArrayList<>(this.waitingDrivers);
         this.waitingDrivers = new ArrayList<>();
@@ -392,6 +406,9 @@ public class Master extends ThreadSafeRpcEndpoint {
         }
     }
 
+    /**
+     * 判断是否资源仍然不足, 则继续等待
+     */
     private void tryWaitingResource(ApplicationContext driver) {
         //资源分配不足仍然需要在队列等待有足够的资源分配
         if (driver.getCpuCoreLeft() > 0) {
@@ -402,7 +419,7 @@ public class Master extends ThreadSafeRpcEndpoint {
     }
 
     /**
-     * 告诉master application完成, 释放资源
+     * 通知master application完成, 释放资源
      *
      * @param applicationEnd 也就是appName
      */
@@ -430,7 +447,7 @@ public class Master extends ThreadSafeRpcEndpoint {
     }
 
     /**
-     * 从某worker上的读取文件
+     * driver请求在某worker上的读取文件
      *
      * @param readFile 读取文件所需参数, 也就是所在worker的唯一Id, 路径, 开始行数
      */
@@ -449,6 +466,9 @@ public class Master extends ThreadSafeRpcEndpoint {
         context.reply(TaskExecFileContent.fail(workerId, path, fromLineNum, String.format("unknow worker(workerId='%s')", workerId)));
     }
 
+    /**
+     * master定时检查心跳超时
+     */
     private void checkHeartbeatTimeout() {
         try {
             long sleepTime = heartbeatCheckInterval - System.currentTimeMillis() % heartbeatCheckInterval;

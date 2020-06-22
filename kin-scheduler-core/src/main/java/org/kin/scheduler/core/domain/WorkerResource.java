@@ -3,21 +3,23 @@ package org.kin.scheduler.core.domain;
 import java.io.Serializable;
 
 /**
+ * worker资源
+ *
  * @author huangjianqin
  * @date 2020-02-13
  */
 public class WorkerResource implements Serializable {
     private static final long serialVersionUID = -9114436364954662176L;
-
+    /** worker id */
     private String workerId;
+    /** worker占用cpu核心数 */
     private int cpuCore;
 
-    public WorkerResource() {
-    }
-
-    public WorkerResource(String workerId, int cpuCore) {
-        this.workerId = workerId;
-        this.cpuCore = cpuCore;
+    public static WorkerResource of(String workerId, int cpuCore) {
+        WorkerResource res = new WorkerResource();
+        res.workerId = workerId;
+        res.cpuCore = cpuCore;
+        return res;
     }
 
     public void useCpuCore(int cpuCore) {
@@ -32,7 +34,7 @@ public class WorkerResource implements Serializable {
         return this.cpuCore >= cpuCore;
     }
 
-    //getter
+    //setter && getter
     public String getWorkerId() {
         return workerId;
     }

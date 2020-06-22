@@ -5,11 +5,26 @@ import org.kin.scheduler.core.transport.RPCResp;
 import java.io.Serializable;
 
 /**
+ * scheduler读取worker上的文件消息
+ *
  * @author huangjianqin
  * @date 2020-03-08
  */
 public class TaskExecFileContent extends RPCResp implements Serializable {
     private static final long serialVersionUID = 42L;
+
+    /** 文件所在的worker id */
+    private String workerId;
+    /** 文件路径 */
+    private String path;
+    /** 开始行数 */
+    private int fromLineNum;
+    /** 读到的行数 */
+    private int toLineNum;
+    /** 内容 */
+    private String content;
+    /** 是否文件尾 */
+    private boolean isEnd;
 
     public static TaskExecFileContent success(String workerId, String path, int fromLineNum, int toLineNum, String content, boolean isEnd) {
         TaskExecFileContent result = new TaskExecFileContent();
@@ -35,19 +50,7 @@ public class TaskExecFileContent extends RPCResp implements Serializable {
         return content;
     }
 
-    /** 文件所在的worker id */
-    private String workerId;
-    /** 文件路径 */
-    private String path;
-    /** 开始行数 */
-    private int fromLineNum;
-    /** 读到的行数 */
-    private int toLineNum;
-    /** 内容 */
-    private String content;
-    /** 是否文件尾 */
-    private boolean isEnd;
-
+    //setter && getter
     public String getWorkerId() {
         return workerId;
     }

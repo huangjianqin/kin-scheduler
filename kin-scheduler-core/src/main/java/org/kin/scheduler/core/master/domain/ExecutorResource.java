@@ -6,21 +6,23 @@ import java.io.Serializable;
 import java.util.Objects;
 
 /**
+ * executor资源
+ *
  * @author huangjianqin
  * @date 2020-02-13
  */
 public class ExecutorResource implements Serializable {
     private static final long serialVersionUID = -1497899582734658387L;
-
+    /** executor id */
     private String executorId;
+    /** 占用的worker资源 */
     private WorkerResource workerResource;
 
-    public ExecutorResource() {
-    }
-
-    public ExecutorResource(String executorId, WorkerResource workerResource) {
-        this.executorId = executorId;
-        this.workerResource = workerResource;
+    public static ExecutorResource of(String executorId, WorkerResource workerResource) {
+        ExecutorResource res = new ExecutorResource();
+        res.executorId = executorId;
+        res.workerResource = workerResource;
+        return res;
     }
 
     //setter && getter

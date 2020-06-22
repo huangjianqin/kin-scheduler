@@ -5,19 +5,22 @@ import org.kin.scheduler.core.task.domain.TaskStatus;
 import java.io.Serializable;
 
 /**
+ * task状态变化
+ *
  * @author huangjianqin
  * @date 2020-02-06
- * <p>
- * task执行结果
  */
 public class TaskStatusChanged implements Serializable {
     private static final long serialVersionUID = -9038880319405781079L;
-
+    /** task id */
     private String taskId;
+    /** task status */
     private TaskStatus status;
+    /** task loglujing */
     private String logFileName = "";
-    /** 处理器执行返回结果 */
+    /** task执行结果 */
     private Serializable execResult;
+    /** task fail原因描述 */
     private String reason = "";
 
     //-------------------------------------------------------------------------------------------

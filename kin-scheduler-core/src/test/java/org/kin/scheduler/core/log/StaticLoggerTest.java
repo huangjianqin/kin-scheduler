@@ -12,7 +12,7 @@ public class StaticLoggerTest {
 
     public static void main(String[] args) {
         log.info("start");
-        Loggers.master("logs", "master");
-        Loggers.log.info("测试");
+        ch.qos.logback.classic.Logger masterLog = Loggers.master("logs", "master");
+        masterLog.info("测试");
     }
 }

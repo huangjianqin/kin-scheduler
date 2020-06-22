@@ -3,16 +3,22 @@ package org.kin.scheduler.core.worker.transport;
 import org.kin.scheduler.core.transport.RPCResp;
 
 /**
+ * master通知worker启动executor返回消息
+ *
  * @author huangjianqin
  * @date 2020-02-08
  */
 public class LaunchExecutorResp extends RPCResp {
     private static final long serialVersionUID = -4359993770222676944L;
-
+    /** app name */
     private String appName;
+    /** executor id */
     private String executorId;
+    /** worker id */
     private String workerId;
+    /** executor占用cpu核心数 */
     private int cpuCore;
+    /** executor endpoint地址 */
     private String address;
 
     public static LaunchExecutorResp of(boolean success, String desc, String appName, String executorId, String workerId, int cpuCore, String address) {

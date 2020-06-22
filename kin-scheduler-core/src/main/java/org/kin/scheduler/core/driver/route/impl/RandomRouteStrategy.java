@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
+ * 基于随机的executor路由策略
+ *
  * @author huangjianqin
  * @date 2020-03-03
  */

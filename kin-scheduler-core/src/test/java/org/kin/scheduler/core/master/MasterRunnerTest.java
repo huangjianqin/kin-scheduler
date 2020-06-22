@@ -11,8 +11,8 @@ public class MasterRunnerTest {
     public static void main(String[] args) {
         Config config = Configs.getCfg();
         String[] masterArgs = new String[]{
-                config.getMasterBackendHost(),
-                String.valueOf(config.getMasterBackendPort()),
+                config.getMasterHost(),
+                String.valueOf(config.getMasterPort()),
                 config.getLogPath(),
                 String.valueOf(config.getHeartbeatTime())
         };

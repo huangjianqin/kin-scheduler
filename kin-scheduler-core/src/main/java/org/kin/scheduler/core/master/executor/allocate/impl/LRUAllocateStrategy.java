@@ -7,9 +7,13 @@ import org.kin.scheduler.core.master.domain.WorkerContext;
 import org.kin.scheduler.core.master.executor.allocate.AllocateStrategy;
 
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * 基于LRU(最近最久未使用)的资源分配策略
+ * 选择经常使用的
+ *
  * @author huangjianqin
  * @date 2020-03-03
  */
@@ -48,10 +52,12 @@ public class LRUAllocateStrategy implements AllocateStrategy {
                     lruMap.remove(workerId);
                 }
 
-                String selectedWorkerId = lruMap.keySet().iterator().next();
 
-                WorkerContext selectedWorkerContext = workerId2Context.get(selectedWorkerId);
-                return Collections.singletonList(selectedWorkerContext);
+                List<Map.Entry<String, Boolean>> entries = new ArrayList<>(lruMap.entrySet());
+                if (CollectionUtils.isNonEmpty(entries)) {
+                    String selectedWorkerId = entries.get(ThreadLocalRandom.current().nextInt(entries.size())).getKey();
+                    return Collections.singletonList(workerId2Context.get(selectedWorkerId));
+                }
             }
         }
 

@@ -1,6 +1,8 @@
 package org.kin.scheduler.core.task.domain;
 
 /**
+ * task状态
+ *
  * @author huangjianqin
  * @date 2020-05-27
  */
@@ -19,6 +21,9 @@ public enum TaskStatus {
     LOST,
     ;
 
+    /**
+     * @return 是否是结束状态
+     */
     public boolean isFinished() {
         return equals(TaskStatus.FAIL) ||
                 equals(TaskStatus.CANCELLED) ||

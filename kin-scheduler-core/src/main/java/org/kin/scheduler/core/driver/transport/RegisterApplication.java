@@ -6,22 +6,25 @@ import org.kin.scheduler.core.driver.ApplicationDescription;
 import java.io.Serializable;
 
 /**
+ * application 注册消息
+ *
  * @author huangjianqin
  * @date 2020-02-11
  */
 public class RegisterApplication implements Serializable {
     private static final long serialVersionUID = 8669073559392601217L;
-
+    /** application 描述 */
     private ApplicationDescription appDesc;
-    private RpcEndpointRef driverRef;
+    /** scheduler client ref */
+    private RpcEndpointRef schedulerRef;
 
     public RegisterApplication() {
     }
 
-    public static RegisterApplication of(ApplicationDescription appDesc, RpcEndpointRef driverRef) {
+    public static RegisterApplication of(ApplicationDescription appDesc, RpcEndpointRef schedulerRef) {
         RegisterApplication message = new RegisterApplication();
         message.setAppDesc(appDesc);
-        message.setDriverRef(driverRef);
+        message.setSchedulerRef(schedulerRef);
         return message;
     }
 
@@ -35,11 +38,11 @@ public class RegisterApplication implements Serializable {
         this.appDesc = appDesc;
     }
 
-    public RpcEndpointRef getDriverRef() {
-        return driverRef;
+    public RpcEndpointRef getSchedulerRef() {
+        return schedulerRef;
     }
 
-    public void setDriverRef(RpcEndpointRef driverRef) {
-        this.driverRef = driverRef;
+    public void setSchedulerRef(RpcEndpointRef schedulerRef) {
+        this.schedulerRef = schedulerRef;
     }
 }

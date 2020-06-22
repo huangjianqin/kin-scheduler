@@ -35,13 +35,18 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
+ * executor实现
+ * 每个app拥有不同的executors, 实现应用隔离
+ *
  * @author huangjianqin
  * @date 2020-02-06
  */
 public class Executor extends ThreadSafeRpcEndpoint {
+    /** 所属的appName */
     private final String appName;
     /** 所属的workerId */
     private final String workerId;
+    /** executor id */
     private final String executorId;
     /** Executor的线程池, task执行线程池 */
     private ExecutionContext executionContext;
@@ -55,9 +60,6 @@ public class Executor extends ThreadSafeRpcEndpoint {
     private RpcEndpointRef schedulerRef;
     /** worker client */
     private RpcEndpointRef workerRef;
-    /**
-     *
-     */
     private volatile boolean isStopped;
 
     //--------------------------------------------------------------------
@@ -66,16 +68,18 @@ public class Executor extends ThreadSafeRpcEndpoint {
 
     public Executor(RpcEnv rpcEnv, String appName, String workerId, String executorId,
                     String logPath,
-                    String executorDriverBackendAddress, String executorWorkerBackendAddress, boolean isLocal) {
+                    String executorDriverAddress, String executorWorkerAddress, boolean isLocal) {
         super(rpcEnv);
         this.appName = appName;
         this.workerId = workerId;
         this.executorId = executorId;
         this.logPath = logPath;
 
-        Object[] schedulerHostPort = NetUtils.parseIpPort(executorDriverBackendAddress);
+        //创建scheduler client ref
+        Object[] schedulerHostPort = NetUtils.parseIpPort(executorDriverAddress);
         this.schedulerRef = rpcEnv.createEndpointRef(schedulerHostPort[0].toString(), (Integer) schedulerHostPort[1], appName);
-        Object[] workerHostPort = NetUtils.parseIpPort(executorWorkerBackendAddress);
+        //创建worker client ref
+        Object[] workerHostPort = NetUtils.parseIpPort(executorWorkerAddress);
         this.workerRef = rpcEnv.createEndpointRef(workerHostPort[0].toString(), (Integer) workerHostPort[1], workerId);
     }
 
@@ -87,12 +91,13 @@ public class Executor extends ThreadSafeRpcEndpoint {
         super.onStart();
 
         executionContext = ExecutionContext.cache("executor-".concat(executorId));
+        //启动log
         taskLoggerContext = new TaskLoggerContext(executorId);
         log = LogUtils.getExecutorLogger(logPath, workerId, executorId);
         taskLoggerContext.start();
-
+        //通知worker executor status change
         workerRef.send(ExecutorStateChanged.running(appName, executorId));
-
+        //往scheduler注册exeuctor
         schedulerRef.send(RegisterExecutor.of(workerId, executorId, ref()));
         log.info("executor({}) started", executorId);
     }
@@ -144,13 +149,23 @@ public class Executor extends ThreadSafeRpcEndpoint {
     }
 
     //-------------------------------------------------------------------------------------------------------------------------
+
+    /**
+     * scheduler 通知 executor执行task
+     *
+     * @param context         消息通信上下文
+     * @param taskDescription task描述
+     */
     private void execTask(RpcMessageCallContext context, TaskDescription taskDescription) {
-        TaskSubmitResp taskSubmitResp = execTask0(taskDescription, log);
+        TaskSubmitResp taskSubmitResp = execTask0(taskDescription);
         log.info("exec task({}) finished, resulst >>>> {}", taskDescription.getTaskId(), taskSubmitResp);
         context.reply(taskSubmitResp);
     }
 
-    private TaskSubmitResp execTask0(TaskDescription taskDescription, Logger log) {
+    /**
+     * 调度执行task
+     */
+    private TaskSubmitResp execTask0(TaskDescription taskDescription) {
         if (!isStopped) {
             log.info("execing task({})", taskDescription);
 
@@ -160,6 +175,7 @@ public class Executor extends ThreadSafeRpcEndpoint {
             }
             try {
                 TaskRunner newTaskRunner = new TaskRunner(taskDescription);
+                //
                 List<TaskRunner> exTaskRunners = taskId2TaskRunners.get(taskDescription.getTaskId());
                 switch (taskDescription.getExecStrategy()) {
                     case SERIAL_EXECUTION:
@@ -185,6 +201,7 @@ public class Executor extends ThreadSafeRpcEndpoint {
                         break;
                 }
 
+                //执行task
                 executionContext.execute(newTaskRunner);
 
                 //保存newTaskRunner
@@ -200,6 +217,7 @@ public class Executor extends ThreadSafeRpcEndpoint {
                     }
                 }
 
+                //获取task log/output path
                 String taskLogName = LogUtils.getTaskLogFileAbsoluteName(logPath, taskDescription.getJobId(), taskDescription.getTaskId(), taskDescription.getLogFileName());
                 String taskOutputName = LogUtils.getTaskOutputFileAbsoluteName(logPath, taskDescription.getJobId(), taskDescription.getTaskId(), taskDescription.getLogFileName());
                 return TaskSubmitResp.success(taskDescription.getTaskId(), taskLogName, taskOutputName);
@@ -212,6 +230,9 @@ public class Executor extends ThreadSafeRpcEndpoint {
         return TaskSubmitResp.failure(taskDescription.getTaskId(), String.format("executor(%s) stopped", executorId));
     }
 
+    /**
+     * scheduler 通知取消执行task
+     */
     private void cancelTask(RpcMessageCallContext context, CancelTask cancelTask) {
         String taskId = cancelTask.getTaskId();
         log.info("task({}) cancel >>>>", taskId);
@@ -234,14 +255,14 @@ public class Executor extends ThreadSafeRpcEndpoint {
      * 清掉已完成task的信息
      */
     private void cleanFinishedTask(TaskDescription taskDescription) {
-        List<TaskRunner> exTaskRunners = taskId2TaskRunners.get(taskDescription.getTaskId());
-        if (CollectionUtils.isNonEmpty(exTaskRunners)) {
-            exTaskRunners.removeIf(tr -> tr.taskDescription.getTaskId().equals(taskDescription.getTaskId()));
-        }
+        taskId2TaskRunners.remove(taskDescription.getTaskId());
     }
 
     //-----------------------------------------------------------------------------------------------------------------
 
+    /**
+     * 通知worker executor state change
+     */
     public void executorStateChanged(ExecutorState state) {
         switch (state) {
             case KILLED:
@@ -259,8 +280,12 @@ public class Executor extends ThreadSafeRpcEndpoint {
 
     //-----------------------------------------------------------------------------------------------------------------
 
+    /**
+     * task 执行逻辑
+     */
     private class TaskRunner implements Runnable {
-        private TaskDescription taskDescription;
+        /** task 描述 */
+        private final TaskDescription taskDescription;
         private Lock lock = new ReentrantLock();
         private volatile boolean isStopped;
         private Thread currentThread;
@@ -283,12 +308,11 @@ public class Executor extends ThreadSafeRpcEndpoint {
 
             currentThread = Thread.currentThread();
             try {
-                initLogger();
-
                 TaskStatusChanged execResult;
                 Future<TaskStatusChanged> future = null;
                 try {
                     if (taskDescription.getTimeout() > 0) {
+                        //需要timeout
                         future = executionContext.submit(this::runTask);
                         execResult = future.get(taskDescription.getTimeout(), TimeUnit.SECONDS);
                     } else {
@@ -311,21 +335,33 @@ public class Executor extends ThreadSafeRpcEndpoint {
                 schedulerRef.send(execResult);
             } finally {
                 Loggers.removeAll();
-                isStopped = true;
+                lock.lock();
+                try {
+                    isStopped = true;
+                } finally {
+                    lock.unlock();
+                }
                 cleanFinishedTask(taskDescription);
             }
         }
 
+        /**
+         * 初始化logger
+         */
         private void initLogger() {
             //更新上下文日志
             Loggers.updateLogger(taskLoggerContext.getTaskLogger(logPath, taskDescription.getJobId(), taskDescription.getTaskId(), taskDescription.getLogFileName()));
             Loggers.updateTaskOutputFileName(LogUtils.getTaskOutputFileAbsoluteName(logPath, taskDescription.getJobId(), taskDescription.getTaskId(), taskDescription.getLogFileName()));
         }
 
+        /**
+         * 真正执行task
+         */
         private TaskStatusChanged runTask() throws Exception {
             //获取task handler
             TaskHandler taskHandler = TaskHandlers.getTaskHandler(taskDescription);
             Preconditions.checkNotNull(taskHandler, "task handler is null");
+
 
             initLogger();
             return TaskStatusChanged.finished(
@@ -337,6 +373,9 @@ public class Executor extends ThreadSafeRpcEndpoint {
                     taskHandler.exec(taskDescription));
         }
 
+        /**
+         * 中断task执行
+         */
         private void interrupt() {
             lock.lock();
             try {

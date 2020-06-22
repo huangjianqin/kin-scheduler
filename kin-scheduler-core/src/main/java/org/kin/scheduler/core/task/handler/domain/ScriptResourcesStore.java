@@ -3,10 +3,10 @@ package org.kin.scheduler.core.task.handler.domain;
 import org.kin.framework.utils.*;
 
 /**
+ * 脚本文件存储位置类型
+ *
  * @author huangjianqin
  * @date 2020-02-21
- * <p>
- * 脚本存储位置
  */
 public enum ScriptResourcesStore {
     /**
@@ -56,6 +56,9 @@ public enum ScriptResourcesStore {
 
     //----------------------------------------------------------------------------------
 
+    /**
+     * 根据名称获取脚本文件存储位置类型
+     */
     public static ScriptResourcesStore getByName(String name) {
         if (StringUtils.isNotBlank(name)) {
             for (ScriptResourcesStore item : STORES) {

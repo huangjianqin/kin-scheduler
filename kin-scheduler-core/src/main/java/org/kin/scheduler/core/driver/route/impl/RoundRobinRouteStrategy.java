@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
+ * 基于RoundRobin(逐渐递增)的executor路由策略
+ *
  * @author huangjianqin
  * @date 2020-03-03
  */

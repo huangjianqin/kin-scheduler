@@ -4,13 +4,16 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
+ * worker通知master executor状态更新消息
+ *
  * @author huangjianqin
  * @date 2020-06-16
  */
 public class ExecutorStateUpdate implements Serializable {
     private static final long serialVersionUID = -1568064313237525058L;
-
+    /** 新增executor ids */
     private List<String> newExecutorIds;
+    /** 无效executor ids */
     private List<String> unavailableExecutorIds;
 
     public static ExecutorStateUpdate of(List<String> newExecutorIds, List<String> unavailableExecutorIds) {

@@ -6,13 +6,12 @@ import org.kin.scheduler.core.task.TaskDescription;
 import java.io.Serializable;
 
 /**
- * @author huangjianqin
- * @date 2020-02-06
- * <p>
  * 必须包含无参constructor
  * 单例模式调用
- * <p>
  * {@link Loggers} 获取当前日志输出
+ *
+ * @author huangjianqin
+ * @date 2020-02-06
  */
 public interface TaskHandler<PARAM extends Serializable, RESULT extends Serializable> {
     /**

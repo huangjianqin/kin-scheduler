@@ -11,6 +11,8 @@ import java.util.Objects;
 import java.util.TreeMap;
 
 /**
+ * 基于Hash的资源分配策略
+ *
  * @author huangjianqin
  * @date 2020-03-03
  */

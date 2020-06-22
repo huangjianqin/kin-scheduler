@@ -8,6 +8,8 @@ import java.util.Collection;
 import java.util.TreeMap;
 
 /**
+ * 基于hash的executor路由策略
+ *
  * @author huangjianqin
  * @date 2020-03-03
  */

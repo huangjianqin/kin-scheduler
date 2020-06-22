@@ -8,7 +8,7 @@ import java.io.Serializable;
 import java.util.Objects;
 
 /**
- * 应用配置
+ * application描述
  *
  * @author huangjianqin
  * @date 2020-05-26

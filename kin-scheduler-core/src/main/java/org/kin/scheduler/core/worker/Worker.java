@@ -22,6 +22,7 @@ import org.kin.scheduler.core.master.transport.LaunchExecutor;
 import org.kin.scheduler.core.master.transport.RegisterWorkerResp;
 import org.kin.scheduler.core.master.transport.UnRegisterWorkerResp;
 import org.kin.scheduler.core.master.transport.WorkerReRegister;
+import org.kin.scheduler.core.worker.domain.WorkerInfo;
 import org.kin.scheduler.core.worker.transport.*;
 
 import java.io.*;
@@ -50,7 +51,7 @@ public class Worker extends ThreadSafeRpcEndpoint {
      * 类actor执行, 所有rpc请求都是同一线程处理, 不需要用原子类
      */
     private int executorIdCounter = 1;
-    //定时发送心跳
+    /** 定时发送心跳keeper */
     private Keeper.KeeperStopper heartbeatKeeper;
     private volatile boolean isStopped;
 
@@ -58,7 +59,7 @@ public class Worker extends ThreadSafeRpcEndpoint {
         super(rpcEnv);
         this.workerId = workerId;
         this.config = config;
-        this.masterRef = rpcEnv.createEndpointRef(config.getMasterBackendHost(), config.getMasterBackendPort(), Master.DEFAULT_NAME);
+        this.masterRef = rpcEnv.createEndpointRef(config.getMasterHost(), config.getMasterPort(), Master.DEFAULT_NAME);
         log = Loggers.worker(config.getLogPath(), workerId);
 
         JvmCloseCleaner.DEFAULT().add(JvmCloseCleaner.MAX_PRIORITY, this::stop);
@@ -67,9 +68,9 @@ public class Worker extends ThreadSafeRpcEndpoint {
     @Override
     protected void onStart() {
         super.onStart();
-
+        //注册worker
         registerWorker();
-
+        //启动定时心跳
         heartbeatKeeper = Keeper.keep(this::sendHeartbeat);
 
         log.info("worker({}) started", workerId);
@@ -122,8 +123,11 @@ public class Worker extends ThreadSafeRpcEndpoint {
         rpcEnv.unregister(workerId, this);
     }
 
-    //---------------------------------------WorkerBackend-------------------------------------------------------------------------
+    //---------------------------------------Worker endpoint-------------------------------------------------------------------------
 
+    /**
+     * 通知master注册worker
+     */
     private void registerWorker() {
         if (isStopped) {
             return;
@@ -132,6 +136,9 @@ public class Worker extends ThreadSafeRpcEndpoint {
         masterRef.send(RegisterWorker.of(WorkerInfo.of(workerId, config.getCpuCore(), 0), ref()));
     }
 
+    /**
+     * worker注册返回
+     */
     private void registerWorkerResp(RegisterWorkerResp registerWorkerResp) {
         if (isStopped) {
             return;
@@ -143,6 +150,9 @@ public class Worker extends ThreadSafeRpcEndpoint {
         }
     }
 
+    /**
+     * 通知master注销worker
+     */
     private void unRegisterWorker() {
         if (isStopped) {
             return;
@@ -151,6 +161,9 @@ public class Worker extends ThreadSafeRpcEndpoint {
         masterRef.send(UnRegisterWorker.of(workerId));
     }
 
+    /**
+     * 注销worker返回
+     */
     private void unRegisterWorkerResp() {
         if (isStopped) {
             return;
@@ -159,6 +172,9 @@ public class Worker extends ThreadSafeRpcEndpoint {
         log.info("worker '{}' unRegistered", workerId);
     }
 
+    /**
+     * worker定时发送心跳逻辑
+     */
     private void sendHeartbeat() {
         if (isStopped) {
             return;
@@ -176,6 +192,9 @@ public class Worker extends ThreadSafeRpcEndpoint {
         masterRef.send(WorkerHeartbeat.of(workerId, ref()));
     }
 
+    /**
+     * master通知worker启动executor
+     */
     private void launchExecutor(LaunchExecutor launchInfo) {
         if (isStopped) {
             return;
@@ -184,7 +203,7 @@ public class Worker extends ThreadSafeRpcEndpoint {
 
         //log
         if (result.isSuccess()) {
-            log.info("lauch executor success >>> executorId({}), executorBackendAddress({})", result.getExecutorId(), result.getAddress());
+            log.info("lauch executor success >>> executorId({}), executorAddress({})", result.getExecutorId(), result.getAddress());
         } else {
             log.error("lauch executor fail >>> {}", result.getDesc());
         }
@@ -192,6 +211,9 @@ public class Worker extends ThreadSafeRpcEndpoint {
         masterRef.send(result);
     }
 
+    /**
+     * worker启动executor真正逻辑
+     */
     private LaunchExecutorResp launchExecutor0(LaunchExecutor launchInfo) {
         if (isStopped) {
             return LaunchExecutorResp.failure("worker not start");
@@ -202,19 +224,19 @@ public class Worker extends ThreadSafeRpcEndpoint {
         String appName = launchInfo.getAppName();
         int cpuCore = launchInfo.getCpuCore();
 
-        String executorWorkerBackendAddress = NetUtils.getIpPort(config.getWorkerBackendHost(), config.getWorkerBackendPort());
-        int executorBackendPort = getAvailableExecutorBackendPort();
-        if (executorBackendPort > 0) {
+        String executorWorkerAddress = NetUtils.getIpPort(config.getWorkerHost(), config.getWorkerPort());
+        int executorPort = getAvailableExecutorPort();
+        if (executorPort > 0) {
             String executorId = workerId.concat("-Executor-").concat(String.valueOf(executorIdCounter++));
             if (config.isAllowEmbeddedExecutor()) {
                 Executor executor = new Executor(rpcEnv, appName, workerId, executorId, config.getLogPath(),
-                        launchInfo.getExecutorDriverBackendAddress(), executorWorkerBackendAddress, true);
+                        launchInfo.getExecutorSchedulerAddress(), executorWorkerAddress, true);
                 executor.start();
 
                 embeddedExecutors.put(executorId, executor);
 
                 result = LaunchExecutorResp.success(appName, executorId, workerId, cpuCore,
-                        NetUtils.getIpPort(config.getWorkerBackendHost(), executorBackendPort));
+                        NetUtils.getIpPort(config.getWorkerHost(), executorPort));
             } else {
                 //启动新jvm来启动Executor
                 //TODO 通过启动进程控制CPU使用数
@@ -223,14 +245,14 @@ public class Worker extends ThreadSafeRpcEndpoint {
                 try {
                     commandExecResult = CommandUtils.execCommand("java -jar kin-scheduler-admin.jar ExecutorRunner",
                             LogUtils.getExecutorLogFileName(config.getLogPath(), workerId, executorId), "/",
-                            appName, workerId, executorId, config.getWorkerBackendHost(), String.valueOf(executorBackendPort),
-                            config.getLogPath(), launchInfo.getExecutorDriverBackendAddress(), executorWorkerBackendAddress);
+                            appName, workerId, executorId, config.getWorkerHost(), String.valueOf(executorPort),
+                            config.getLogPath(), launchInfo.getExecutorSchedulerAddress(), executorWorkerAddress);
                 } catch (Exception e) {
                     reason = ExceptionUtils.getExceptionDesc(e);
                 }
                 if (commandExecResult == 0) {
                     result = LaunchExecutorResp.success(appName, executorId, workerId, cpuCore,
-                            NetUtils.getIpPort(config.getWorkerBackendHost(), executorBackendPort));
+                            NetUtils.getIpPort(config.getWorkerHost(), executorPort));
                 } else {
                     result = LaunchExecutorResp.failure("executor launch fail >>>>>".concat(System.lineSeparator()).concat(reason));
                 }
@@ -242,21 +264,26 @@ public class Worker extends ThreadSafeRpcEndpoint {
         return result;
     }
 
-    private int getAvailableExecutorBackendPort() {
-        int executorBackendPort;
+    /**
+     * @return 获取可用的executor 端口
+     */
+    private int getAvailableExecutorPort() {
+        int executorPort;
         if (config.isAllowEmbeddedExecutor()) {
-            executorBackendPort = config.getWorkerBackendPort();
+            executorPort = config.getWorkerPort();
         } else {
-            executorBackendPort = config.getExecutorBackendPort();
-            while (NetUtils.isPortInRange(executorBackendPort) && !NetUtils.isValidPort(executorBackendPort)) {
-                executorBackendPort++;
+            executorPort = config.getExecutorPort();
+            while (NetUtils.isPortInRange(executorPort) && !NetUtils.isValidPort(executorPort)) {
+                executorPort++;
             }
         }
 
-        return NetUtils.isPortInRange(executorBackendPort) ? executorBackendPort : -1;
+        return NetUtils.isPortInRange(executorPort) ? executorPort : -1;
     }
 
-
+    /**
+     * scheduler 读取worker上的文件
+     */
     private void readFile(RpcMessageCallContext context, ReadFile readFile) {
         if (isStopped) {
             return;
@@ -277,6 +304,7 @@ public class Worker extends ThreadSafeRpcEndpoint {
 
         StringBuffer logContentBuffer = new StringBuffer();
         int toLineNum = 0;
+        //从指定行开始读取内容
         try (LineNumberReader reader = new LineNumberReader(new InputStreamReader(new FileInputStream(logFile), StandardCharsets.UTF_8))) {
             String line;
             while ((line = reader.readLine()) != null) {
@@ -293,6 +321,9 @@ public class Worker extends ThreadSafeRpcEndpoint {
         context.reply(TaskExecFileContent.success(workerId, path, fromLineNum, toLineNum, logContentBuffer.toString(), fromLineNum == toLineNum));
     }
 
+    /**
+     * executor通知worker其状态变化, worker进而通知master该executor状态变化
+     */
     private void executorStateChanged(ExecutorStateChanged executorStateChanged) {
         if (isStopped) {
             return;

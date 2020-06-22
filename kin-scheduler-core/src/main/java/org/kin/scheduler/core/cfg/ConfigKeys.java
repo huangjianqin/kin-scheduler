@@ -5,45 +5,46 @@ import org.kin.scheduler.core.utils.ConfigUtils;
 import java.util.Properties;
 
 /**
+ * 配置keies
+ *
  * @author huangjianqin
  * @date 2020-02-08
- * worker通用配置
  */
 public enum ConfigKeys {
     /**
      *
      */
-    WorkerBackendHost("WorkerBackendHost") {
+    WorkerHost("WorkerHost") {
         @Override
         void updateConfig(Config config, Properties properties) {
-            config.setWorkerBackendHost(ConfigUtils.getValue(properties, this));
+            config.setWorkerHost(ConfigUtils.getValue(properties, this));
         }
     },
     /**
      *
      */
-    WorkerBackendPort("WorkerBackendPort") {
+    WorkerPort("WorkerPort") {
         @Override
         void updateConfig(Config config, Properties properties) {
-            config.setWorkerBackendPort(ConfigUtils.getValue(properties, this));
+            config.setWorkerPort(ConfigUtils.getValue(properties, this));
         }
     },
     /**
      *
      */
-    MasterBackendHost("MasterBackendHost") {
+    MasterHost("MasterHost") {
         @Override
         void updateConfig(Config config, Properties properties) {
-            config.setMasterBackendHost(ConfigUtils.getValue(properties, this));
+            config.setMasterHost(ConfigUtils.getValue(properties, this));
         }
     },
     /**
      *
      */
-    MasterBackendPort("MasterBackendPort") {
+    MasterPort("MasterPort") {
         @Override
         void updateConfig(Config config, Properties properties) {
-            config.setMasterBackendPort(ConfigUtils.getValue(properties, this));
+            config.setMasterPort(ConfigUtils.getValue(properties, this));
         }
     },
     /**
@@ -58,10 +59,10 @@ public enum ConfigKeys {
     /**
      * Executor rpc端口(后续端口是累加上去)
      */
-    ExecutorBackendPort("Executor rpc端口") {
+    ExecutorPort("Executor rpc端口") {
         @Override
         void updateConfig(Config config, Properties properties) {
-            config.setExecutorBackendPort(ConfigUtils.getValue(properties, this));
+            config.setExecutorPort(ConfigUtils.getValue(properties, this));
         }
     },
     /**

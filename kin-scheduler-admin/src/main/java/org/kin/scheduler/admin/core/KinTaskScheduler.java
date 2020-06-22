@@ -15,7 +15,6 @@ import org.kin.scheduler.core.task.TaskDescription;
 import org.kin.scheduler.core.task.TaskExecStrategy;
 
 import java.io.Serializable;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -55,7 +54,7 @@ public class KinTaskScheduler extends TaskScheduler<TaskInfoDTO> {
         taskDescription.setParam(TaskType.getByName(dto.getType()).parseParam(dto.getParam()));
         taskDescription.setLogFileName(String.valueOf(taskLog.getId()));
 
-        TaskContext taskContext = taskSetManager.init(Collections.singletonList(taskDescription)).get(0);
+        TaskContext taskContext = taskSetManager.init(taskDescription);
 
         //过滤掉已经执行过该task的executor
         List<ExecutorContext> filterExecutorContexts = getAvailableExecutors().stream()
@@ -73,8 +72,8 @@ public class KinTaskScheduler extends TaskScheduler<TaskInfoDTO> {
             if (Objects.nonNull(future)) {
                 //future不为null就是成功调度了
                 taskLog.setTriggerCode(Constants.SUCCESS_CODE);
-                taskLog.setLogPath(future.getTaskSubmitResult().getLogPath());
-                taskLog.setOutputPath(future.getTaskSubmitResult().getOutputPath());
+                taskLog.setLogPath(future.getTaskSubmitResp().getLogPath());
+                taskLog.setOutputPath(future.getTaskSubmitResp().getOutputPath());
             } else {
                 taskLog.setTriggerCode(Constants.FAIL_CODE);
             }

@@ -28,6 +28,8 @@ import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 
 /**
+ * application driver 负责创建taskscheduler, 对外提供调用接口
+ *
  * @author huangjianqin
  * @date 2020-02-09
  */
@@ -54,6 +56,7 @@ public class Driver {
     //---------------------------------------------------------------------------------------------------------------------
     public Driver(RpcEnv rpcEnv, Application app, TaskScheduler taskScheduler) {
         this.rpcEnv = rpcEnv;
+        //master client ref
         Object[] masterHostPort = NetUtils.parseIpPort(app.getMasterAddress());
         this.masterRef = rpcEnv.createEndpointRef(masterHostPort[0].toString(), (Integer) masterHostPort[1], Master.DEFAULT_NAME);
         this.app = app;
@@ -65,11 +68,12 @@ public class Driver {
             return;
         }
 
+        //启动taskscheduler
         taskScheduler.start();
 
         JvmCloseCleaner.DEFAULT().add(JvmCloseCleaner.MAX_PRIORITY, this::stop);
 
-        //注册applications
+        //注册application
         try {
             ApplicationDescription appDesc = new ApplicationDescription();
             appDesc.setAppName(app.getAppName());
@@ -102,12 +106,17 @@ public class Driver {
             taskScheduler.stop();
         }
 
-        TaskExecFuture.CALLBACK_EXECUTORS.shutdown();
+        //shutdown rpc环境
         rpcEnv.stop();
+        TaskExecFuture.CALLBACK_EXECUTORS.shutdown();
         log.info("driver(appName={}, master={}) closed", app.getAppName(), app.getMasterAddress());
     }
 
     //----------------------------------------------------------------------------------------------------------------------------
+
+    /**
+     * 等待task完成
+     */
     public final void awaitTermination() {
         taskScheduler.awaitTermination();
     }
@@ -117,7 +126,6 @@ public class Driver {
      * 向master请求某worker上的log文件
      *
      * @param taskId      task id
-     * @param fromLineNum 开始的行数
      * @return log info
      */
     public final TaskExecFileContent readLog(String taskId, int fromLineNum) {
@@ -134,7 +142,6 @@ public class Driver {
      * 向master请求某worker上的output文件
      *
      * @param taskId      task id
-     * @param fromLineNum 开始的行数
      * @return output info
      */
     public final TaskExecFileContent readOutput(String taskId, int fromLineNum) {
@@ -148,6 +155,11 @@ public class Driver {
 
     /**
      * call线程
+     * 从worker上读取文件
+     *
+     * @param workerId      worker id
+     * @param taskId        task id
+     * @param fromLineNum   开始的行数
      */
     protected final TaskExecFileContent readFile(String workerId, String path, int fromLineNum) {
         try {
@@ -160,6 +172,7 @@ public class Driver {
     }
 
     /**
+     * 提交task
      * call线程
      */
     public final <R extends Serializable, PARAM extends Serializable> TaskExecFuture<R> submitTask(TaskDescription<PARAM> taskDescription) {
@@ -167,6 +180,7 @@ public class Driver {
     }
 
     /**
+     * 取消task
      * call线程
      */
     public final boolean cancelTask(String taskId) {

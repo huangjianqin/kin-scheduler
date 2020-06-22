@@ -33,7 +33,7 @@ public class ApplicationContext {
      * 占用Executor资源
      */
     public void useExecutorResource(String executorId, WorkerResource resource) {
-        usedExecutorResources.add(new ExecutorResource(executorId, resource));
+        usedExecutorResources.add(ExecutorResource.of(executorId, resource));
     }
 
     /**
@@ -70,7 +70,7 @@ public class ApplicationContext {
         return usedExecutorResources.stream().anyMatch(r -> r.getWorkerResource().getWorkerId().equals(workerId));
     }
 
-    //getter
+    //------------------------------------------------------------------------------------------------------------------
     public ApplicationDescription getAppDesc() {
         return appDesc;
     }

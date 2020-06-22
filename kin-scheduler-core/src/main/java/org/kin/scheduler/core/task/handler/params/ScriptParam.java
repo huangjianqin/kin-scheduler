@@ -1,6 +1,8 @@
 package org.kin.scheduler.core.task.handler.params;
 
 /**
+ * 脚本task参数
+ *
  * @author huangjianqin
  * @date 2020-02-21
  */
@@ -10,8 +12,17 @@ public class ScriptParam extends GlueParam {
     private String user;
     private String password;
 
-    //setter && getter
+    public static ScriptParam of(String scriptResources, String scriptResourcesStore,
+                                 String user, String password) {
+        ScriptParam scriptParam = new ScriptParam();
+        scriptParam.scriptResources = scriptResources;
+        scriptParam.scriptResourcesStore = scriptResourcesStore;
+        scriptParam.user = user;
+        scriptParam.password = password;
+        return scriptParam;
+    }
 
+    //setter && getter
     public String getScriptResources() {
         return scriptResources;
     }

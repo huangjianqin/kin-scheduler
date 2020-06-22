@@ -4,9 +4,10 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
 
 /**
+ * task log上下文用于创建及管理Task相关logger
+ *
  * @author huangjianqin
  * @date 2020-02-18
- * <p>
  */
 public class TaskLoggerContext extends LoggerContext {
     public TaskLoggerContext(String executorId) {

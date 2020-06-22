@@ -4,10 +4,10 @@ import java.io.Serializable;
 import java.util.Objects;
 
 /**
+ * task信息的抽象
+ *
  * @author huangjianqin
  * @date 2020-02-05
- * <p>
- * task信息的抽象
  */
 public class TaskDescription<PARAM extends Serializable> implements Serializable {
     private String jobId;
@@ -24,7 +24,7 @@ public class TaskDescription<PARAM extends Serializable> implements Serializable
     //--------------------------------------------------------------------------------------------
 
     /**
-     * 创建一个尚未分配id的Task
+     * 创建一个尚未分配id的Task描述
      */
     public static <PARAM extends Serializable> TaskDescription<PARAM> createTmpTask(PARAM param, TaskExecStrategy execStrategy, int timeout) {
         TaskDescription<PARAM> newTaskDescription = new TaskDescription<>();
@@ -34,6 +34,9 @@ public class TaskDescription<PARAM extends Serializable> implements Serializable
         return newTaskDescription;
     }
 
+    /**
+     * 创建一个分配了task id 和job id的task描述
+     */
     public static <PARAM extends Serializable> TaskDescription<PARAM> of(String jobId, String taskId) {
         TaskDescription<PARAM> newTaskDescription = new TaskDescription<>();
         newTaskDescription.jobId = jobId;

@@ -4,16 +4,18 @@ import org.kin.framework.utils.StringUtils;
 import org.kin.scheduler.core.transport.RPCResp;
 
 /**
+ * task 提交返回消息
+ *
  * @author huangjianqin
  * @date 2020-03-10
- * <p>
- * task 提交结果
  */
 public class TaskSubmitResp extends RPCResp {
     private static final long serialVersionUID = -7447918191273892930L;
-
+    /** task id */
     private String taskId;
+    /** task log路径 */
     private String logPath;
+    /** task output路径 */
     private String outputPath;
 
     public static TaskSubmitResp of(boolean success, String desc) {
@@ -39,7 +41,7 @@ public class TaskSubmitResp extends RPCResp {
         return TaskSubmitResp.of(false, desc, taskId, "", "");
     }
 
-
+    //---------------------------------------------------------------------------------------------------
     public String getTaskId() {
         return taskId;
     }

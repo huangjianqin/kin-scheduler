@@ -18,6 +18,8 @@ import java.util.Date;
 import java.util.Objects;
 
 /**
+ * 创建Logger工具类
+ *
  * @author huangjianqin
  * @date 2020-02-19
  */
@@ -30,6 +32,9 @@ public class LogUtils {
         return getLogger(loggerName, appenderName, getMasterLogFileName(basePath, masterId));
     }
 
+    /**
+     * @return master log name
+     */
     public static String getMasterLogFileName(String basePath, String masterId) {
         return getLogFileName(basePath, masterId);
     }
@@ -40,6 +45,9 @@ public class LogUtils {
         return getLogger(loggerName, appenderName, getWorkerLogFileName(basePath, workerId));
     }
 
+    /**
+     * @return worker log name
+     */
     public static String getWorkerLogFileName(String basePath, String workerId) {
         return getLogFileName(basePath, workerId);
     }
@@ -50,6 +58,9 @@ public class LogUtils {
         return getLogger(loggerName, appenderName, getExecutorLogFileName(basePath, workerId, executorId));
     }
 
+    /**
+     * @return task log name
+     */
     public static String getExecutorLogFileName(String basePath, String workerId, String executorId) {
         return getLogFileName(basePath, workerId.concat(File.separator).concat(executorId));
     }
@@ -65,6 +76,9 @@ public class LogUtils {
         return getLogFileName(basePath, fileName);
     }
 
+    /**
+     * @return task log 绝对路径
+     */
     public static String getTaskLogFileAbsoluteName(String basePath, String jobId, String taskId, String logFileName) {
         File logFile = new File(getTaskLogFileName(basePath, jobId, taskId, logFileName));
         return logFile.getAbsolutePath();
@@ -81,6 +95,9 @@ public class LogUtils {
         return getFileName(basePath, fileName, ".out");
     }
 
+    /**
+     * @return task output 绝对路径
+     */
     public static String getTaskOutputFileAbsoluteName(String basePath, String jobId, String taskId, String logFileName) {
         File logFile = new File(getTaskOutputFileName(basePath, jobId, taskId, logFileName));
         return logFile.getAbsolutePath();
@@ -120,23 +137,10 @@ public class LogUtils {
         infoFilter.setContext(lc);
         infoFilter.start();
 
-//        TimeBasedRollingPolicy policy = new TimeBasedRollingPolicy();
-//        policy.setFileNamePattern(basePath.concat(File.separator).concat("%d{yyyy-MM-dd}").concat(File.separator).concat(file).concat(".log"));
-////        policy.setMaxHistory(30);
-//        policy.setContext(lc);
-
         PatternLayoutEncoder encoder = new PatternLayoutEncoder();
         encoder.setContext(lc);
         encoder.setPattern("[%p] %d{yyyy-MM-dd HH:mm:ss SSS} [%t] |  %C.%M\\(%L\\) : %msg%n%ex");
         encoder.start();
-
-//        RollingFileAppender<ILoggingEvent> dailyRollingFileAppender = new RollingFileAppender<>();
-//        dailyRollingFileAppender.setContext(lc);
-//        dailyRollingFileAppender.setName(appenderName);
-//        dailyRollingFileAppender.addFilter(infoFilter);
-//        dailyRollingFileAppender.setRollingPolicy(policy);
-//        dailyRollingFileAppender.setEncoder(encoder);
-//        dailyRollingFileAppender.setAppend(true);
 
         FileAppender<ILoggingEvent> fileAppender = new FileAppender<>();
         fileAppender.setContext(lc);
@@ -146,11 +150,6 @@ public class LogUtils {
         fileAppender.setAppend(true);
 
         fileAppender.setFile(file);
-
-//        policy.setParent(dailyRollingFileAppender);
-//        policy.start();
-//        dailyRollingFileAppender.start();
-
         fileAppender.start();
 
         //从已有的logger中获取打印控制台的appender

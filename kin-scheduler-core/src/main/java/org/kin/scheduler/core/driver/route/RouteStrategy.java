@@ -5,6 +5,8 @@ import org.kin.scheduler.core.driver.ExecutorContext;
 import java.util.Collection;
 
 /**
+ * scheduler选择executor执行task路由策略
+ *
  * @author huangjianqin
  * @date 2020-03-03
  */

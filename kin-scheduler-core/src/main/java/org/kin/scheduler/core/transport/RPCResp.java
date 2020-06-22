@@ -3,6 +3,8 @@ package org.kin.scheduler.core.transport;
 import java.io.Serializable;
 
 /**
+ * 通用的rpc请求返回消息
+ *
  * @author huangjianqin
  * @date 2020-02-06
  */
@@ -14,30 +16,25 @@ public class RPCResp implements Serializable {
     /** 结果描述 */
     protected String desc;
 
-    public RPCResp() {
-    }
-
-    public RPCResp(boolean success) {
-        this(success, "");
-    }
-
-    public RPCResp(boolean success, String desc) {
-        this.success = success;
-        this.desc = desc;
-    }
-
     //-------------------------------------------------------------------------------------
+    public static RPCResp of(boolean success, String desc) {
+        RPCResp resp = new RPCResp();
+        resp.success = success;
+        resp.desc = desc;
+
+        return resp;
+    }
 
     public static RPCResp success() {
         return success("");
     }
 
     public static RPCResp success(String desc) {
-        return new RPCResp(true, desc);
+        return RPCResp.of(true, desc);
     }
 
     public static RPCResp failure(String desc) {
-        return new RPCResp(false, desc);
+        return RPCResp.of(false, desc);
     }
 
     //-------------------------------------------------------------------------------------

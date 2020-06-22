@@ -1,17 +1,21 @@
-package org.kin.scheduler.core.worker.transport;
+package org.kin.scheduler.core.worker.domain;
 
 import java.io.Serializable;
 import java.util.Objects;
 
 /**
+ * worker信息
+ *
  * @author huangjianqin
  * @date 2020-02-09
  */
 public class WorkerInfo implements Serializable {
     private static final long serialVersionUID = -4507523138506740303L;
-
+    /** worker id */
     private String workerId;
+    /** worker占用核心数 */
     private int maxCpuCore;
+    /** worker占用内存数 */
     private long maxMemory;
 
     public static WorkerInfo of(String workerId, int maxCpuCore, long maxMemory) {

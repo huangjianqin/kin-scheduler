@@ -5,6 +5,8 @@ import org.kin.scheduler.core.master.domain.WorkerContext;
 import java.util.List;
 
 /**
+ * application资源分配策略实现
+ *
  * @author huangjianqin
  * @date 2020-03-03
  */

@@ -3,6 +3,8 @@ package org.kin.scheduler.core.master.transport;
 import java.io.Serializable;
 
 /**
+ * master定时检查心跳消息
+ *
  * @author huangjianqin
  * @date 2020-06-16
  */

@@ -3,6 +3,7 @@ package org.kin.scheduler.core.driver.transport;
 import java.io.Serializable;
 
 /**
+ * kill executor消息
  * @author huangjianqin
  * @date 2020-06-18
  */

@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
+ * 随机分配资源
+ *
  * @author huangjianqin
  * @date 2020-03-03
  */

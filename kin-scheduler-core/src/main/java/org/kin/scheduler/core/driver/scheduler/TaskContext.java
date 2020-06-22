@@ -1,6 +1,5 @@
 package org.kin.scheduler.core.driver.scheduler;
 
-import org.kin.framework.utils.CollectionUtils;
 import org.kin.scheduler.core.executor.transport.TaskSubmitResp;
 import org.kin.scheduler.core.task.TaskDescription;
 import org.kin.scheduler.core.task.domain.TaskStatus;
@@ -42,26 +41,41 @@ public class TaskContext {
         this.taskDescription = taskDescription;
     }
 
+    /**
+     * 记录task提交前的一些数据信息
+     */
+    public void preSubmit(String workerId, String runningExecutorId) {
+        this.workerId = workerId;
+        execedExecutorIds.add(runningExecutorId);
+        this.runningExecutorId = runningExecutorId;
+    }
+
+    /**
+     * task 提交成功回调, 设置一些task运行时信息
+     */
     public void submitTask(TaskSubmitResp submitResult, TaskExecFuture future) {
         this.logPath = submitResult.getLogPath();
         this.outputPath = submitResult.getOutputPath();
         this.future = future;
     }
 
-    public void preExecute(String workerId, String runningExecutorId) {
-        this.workerId = workerId;
-        execedExecutorIds.add(runningExecutorId);
-        this.runningExecutorId = runningExecutorId;
-    }
-
+    /**
+     * task 执行失败, 移除task正在执行的executor id
+     */
     public void execFail() {
         this.runningExecutorId = null;
     }
 
+    /**
+     * @return task是否完成, 不管是成功完成还是失败完成
+     */
     public boolean isFinish() {
         return state.isFinished();
     }
 
+    /**
+     * task 成功执行并返回回调
+     */
     public void finish(String taskId, TaskStatus taskStatus, Serializable result, String reason) {
         if (isNotFinish()) {
             this.result = result;
@@ -70,21 +84,21 @@ public class TaskContext {
         }
     }
 
+    /**
+     * @return task是否未完成
+     */
     public boolean isNotFinish() {
         return !isFinish();
     }
 
     /**
-     * 正执行该task的ExecutorId
+     * @return 正执行该task的ExecutorId
      */
-    public String getExecingTaskExecutorId() {
-        if (CollectionUtils.isNonEmpty(execedExecutorIds)) {
-            return execedExecutorIds.get(execedExecutorIds.size() - 1);
-        }
-
-        return null;
+    public String getRunningTaskExecutorId() {
+        return runningExecutorId;
     }
 
+    //--------------------------------------------------------------------------------------------------------
     public TaskDescription getTaskDescription() {
         return taskDescription;
     }

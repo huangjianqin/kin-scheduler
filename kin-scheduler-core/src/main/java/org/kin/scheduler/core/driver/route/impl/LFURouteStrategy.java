@@ -1,5 +1,6 @@
 package org.kin.scheduler.core.driver.route.impl;
 
+import org.kin.framework.utils.CollectionUtils;
 import org.kin.framework.utils.TimeUtils;
 import org.kin.scheduler.core.driver.ExecutorContext;
 import org.kin.scheduler.core.driver.route.RouteStrategy;
@@ -9,6 +10,9 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * 基于LFU(最近最少使用)的executor路由策略
+ * 选择最不常使用的
+ *
  * @author huangjianqin
  * @date 2020-03-03
  */
@@ -51,11 +55,15 @@ public class LFURouteStrategy implements RouteStrategy {
             }
 
             List<Map.Entry<String, Integer>> entries = new ArrayList<>(lfuMap.entrySet());
-            entries.sort(Comparator.comparingInt(Map.Entry::getValue));
+            if (CollectionUtils.isNonEmpty(entries)) {
+                entries.sort(Comparator.comparingInt(Map.Entry::getValue));
 
-            String selectedExecutorrId = entries.get(0).getKey();
-            lfuMap.put(selectedExecutorrId, entries.get(0).getValue() + 1);
-            return executorId2Context.get(selectedExecutorrId);
+                String selectedExecutorrId = entries.get(0).getKey();
+                lfuMap.put(selectedExecutorrId, entries.get(0).getValue() + 1);
+                return executorId2Context.get(selectedExecutorrId);
+            }
+
+            return null;
         }
     }
 }

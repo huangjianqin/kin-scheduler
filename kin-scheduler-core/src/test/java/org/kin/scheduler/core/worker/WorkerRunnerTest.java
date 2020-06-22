@@ -22,7 +22,7 @@ public class WorkerRunnerTest {
     public static void main(String[] args) {
         //读取scheduler.yml来获取worker起始端口
         Config config = Configs.getCfg();
-        int workerBackendPort = config.getWorkerBackendPort();
+        int workerPort = config.getWorkerPort();
 
         ExecutorService executors = Executors.newCachedThreadPool();
         List<Thread> threads = new ArrayList<>();
@@ -32,16 +32,16 @@ public class WorkerRunnerTest {
             try (Scanner scanner = new Scanner(is)) {
                 while (scanner.hasNext()) {
                     String executorId = scanner.nextLine();
-                    while (NetUtils.isPortInRange(workerBackendPort) && !NetUtils.isValidPort(workerBackendPort)) {
-                        workerBackendPort++;
+                    while (NetUtils.isPortInRange(workerPort) && !NetUtils.isValidPort(workerPort)) {
+                        workerPort++;
                     }
 
-                    if (NetUtils.isPortInRange(workerBackendPort)) {
-                        int finalWorkerBackendPort = workerBackendPort;
+                    if (NetUtils.isPortInRange(workerPort)) {
+                        int finalWorkerPort = workerPort;
                         executors.execute(() -> {
                             Thread curThread = Thread.currentThread();
                             threads.add(curThread);
-                            WorkerRunner.main(new String[]{executorId, String.valueOf(finalWorkerBackendPort)});
+                            WorkerRunner.main(new String[]{executorId, String.valueOf(finalWorkerPort)});
                         });
                     }
                 }

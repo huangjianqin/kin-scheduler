@@ -10,23 +10,29 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ * 加载executor路由策略
+ *
  * @author huangjianqin
  * @date 2020-03-03
  */
 public class RouteStrategies {
     private static Logger log = LoggerFactory.getLogger(RouteStrategies.class);
+    /** key -> executor路由策略类型 value -> 策略实现 */
     private static Map<RouteStrategyType, RouteStrategy> strategies;
 
     static {
+        //加载RouteStrategies时顺带加载executor路由策略实现
         Set<Class<? extends RouteStrategy>> allocateStrategyImplClasses =
                 ClassUtils.getSubClass(RouteStrategy.class.getPackage().getName(), RouteStrategy.class, false);
         Map<RouteStrategyType, RouteStrategy> strategies = new EnumMap<>(RouteStrategyType.class);
         for (Class<? extends RouteStrategy> allocateStrategyImplClass : allocateStrategyImplClasses) {
             try {
                 String className = allocateStrategyImplClass.getSimpleName();
+                //XXXXRouteStrategy类型即为XXXX
                 int prefix = className.lastIndexOf(RouteStrategy.class.getSimpleName());
                 String allocateStrategyName = className.substring(0, prefix);
                 RouteStrategyType routeStrategyType = RouteStrategyType.valueOf(allocateStrategyName);
+                //获取空构造器
                 Constructor<? extends RouteStrategy> constructor = allocateStrategyImplClass.getConstructor();
                 strategies.put(routeStrategyType, constructor.newInstance());
             } catch (Exception e) {

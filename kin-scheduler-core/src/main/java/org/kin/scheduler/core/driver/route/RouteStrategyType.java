@@ -1,6 +1,8 @@
 package org.kin.scheduler.core.driver.route;
 
 /**
+ * scheduler选择executor执行task路由策略类型
+ *
  * @author huangjianqin
  * @date 2020-03-03
  */
@@ -29,7 +31,7 @@ public enum RouteStrategyType {
 
     //------------------------------------------------------
     public static RouteStrategyType[] VALUES = values();
-
+    /** 描述 */
     private String desc;
 
     RouteStrategyType(String desc) {
@@ -40,6 +42,9 @@ public enum RouteStrategyType {
         return desc;
     }
 
+    /**
+     * 根据名字获取executor路由策略类型
+     */
     public static RouteStrategyType getByName(String name) {
         for (RouteStrategyType strategy : VALUES) {
             if (strategy.name().toLowerCase().equals(name.toLowerCase())) {

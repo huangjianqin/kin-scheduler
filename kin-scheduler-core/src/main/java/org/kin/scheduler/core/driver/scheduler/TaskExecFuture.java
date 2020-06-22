@@ -14,34 +14,42 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * 执行task的future
+ *
  * @author huangjianqin
  * @date 2020-02-12
- * <p>
- * 等待task执行的future
  */
 public class TaskExecFuture<R extends Serializable> implements Future<R> {
+    /** callback执行线程池 */
     public static ExecutionContext CALLBACK_EXECUTORS = ExecutionContext.fix(SysUtils.CPU_NUM, "TaskSubmitFuture-Callback-Thread");
 
     static {
         JvmCloseCleaner.DEFAULT().add(CALLBACK_EXECUTORS::shutdown);
     }
 
-    private TaskSubmitResp taskSubmitResult;
+    /** task submit 返回结果 */
+    private TaskSubmitResp taskSubmitResp;
+    /** 所属TaskScheduler */
     private TaskScheduler taskScheduler;
+    /** task执行结果 */
     private volatile R result;
+    /** future是否完成 */
     private volatile boolean done;
+    /** future是否取消 */
     private volatile boolean canneled;
+    /** 添加的callbacks */
     private Collection<TaskExecCallback<R>> callbacks = new CopyOnWriteArrayList<>();
+    /** 阻塞等待的的线程数 */
     private short waiters;
 
-    public TaskExecFuture(TaskSubmitResp taskSubmitResult, TaskScheduler taskScheduler) {
-        this.taskSubmitResult = taskSubmitResult;
+    public TaskExecFuture(TaskSubmitResp taskSubmitResp, TaskScheduler taskScheduler) {
+        this.taskSubmitResp = taskSubmitResp;
         this.taskScheduler = taskScheduler;
     }
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
-        canneled = taskScheduler.cancelTask(taskSubmitResult.getTaskId());
+        canneled = taskScheduler.cancelTask(taskSubmitResp.getTaskId());
         return canneled;
     }
 
@@ -85,6 +93,9 @@ public class TaskExecFuture<R extends Serializable> implements Future<R> {
         return (R) result;
     }
 
+    /**
+     * task 完成调用
+     */
     public void done(String taskId, TaskStatus taskStatus, Serializable result, String logPath, String outputPath, String reason) {
         done = true;
         this.result = (R) result;
@@ -93,17 +104,25 @@ public class TaskExecFuture<R extends Serializable> implements Future<R> {
                 callback.execFinish(taskId, taskStatus, this.result, logPath, outputPath, reason);
             }
         });
-        if (waiters > 0) {
-            notifyAll();
+        synchronized (this) {
+            if (waiters > 0) {
+                notifyAll();
+            }
         }
     }
 
+    /**
+     * 添加callback
+     */
     public TaskExecFuture<R> addCallback(TaskExecCallback<R> callback) {
         callbacks.add(callback);
         return this;
     }
 
-    public TaskSubmitResp getTaskSubmitResult() {
-        return taskSubmitResult;
+    /**
+     * @return task submit 返回结果
+     */
+    public TaskSubmitResp getTaskSubmitResp() {
+        return taskSubmitResp;
     }
 }

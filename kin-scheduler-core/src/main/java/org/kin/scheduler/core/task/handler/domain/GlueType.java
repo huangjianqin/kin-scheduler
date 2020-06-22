@@ -3,6 +3,8 @@ package org.kin.scheduler.core.task.handler.domain;
 import org.kin.framework.utils.StringUtils;
 
 /**
+ * glue操作类型
+ *
  * @author huangjianqin
  * @date 2020-02-21
  */
@@ -56,6 +58,9 @@ public enum GlueType {
 
     //----------------------------------------------------------------------------------
 
+    /**
+     * 根据类型名称获取类型
+     */
     public static GlueType getByType(String type) {
         if (StringUtils.isNotBlank(type)) {
             for (GlueType item : TYPES) {

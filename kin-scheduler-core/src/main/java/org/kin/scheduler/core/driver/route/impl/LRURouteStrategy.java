@@ -1,14 +1,19 @@
 package org.kin.scheduler.core.driver.route.impl;
 
 import org.kin.framework.collection.LRUMap;
+import org.kin.framework.utils.CollectionUtils;
 import org.kin.framework.utils.TimeUtils;
 import org.kin.scheduler.core.driver.ExecutorContext;
 import org.kin.scheduler.core.driver.route.RouteStrategy;
 
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * 基于LRU(最近最久未使用)的executor路由策略
+ * 选择经常使用的
+ *
  * @author huangjianqin
  * @date 2020-03-03
  */
@@ -46,8 +51,13 @@ public class LRURouteStrategy implements RouteStrategy {
                 lruMap.remove(executorId);
             }
 
-            String selectedWorkerId = lruMap.keySet().iterator().next();
-            return executorId2Context.get(selectedWorkerId);
+            List<Map.Entry<String, Boolean>> entries = new ArrayList<>(lruMap.entrySet());
+            if (CollectionUtils.isNonEmpty(entries)) {
+                String selectedWorkerId = entries.get(ThreadLocalRandom.current().nextInt(entries.size())).getKey();
+                return executorId2Context.get(selectedWorkerId);
+            }
+
+            return null;
         }
     }
 }

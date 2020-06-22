@@ -4,10 +4,13 @@ import org.kin.framework.utils.SysUtils;
 import org.kin.scheduler.core.master.executor.allocate.AllocateStrategyType;
 
 /**
+ * application配置
+ *
  * @author huangjianqin
  * @date 2020-02-11
  */
 public class Application {
+    /** appName */
     private String appName;
     /** master rpc接口 */
     private String masterAddress = "0.0.0.0:46668";

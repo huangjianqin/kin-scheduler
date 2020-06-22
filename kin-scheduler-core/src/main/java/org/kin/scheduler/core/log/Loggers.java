@@ -9,13 +9,17 @@ import java.util.Objects;
  * @date 2020-03-03
  */
 public class Loggers {
-    //理论上每个进程只有一个master or worker
-    public static Logger log;
+    /** 理论上每个进程只有一个master or worker */
+    private static Logger log;
 
-    //task相关
-    //task执行线程绑定的logger
+    /**
+     * task相关
+     * task执行线程绑定的logger
+     */
     private static ThreadLocal<Logger> threadLocalLogger = new ThreadLocal<>();
-    //task输出内容
+    /**
+     * task output 路径
+     */
     private static ThreadLocal<String> threadLocalTaskOutputFile = new ThreadLocal<>();
 
     //-----------------------------------------------------------------------------------------------------------------

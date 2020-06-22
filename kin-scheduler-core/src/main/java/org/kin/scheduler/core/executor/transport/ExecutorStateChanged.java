@@ -5,14 +5,18 @@ import org.kin.scheduler.core.executor.domain.ExecutorState;
 import java.io.Serializable;
 
 /**
+ * executor state change消息
+ *
  * @author huangjianqin
  * @date 2020-05-25
  */
 public class ExecutorStateChanged implements Serializable {
     private static final long serialVersionUID = 8314416045349454746L;
-
+    /** appName */
     private String appName;
+    /** executor id */
     private String executorId;
+    /** executor状态 */
     private ExecutorState state;
 
     public static ExecutorStateChanged of(String appName, String executorId, ExecutorState state) {
@@ -23,6 +27,7 @@ public class ExecutorStateChanged implements Serializable {
         return message;
     }
 
+    //----------------------------------------------------------------------------------------------------
     public static ExecutorStateChanged launching(String appName, String executorId) {
         return ExecutorStateChanged.of(appName, executorId, ExecutorState.LAUNCHING);
     }
@@ -43,7 +48,7 @@ public class ExecutorStateChanged implements Serializable {
         return ExecutorStateChanged.of(appName, executorId, ExecutorState.EXIT);
     }
 
-
+    //----------------------------------------------------------------------------------------------------------
     public String getAppName() {
         return appName;
     }

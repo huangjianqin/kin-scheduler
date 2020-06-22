@@ -6,6 +6,8 @@ import org.kin.scheduler.core.master.executor.allocate.AllocateStrategy;
 import java.util.List;
 
 /**
+ * 分配全部资源
+ *
  * @author huangjianqin
  * @date 2020-03-10
  */
