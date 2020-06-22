@@ -77,4 +77,6 @@ kin:
     host: 0.0.0.0
     port: 46668
     logPath: logs
+    serialize: kryo
+    compression: false
 

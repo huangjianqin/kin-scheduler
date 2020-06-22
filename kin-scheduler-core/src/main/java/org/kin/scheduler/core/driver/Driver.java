@@ -6,7 +6,6 @@ import org.kin.framework.utils.NetUtils;
 import org.kin.framework.utils.SysUtils;
 import org.kin.kinrpc.message.core.RpcEndpointRef;
 import org.kin.kinrpc.message.core.RpcEnv;
-import org.kin.kinrpc.transport.serializer.SerializerType;
 import org.kin.kinrpc.transport.serializer.Serializers;
 import org.kin.scheduler.core.driver.exception.RegisterApplicationFailureException;
 import org.kin.scheduler.core.driver.scheduler.TaskContext;
@@ -47,8 +46,8 @@ public class Driver {
 
     //---------------------------------------------------------------------------------------------------------------------
     public static Driver common(Application app) {
-        RpcEnv rpcEnv = new RpcEnv("0.0.0.0", app.getDriverPort(), SysUtils.getSuitableThreadNum(),
-                Serializers.getSerializer(SerializerType.KRYO), false);
+        RpcEnv rpcEnv = new RpcEnv("0.0.0.0", app.getDriverPort(), SysUtils.CPU_NUM,
+                Serializers.getSerializer(app.getSerialize()), app.isCompression());
         rpcEnv.startServer();
         return new Driver(rpcEnv, app, new DefaultTaskScheduler(rpcEnv, app));
     }

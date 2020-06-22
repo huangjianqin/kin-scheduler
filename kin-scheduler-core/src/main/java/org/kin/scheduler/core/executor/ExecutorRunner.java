@@ -2,7 +2,6 @@ package org.kin.scheduler.core.executor;
 
 import org.kin.framework.utils.SysUtils;
 import org.kin.kinrpc.message.core.RpcEnv;
-import org.kin.kinrpc.transport.serializer.SerializerType;
 import org.kin.kinrpc.transport.serializer.Serializers;
 import org.kin.scheduler.core.executor.domain.ExecutorState;
 
@@ -14,7 +13,7 @@ import org.kin.scheduler.core.executor.domain.ExecutorState;
  */
 public class ExecutorRunner {
     public static void main(String[] args) {
-        if (args.length >= 8) {
+        if (args.length >= 10) {
             String appName = args[0];
             String workerId = args[1];
             String executorId = args[2];
@@ -23,10 +22,12 @@ public class ExecutorRunner {
             String logBasePath = args[5];
             String driverAddress = args[6];
             String workerAddress = args[7];
+            String serialize = args[8];
+            boolean compression = Boolean.parseBoolean(args[9]);
 
             //创建rpc env
-            RpcEnv rpcEnv = new RpcEnv(host, port, SysUtils.getSuitableThreadNum(),
-                    Serializers.getSerializer(SerializerType.KRYO), false);
+            //外部进程通过commandline方式限制进程能使用的cpu核心数
+            RpcEnv rpcEnv = new RpcEnv(host, port, SysUtils.getSuitableThreadNum(), Serializers.getSerializer(serialize), compression);
             //启动server
             rpcEnv.startServer();
             //创建executor

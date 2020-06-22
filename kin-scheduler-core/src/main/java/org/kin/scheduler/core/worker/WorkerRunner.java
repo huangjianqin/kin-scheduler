@@ -1,9 +1,6 @@
 package org.kin.scheduler.core.worker;
 
-import org.kin.framework.utils.SysUtils;
 import org.kin.kinrpc.message.core.RpcEnv;
-import org.kin.kinrpc.transport.serializer.SerializerType;
-import org.kin.kinrpc.transport.serializer.Serializers;
 import org.kin.scheduler.core.cfg.Config;
 import org.kin.scheduler.core.cfg.Configs;
 
@@ -27,8 +24,8 @@ public class WorkerRunner {
             config.setWorkerPort(Integer.parseInt(args[1]));
 
             //创建rpc环境
-            RpcEnv rpcEnv = new RpcEnv(config.getWorkerHost(), config.getWorkerPort(), SysUtils.getSuitableThreadNum(),
-                    Serializers.getSerializer(SerializerType.KRYO), false);
+            RpcEnv rpcEnv = new RpcEnv(config.getWorkerHost(), config.getWorkerPort(), config.getCpuCore(),
+                    config.getSerializer(), config.isCompression());
             //启动server
             rpcEnv.startServer();
             Worker worker = new Worker(rpcEnv, workerId, config);

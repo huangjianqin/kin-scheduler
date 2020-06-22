@@ -1,6 +1,7 @@
 package org.kin.scheduler.core.driver;
 
 import org.kin.framework.utils.SysUtils;
+import org.kin.kinrpc.transport.serializer.SerializerType;
 import org.kin.scheduler.core.master.executor.allocate.AllocateStrategyType;
 
 /**
@@ -18,14 +19,18 @@ public class Application {
     private AllocateStrategyType allocateStrategyType = AllocateStrategyType.Hash;
     /** driver rpc服务端口 */
     private int driverPort = 46000;
-    //需要cpu核心数
+    /** 需要cpu核心数 */
     private int cpuCoreNum = SysUtils.CPU_NUM;
-    //每个executor最小需要cpu核心数
+    /** 每个executor最小需要cpu核心数 */
     private int minCoresPerExecutor = SysUtils.CPU_NUM;
-    //每个worker一个Executor
+    /** 每个worker一个Executor */
     private boolean oneExecutorPerWorker;
-    //application是否缓存结果
+    /** application是否缓存结果 */
     private boolean dropResult;
+    /** 通信序列化方式, 默认是kryo */
+    private String serialize = SerializerType.KRYO.name();
+    /** 通信是否支持压缩, more不支持 */
+    private boolean compression;
 
     public Application() {
     }
@@ -90,6 +95,16 @@ public class Application {
         return this;
     }
 
+    public Application serialize(String serialize) {
+        this.serialize = serialize;
+        return this;
+    }
+
+    public Application compression() {
+        this.compression = true;
+        return this;
+    }
+
     //getter
     public String getAppName() {
         return appName;
@@ -121,5 +136,13 @@ public class Application {
 
     public boolean isDropResult() {
         return dropResult;
+    }
+
+    public String getSerialize() {
+        return serialize;
+    }
+
+    public boolean isCompression() {
+        return compression;
     }
 }

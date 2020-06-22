@@ -1,9 +1,6 @@
 package org.kin.scheduler.core.master;
 
-import org.kin.framework.utils.SysUtils;
 import org.kin.kinrpc.message.core.RpcEnv;
-import org.kin.kinrpc.transport.serializer.SerializerType;
-import org.kin.kinrpc.transport.serializer.Serializers;
 import org.kin.scheduler.core.cfg.Config;
 import org.kin.scheduler.core.cfg.Configs;
 
@@ -18,8 +15,8 @@ public class MasterRunner {
         Config config = Configs.getCfg();
 
         //创建rpc环境
-        RpcEnv rpcEnv = new RpcEnv(config.getMasterHost(), config.getMasterPort(), SysUtils.getSuitableThreadNum(),
-                Serializers.getSerializer(SerializerType.KRYO), false);
+        RpcEnv rpcEnv = new RpcEnv(config.getMasterHost(), config.getMasterPort(), config.getCpuCore(),
+                config.getSerializer(), config.isCompression());
         //启动server
         rpcEnv.startServer();
         Master master = new Master(rpcEnv, config);

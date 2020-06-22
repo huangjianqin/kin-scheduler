@@ -51,6 +51,12 @@ public class KinSchedulerContext implements InitializingBean, ApplicationListene
     /** 日志路径 */
     @Value("${kin.scheduler.logPath}")
     private String logPath;
+    /** 通信序列化方式 */
+    @Value("${kin.scheduler.serialize}")
+    private String serialize = SerializerType.KRYO.name();
+    /** 通信是否支持压缩 */
+    @Value("${kin.scheduler.compression}")
+    private boolean compression;
 
     @Autowired
     private TaskInfoDao taskInfoDao;
@@ -83,7 +89,7 @@ public class KinSchedulerContext implements InitializingBean, ApplicationListene
         if (refreshedEvent.getApplicationContext().getParent() == null) {
             //spring 容器初始化后, 初始化rpc环境和master
             rpcEnv = new RpcEnv(host, port, SysUtils.getSuitableThreadNum(),
-                    Serializers.getSerializer(SerializerType.KRYO), false);
+                    Serializers.getSerializer(serialize), compression);
             rpcEnv.startServer();
 
             Config config = new Config();
@@ -210,6 +216,22 @@ public class KinSchedulerContext implements InitializingBean, ApplicationListene
 
     public void setLogPath(String logPath) {
         this.logPath = logPath;
+    }
+
+    public String getSerialize() {
+        return serialize;
+    }
+
+    public void setSerialize(String serialize) {
+        this.serialize = serialize;
+    }
+
+    public boolean isCompression() {
+        return compression;
+    }
+
+    public void setCompression(boolean compression) {
+        this.compression = compression;
     }
 
     public JavaMailSender getMailSender() {

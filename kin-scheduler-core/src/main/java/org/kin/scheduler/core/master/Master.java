@@ -44,6 +44,8 @@ public class Master extends ThreadSafeRpcEndpoint {
     //-------------------------------------------------------------------------------------------------
     /** master name */
     private final String name;
+    /** 配置 */
+    private final Config config;
     /** 已注册的worker */
     private Map<String, WorkerContext> workers = new ConcurrentHashMap<>();
     /** 已注册的应用 */
@@ -53,10 +55,6 @@ public class Master extends ThreadSafeRpcEndpoint {
      * 等待资源分配的应用
      */
     private volatile List<ApplicationContext> waitingDrivers = new ArrayList<>();
-    /** 心跳时间(秒) */
-    private final int heartbeatTime;
-    /** 心跳检测间隔(秒) */
-    private final int heartbeatCheckInterval;
     /** 负责执行会阻塞的任务 or 调度心跳 */
     private ExecutionContext commonWorkers;
     private volatile boolean isStopped;
@@ -68,11 +66,10 @@ public class Master extends ThreadSafeRpcEndpoint {
     public Master(String name, RpcEnv rpcEnv, Config config) {
         super(rpcEnv);
         this.name = name;
-        this.heartbeatTime = config.getHeartbeatTime();
-        this.heartbeatCheckInterval = heartbeatTime + 2000;
+        this.config = config;
         log = Loggers.master(config.getLogPath(), name);
         commonWorkers = ExecutionContext.fix(
-                SysUtils.getSuitableThreadNum(), name.concat("-common"), 2, name.concat("-common-schedule"));
+                SysUtils.CPU_NUM, name.concat("-common"), 2, name.concat("-common-schedule"));
     }
 
     //-------------------------------------------------------------------------------------------------
@@ -97,7 +94,7 @@ public class Master extends ThreadSafeRpcEndpoint {
         rpcEnv.startServer();
         //定时心跳超时检查
         commonWorkers.scheduleAtFixedRate(() -> send2Self(CheckHeartbeatTimeout.INSTANCE),
-                heartbeatCheckInterval, heartbeatCheckInterval, TimeUnit.MILLISECONDS);
+                config.getHeartbeatCheckInterval(), config.getHeartbeatCheckInterval(), TimeUnit.MILLISECONDS);
 
         JvmCloseCleaner.DEFAULT().add(JvmCloseCleaner.MAX_PRIORITY, this::stop);
 
@@ -472,6 +469,7 @@ public class Master extends ThreadSafeRpcEndpoint {
      */
     private void checkHeartbeatTimeout() {
         try {
+            int heartbeatCheckInterval = config.getHeartbeatCheckInterval();
             long sleepTime = heartbeatCheckInterval - System.currentTimeMillis() % heartbeatCheckInterval;
             if (sleepTime > 0 && sleepTime < heartbeatCheckInterval) {
                 TimeUnit.MILLISECONDS.sleep(sleepTime);
@@ -484,7 +482,7 @@ public class Master extends ThreadSafeRpcEndpoint {
         for (String registeredWorkerId : registeredWorkerIds) {
             WorkerContext workerContext = workers.get(registeredWorkerId);
             if (Objects.nonNull(workerContext) &&
-                    workerContext.getLastHeartbeatTime() - System.currentTimeMillis() > TimeUnit.MILLISECONDS.toMillis(heartbeatTime)) {
+                    workerContext.getLastHeartbeatTime() - System.currentTimeMillis() > config.getHeartbeatTime()) {
                 //定时检测心跳超时, 并移除超时worker
                 unregisterWorker(workerContext.getWorkerInfo().getWorkerId());
             }

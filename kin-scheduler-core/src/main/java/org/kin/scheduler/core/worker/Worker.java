@@ -246,7 +246,8 @@ public class Worker extends ThreadSafeRpcEndpoint {
                     commandExecResult = CommandUtils.execCommand("java -jar kin-scheduler-admin.jar ExecutorRunner",
                             LogUtils.getExecutorLogFileName(config.getLogPath(), workerId, executorId), "/",
                             appName, workerId, executorId, config.getWorkerHost(), String.valueOf(executorPort),
-                            config.getLogPath(), launchInfo.getExecutorSchedulerAddress(), executorWorkerAddress);
+                            config.getLogPath(), launchInfo.getExecutorSchedulerAddress(), executorWorkerAddress,
+                            config.getSerialize(), Boolean.toString(config.isCompression()));
                 } catch (Exception e) {
                     reason = ExceptionUtils.getExceptionDesc(e);
                 }
