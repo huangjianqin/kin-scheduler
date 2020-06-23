@@ -8,21 +8,22 @@ public class User {
     public static final int USER = 0;
     public static final int ADMIN = 1;
 
-    //唯一id
+    /** 唯一id */
     private int id;
-    //账号
+    /** 账号 */
     private String account;
-    //密码
+    /** 密码 */
     private String password;
-    //0-普通用户、1-管理员
+    /** 0-普通用户、1-管理员 */
     private int role;
-    //名称
+    /** 名称 */
     private String name;
 
     public boolean isAdmin() {
         return role == ADMIN;
     }
 
+    //-----------------------------------------------------------------------------------------------------------------
     public int getId() {
         return id;
     }

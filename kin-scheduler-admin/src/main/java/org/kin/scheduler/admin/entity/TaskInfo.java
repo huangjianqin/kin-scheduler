@@ -1,6 +1,6 @@
 package org.kin.scheduler.admin.entity;
 
-import org.kin.scheduler.admin.core.TaskInfoDTO;
+import org.kin.scheduler.admin.core.domain.TaskInfoDTO;
 
 import java.util.Date;
 
@@ -13,45 +13,45 @@ public class TaskInfo {
     public static final int START = 1;
     public static final int END = 2;
 
-    //唯一id
+    /** 唯一id */
     private int id;
-    //所属jobId
+    /** 所属jobId */
     private int jobId;
-    //时间类型
+    /** 时间类型 */
     private String timeType;
-    //时间表达式
+    /** 时间表达式 */
     private String timeStr;
-    //job描述
+    /** task描述 */
     private String desc;
-    //添加日期
+    /** 添加日期 */
     private Date addTime;
-    //更新日期
+    /** 更新日期 */
     private Date updateTime;
-    //负责人
+    /** 负责人 */
     private int userId;
-    //路由策略
+    /** 路由策略 */
     private String routeStrategy;
-    //类型
+    /** task类型 */
     private String type;
-    //任务参数
+    /** 任务参数 */
     private String param;
-    //任务执行策略
+    /** 任务执行策略 */
     private String execStrategy;
-    //任务执行超时时间，单位秒
+    /** 任务执行超时时间，单位秒 */
     private int execTimeout;
-    //失败重试次数
+    /** 失败重试次数 */
     private int retryTimes;
-    //告警邮箱
+    /** 告警邮箱 */
     private String alarmEmail;
 
-    // 子任务ID，多个逗号分隔
+    /** 子任务ID，多个逗号分隔 */
     private String childTaskIds;
 
-    //调度状态
+    /** 调度状态 */
     private int triggerStatus;
-    //上次调度时间
+    /** 上次调度时间 */
     private long triggerLastTime;
-    //下次调度时间
+    /** 下次调度时间 */
     private long triggerNextTime;
 
     public void stop() {
@@ -60,6 +60,9 @@ public class TaskInfo {
         setTriggerNextTime(0);
     }
 
+    /**
+     * 转换成初始的TaskInfoDTO
+     */
     public TaskInfoDTO convert() {
         return new TaskInfoDTO(jobId, id, desc, 0, retryTimes, execTimeout, type,
                 execStrategy, routeStrategy, param);
@@ -69,6 +72,7 @@ public class TaskInfo {
         setTriggerStatus(END);
     }
 
+    //--------------------------------------------------------------------------------------------------
     public int getId() {
         return id;
     }

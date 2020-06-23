@@ -1,5 +1,7 @@
 package org.kin.scheduler.core.task;
 
+import java.util.Objects;
+
 /**
  * task的执行策略
  *
@@ -32,6 +34,14 @@ public enum TaskExecStrategy {
         }
 
         return null;
+    }
+
+    /**
+     * 根据类型名称获取类型描述
+     */
+    public static String getDescByName(String strategy) {
+        TaskExecStrategy taskExecStrategy = getByName(strategy);
+        return Objects.nonNull(taskExecStrategy) ? taskExecStrategy.desc : "unknown: ".concat(strategy);
     }
 
     public String getDesc() {

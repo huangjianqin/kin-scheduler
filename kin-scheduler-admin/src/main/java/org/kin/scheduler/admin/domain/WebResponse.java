@@ -9,7 +9,6 @@ import java.io.Serializable;
 public class WebResponse<T> implements Serializable {
     public static final long serialVersionUID = 42L;
 
-
     private int code;
     private String msg;
     private T content;
@@ -38,6 +37,8 @@ public class WebResponse<T> implements Serializable {
     public static <T> WebResponse<T> fail(String msg) {
         return new WebResponse<>(Constants.FAIL_CODE, msg, null);
     }
+
+    //------------------------------------------------------------------------------------------------------
 
     public int getCode() {
         return code;

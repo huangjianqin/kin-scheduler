@@ -10,6 +10,8 @@ import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
+ * web mvc相关配置
+ *
  * @author huangjianqin
  * @date 2020-03-07
  */

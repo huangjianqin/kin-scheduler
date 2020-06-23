@@ -60,6 +60,6 @@ public enum TimeType {
             }
         }
 
-        return null;
+        throw new IllegalStateException("unknown TimeType: ".concat(type));
     }
 }

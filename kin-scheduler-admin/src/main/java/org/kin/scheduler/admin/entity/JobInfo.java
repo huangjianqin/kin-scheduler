@@ -5,13 +5,13 @@ package org.kin.scheduler.admin.entity;
  * @date 2020-03-07
  */
 public class JobInfo {
-    //唯一id
+    /** 唯一id */
     private int id;
-    //appName
+    /** appName */
     private String appName;
-    //标题
+    /** 标题 */
     private String title;
-    //优先级
+    /** 优先级 */
     private int order;
 
     public int getId() {

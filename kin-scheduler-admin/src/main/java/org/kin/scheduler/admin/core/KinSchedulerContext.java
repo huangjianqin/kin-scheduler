@@ -27,6 +27,11 @@ import javax.sql.DataSource;
 import java.util.Objects;
 
 /**
+ * admin 上下文,
+ * 1. 存储app相关参数\
+ * 2. 管理master和driver
+ * 3.
+ *
  * @author huangjianqin
  * @date 2020-03-08
  */
@@ -35,6 +40,7 @@ import java.util.Objects;
 public class KinSchedulerContext implements InitializingBean, ApplicationListener<ContextRefreshedEvent> {
     private static KinSchedulerContext INSTANCE;
 
+    //----------------------------------------应用参数------------------------------------------------------------
     /** 应用名 */
     @Value("${application.name:kin-scheduler}")
     private String appName;
@@ -60,21 +66,27 @@ public class KinSchedulerContext implements InitializingBean, ApplicationListene
     @Value("${kin.scheduler.compression:false}")
     private boolean compression;
 
+    //----------------------------------------dao------------------------------------------------------------
     @Autowired
     private TaskInfoDao taskInfoDao;
+    @Autowired
+    private TaskLogDao taskLogDao;
+    @Autowired
+    private JobInfoDao jobInfoDao;
+    //----------------------------------------service------------------------------------------------------------
     @Autowired
     private JobService jobService;
     @Autowired
     private DataSource dataSource;
-    @Autowired
-    private TaskLogDao taskLogDao;
+    /**
+     * 邮件发送
+     */
     @Autowired
     private JavaMailSender mailSender;
-    @Autowired
-    private JobInfoDao jobInfoDao;
 
-    private Master master;
+    //----------------------------------------master 及 driver------------------------------------------------------------
     private RpcEnv rpcEnv;
+    private Master master;
     private KinDriver driver;
 
     public static KinSchedulerContext instance() {
@@ -116,9 +128,13 @@ public class KinSchedulerContext implements InitializingBean, ApplicationListene
         rpcEnv.stop();
     }
 
+    /**
+     * @return 获取driver
+     */
     public KinDriver getDriver() {
         //首次使用driver才初始化driver
         if (Objects.isNull(driver)) {
+            //lazy
             synchronized (this) {
                 if (Objects.isNull(driver)) {
                     driver = new KinDriver(
@@ -127,9 +143,14 @@ public class KinSchedulerContext implements InitializingBean, ApplicationListene
                                     .appName(getAppName())
                                     .master(NetUtils.getIpPort(host, port))
                                     .driverPort(port)
+                                    //相当于worker即executor
+                                    //占用所有worker的所有cpu核心数
                                     .cpuCore(Integer.MAX_VALUE)
+                                    //如果允许, 所有worker都启动executor
                                     .allocateStrategy(AllocateStrategyType.All)
+                                    //每个worker一个executor, 方便应用层面故障隔离
                                     .oneExecutorPerWorker()
+                                    //异步模式
                                     .dropResult()
                     );
                     driver.start();

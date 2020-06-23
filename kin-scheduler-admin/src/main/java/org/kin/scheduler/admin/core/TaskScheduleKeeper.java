@@ -15,12 +15,12 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * 调度task工具类
+ *
  * @author huangjianqin
  * @date 2020-03-08
  */
@@ -42,39 +42,54 @@ public class TaskScheduleKeeper {
         return INSTANCE;
     }
 
+    /** 分区线程池, 用于按task id分区提交task */
     private PartitionTaskExecutor<Integer> triggerThreads;
     private Keeper.KeeperStopper scheduleKeeper;
+    /** 2s时间间隔的时间环, 模拟时间行走, 不太实时, 但是性能相对较好 */
     private TimeRing<Integer> timeRing;
-    private Map<Integer, List<Integer>> ringData = new ConcurrentHashMap<>();
+    /** 数据库连接 */
     private Connection conn = null;
 
+    /**
+     * 初始化
+     */
     private void init() {
         triggerThreads =
-                new PartitionTaskExecutor(
+                new PartitionTaskExecutor<>(
                         KinSchedulerContext.instance().getParallism(),
                         EfficientHashPartitioner.INSTANCE,
-                        "admin-scheduler-thread-");
+                        "admin-schedule-");
         scheduleKeeper = Keeper.keep(this::schedule);
         timeRing = TimeRing.second(2, this::trigger);
         timeRing.start();
     }
 
-    public void trigger(int taskId) {
-        triggerThreads.execute(taskId, () -> {
-            TaskTrigger.instance().trigger(taskId);
-        });
+    /**
+     * 提交分区线程池提交task
+     *
+     * @param taskId task id
+     */
+    private void trigger(int taskId) {
+        triggerThreads.execute(taskId, () -> TaskTrigger.instance().trigger(taskId));
     }
 
-    public void trigger(TaskInfo taskInfo) {
-        triggerThreads.execute(taskInfo.getId(), () -> {
-            TaskTrigger.instance().trigger(taskInfo);
-        });
+    /**
+     * 提交分区线程池提交task
+     *
+     * @param taskInfo task信息
+     */
+    private void trigger(TaskInfo taskInfo) {
+        triggerThreads.execute(taskInfo.getId(), () -> TaskTrigger.instance().trigger(taskInfo));
     }
 
-    public void schedule() {
+    /**
+     * 间隔调度扫描未来 PRE_READ_MS 毫秒内(恰好一个调度间隔)的task, 并push进时间环内, 调度提交task
+     */
+    private void schedule() {
         try {
             TimeUnit.MILLISECONDS.sleep(PRE_READ_MS - System.currentTimeMillis() % 1000);
         } catch (InterruptedException e) {
+            return;
         }
 
         // 扫描任务
@@ -82,7 +97,7 @@ public class TaskScheduleKeeper {
         PreparedStatement preparedStatement = null;
         try {
             if (conn != null) {
-                conn.isClosed();
+                conn.close();
             }
             conn = KinSchedulerContext.instance().getDataSource().getConnection();
             conn.setAutoCommit(false);
@@ -91,23 +106,21 @@ public class TaskScheduleKeeper {
             preparedStatement.execute();
 
             //事务开始, 所有其他操作必须等事务commit or rollback
-            // 1、预读5s内调度任务
+            // 预读 PRE_READ_MS 毫秒内调度任务
             TaskInfoDao taskInfoDao = KinSchedulerContext.instance().getTaskInfoDao();
             long nowTime = System.currentTimeMillis();
             List<TaskInfo> waittingTaskInfos = taskInfoDao.scheduleTaskQuery(nowTime + PRE_READ_MS);
             if (CollectionUtils.isNonEmpty(waittingTaskInfos)) {
-                // 2、推送时间轮
                 for (TaskInfo taskInfo : waittingTaskInfos) {
-
-                    // 时间轮刻度计算
                     if (nowTime > taskInfo.getTriggerNextTime() + PRE_READ_MS) {
                         // 过期超5s：本地忽略，当前时间开始计算下次触发时间
 
-                        // fresh next
+                        // 刷新下次触发时间
                         taskInfo.setTriggerLastTime(taskInfo.getTriggerNextTime());
                         try {
                             taskInfo.setTriggerNextTime(TimeType.getByName(taskInfo.getTimeType()).parseTime(taskInfo.getTimeStr()));
                         } catch (Exception e) {
+                            log.error("schedule task(jobId={}, taskId={}) fail, due to >>>>>", taskInfo.getJobId(), taskInfo.getId(), e);
                             taskInfo.end();
                         }
                     } else if (nowTime > taskInfo.getTriggerNextTime()) {
@@ -117,14 +130,15 @@ public class TaskScheduleKeeper {
                         try {
                             nextTime = TimeType.getByName(taskInfo.getTimeType()).parseTime(taskInfo.getTimeStr());
                         } catch (Exception e) {
+                            log.error("schedule task(jobId={}, taskId={}) fail, due to >>>>>", taskInfo.getJobId(), taskInfo.getId(), e);
                             taskInfo.end();
                             continue;
                         }
 
-                        // 1、trigger
+                        // 提交task
                         trigger(taskInfo);
 
-                        // 2、fresh next
+                        // fresh next, 刷新下次触发时间
                         taskInfo.setTriggerLastTime(taskInfo.getTriggerNextTime());
                         taskInfo.setTriggerNextTime(nextTime);
 
@@ -141,7 +155,7 @@ public class TaskScheduleKeeper {
 
                 }
 
-                // 3、更新trigger信息
+                // 更新trigger信息
                 for (TaskInfo taskInfo : waittingTaskInfos) {
                     taskInfoDao.scheduleUpdate(taskInfo);
                 }
@@ -151,21 +165,28 @@ public class TaskScheduleKeeper {
             //事务结束
             conn.commit();
         } catch (Exception e) {
-            log.error("调度时出现异常 >>>>", e);
+            log.error("调度异常 >>>>", e);
+            try {
+                conn.rollback();
+            } catch (SQLException ex) {
+                log.error("调度时回滚异常 >>>>", e);
+            }
         } finally {
             if (null != preparedStatement) {
                 try {
                     preparedStatement.close();
-                } catch (SQLException ignore) {
+                } catch (SQLException e) {
+                    log.error("数据库连接关闭异常 >>>>", e);
                 }
             }
         }
         long cost = System.currentTimeMillis() - start;
 
         // next second, align second
+        int oneSecondMillis = 1000;
         try {
-            if (cost < 1000) {
-                TimeUnit.MILLISECONDS.sleep(1000 - System.currentTimeMillis() % 1000);
+            if (cost < oneSecondMillis) {
+                TimeUnit.MILLISECONDS.sleep(oneSecondMillis - System.currentTimeMillis() % oneSecondMillis);
             }
         } catch (InterruptedException e) {
 
@@ -175,24 +196,33 @@ public class TaskScheduleKeeper {
             try {
                 conn.close();
             } catch (SQLException e) {
+                log.error("数据库连接关闭异常 >>>>", e);
             }
         }
     }
 
+    /**
+     * 把符合条件的task推进时间环, 等待时间行走到触发时间, 进而触发任务, 提交task
+     *
+     * @param taskInfo task信息
+     */
     private void pushRing(TaskInfo taskInfo) {
-        // 1、make ring second
-        // 2、push time ring
+        // 推进时间环
         timeRing.push(taskInfo.getTriggerNextTime(), taskInfo.getId());
 
-        // 3、fresh next
+        // 刷新下次触发时间
         taskInfo.setTriggerLastTime(taskInfo.getTriggerNextTime());
         try {
             taskInfo.setTriggerNextTime(TimeType.getByName(taskInfo.getTimeType()).parseTime(taskInfo.getTimeStr()));
         } catch (Exception e) {
+            log.error("schedule task(jobId={}, taskId={}) fail, due to >>>>>", taskInfo.getJobId(), taskInfo.getId(), e);
             taskInfo.end();
         }
     }
 
+    /**
+     * 关闭并释放资源
+     */
     public void stop() {
         scheduleKeeper.stop();
         timeRing.stop();

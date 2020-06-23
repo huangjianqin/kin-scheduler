@@ -1,6 +1,6 @@
 package org.kin.scheduler.admin.entity;
 
-import org.kin.scheduler.admin.core.TaskInfoDTO;
+import org.kin.scheduler.admin.core.domain.TaskInfoDTO;
 
 import java.util.Date;
 
@@ -9,38 +9,58 @@ import java.util.Date;
  * @date 2020-03-07
  */
 public class TaskLog {
+    /** 唯一id */
     private int id;
+    /** 所属taskId */
     private int taskId;
+    /** 所属jobId */
     private int jobId;
 
+    /** task描述 */
     private String desc;
+    /** 执行task的executor地址 */
     private String executorAddress;
+    /** 执行task的executor所属workerId */
     private String workerId;
+    /** task类型 */
     private String type;
+    /** 任务参数 */
     private String param;
+    /** 任务执行策略 */
     private String execStrategy;
+    /** 路由策略 */
     private String routeStrategy;
+    /** 任务执行超时时间，单位秒 */
     private int execTimeout;
-    //当前第n重试次数
+    /** 当前第n重试次数 */
     private int retryTimes;
-    //重试次数上限
+    /** 重试次数上限 */
     private int retryTimesLimit;
 
-    // trigger info
+    //------------------------------------------------trigger info------------------------------------------------------
+    /** 调度时间 */
     private Date triggerTime;
+    /** 调度结果 */
     private int triggerCode;
-    // handle info
+
+    //------------------------------------------------handle info-------------------------------------------------------
+    /** task执行结束时间 */
     private Date handleTime;
+    /** task执行结果 */
     private int handleCode;
-    //task执行日志
+    /** task执行日志 */
     private String logPath;
-    //task输出文件
+    /** task输出文件 */
     private String outputPath;
 
-    public TaskInfoDTO convert() {
+    /**
+     * 转换成TaskInfoDTO, 用于重试, 所以当前重试+1
+     */
+    public TaskInfoDTO retry() {
         return new TaskInfoDTO(jobId, taskId, desc, retryTimes + 1, retryTimesLimit, execTimeout, type, execStrategy, routeStrategy, param);
     }
 
+    //-----------------------------------------------------------------------------------------------------------------
     public int getId() {
         return id;
     }

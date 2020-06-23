@@ -5,7 +5,6 @@ import org.kin.kinrpc.message.core.RpcMessageCallContext;
 import org.kin.kinrpc.message.core.ThreadSafeRpcEndpoint;
 import org.kin.scheduler.core.driver.Application;
 import org.kin.scheduler.core.driver.ExecutorContext;
-import org.kin.scheduler.core.driver.exception.TaskRepeatSubmitException;
 import org.kin.scheduler.core.driver.route.RouteStrategy;
 import org.kin.scheduler.core.driver.transport.CancelTask;
 import org.kin.scheduler.core.driver.transport.KillExecutor;
@@ -318,15 +317,13 @@ public abstract class TaskScheduler<T> extends ThreadSafeRpcEndpoint {
 
         /**
          * 初始化TaskContext
-         *
-         * @param taskDescriptions task描述
          */
         public TaskContext init(TaskDescription taskDescription) {
             TaskContext taskContext = new TaskContext(taskDescription);
             TaskContext oldContext = taskContexts.putIfAbsent(taskDescription.getTaskId(), taskContext);
             if (Objects.nonNull(oldContext)) {
                 //已存在相同task id的task上下文
-                throw new TaskRepeatSubmitException(taskDescription.getJobId(), taskDescription.getTaskId());
+                return oldContext;
             }
 
             return taskContext;

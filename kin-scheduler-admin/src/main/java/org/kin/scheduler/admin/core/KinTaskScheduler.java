@@ -1,6 +1,7 @@
 package org.kin.scheduler.admin.core;
 
 import org.kin.kinrpc.message.core.RpcEnv;
+import org.kin.scheduler.admin.core.domain.TaskInfoDTO;
 import org.kin.scheduler.admin.domain.Constants;
 import org.kin.scheduler.admin.domain.TaskType;
 import org.kin.scheduler.admin.entity.TaskLog;
@@ -21,6 +22,8 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
+ * 自定义scheduler, 增加了一些额外的行为
+ *
  * @author huangjianqin
  * @date 2020-03-10
  */
@@ -31,6 +34,7 @@ public class KinTaskScheduler extends TaskScheduler<TaskInfoDTO> {
 
     @Override
     public <R extends Serializable> TaskExecFuture<R> submitTask(TaskInfoDTO dto) {
+        //执行前生成log
         TaskLog taskLog = new TaskLog();
         taskLog.setTaskId(dto.getTaskId());
         taskLog.setJobId(dto.getJobId());
@@ -48,12 +52,14 @@ public class KinTaskScheduler extends TaskScheduler<TaskInfoDTO> {
         taskLog.setTriggerTime(new Date());
         KinSchedulerContext.instance().getTaskLogDao().save(taskLog);
 
+        //转换成通用的task描述
         TaskDescription taskDescription = TaskDescription.of(String.valueOf(dto.getJobId()), String.valueOf(dto.getTaskId()));
         taskDescription.setTimeout(dto.getExecTimeout());
         taskDescription.setExecStrategy(TaskExecStrategy.getByName(dto.getExecStrategy()));
         taskDescription.setParam(TaskType.getByName(dto.getType()).parseParam(dto.getParam()));
         taskDescription.setLogFileName(String.valueOf(taskLog.getId()));
 
+        //初始化task上下文
         TaskContext taskContext = taskSetManager.init(taskDescription);
 
         //过滤掉已经执行过该task的executor
@@ -62,6 +68,7 @@ public class KinTaskScheduler extends TaskScheduler<TaskInfoDTO> {
                 .collect(Collectors.toList());
 
         RouteStrategy routeStrategy = RouteStrategies.getByName(dto.getRouteStrategy());
+        //根据路由策略选择出合适的executor
         ExecutorContext selected = routeStrategy.route(filterExecutorContexts);
 
         if (Objects.nonNull(selected)) {
@@ -74,10 +81,15 @@ public class KinTaskScheduler extends TaskScheduler<TaskInfoDTO> {
                 taskLog.setTriggerCode(Constants.SUCCESS_CODE);
                 taskLog.setLogPath(future.getTaskSubmitResp().getLogPath());
                 taskLog.setOutputPath(future.getTaskSubmitResp().getOutputPath());
+
+                KinSchedulerContext.instance().getTaskLogDao().updateTriggerInfo(taskLog);
             } else {
-                taskLog.setTriggerCode(Constants.FAIL_CODE);
+                //任务提交失败
+                TaskTrigger.instance().submitTaskFail(taskLog);
+
+                KinSchedulerContext.instance().getTaskLogDao().updateTriggerInfo(taskLog);
+                return null;
             }
-            KinSchedulerContext.instance().getTaskLogDao().updateTriggerInfo(taskLog);
 
             return future;
         }

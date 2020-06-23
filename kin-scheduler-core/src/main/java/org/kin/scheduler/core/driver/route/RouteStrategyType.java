@@ -1,5 +1,7 @@
 package org.kin.scheduler.core.driver.route;
 
+import java.util.Objects;
+
 /**
  * scheduler选择executor执行task路由策略类型
  *
@@ -53,5 +55,13 @@ public enum RouteStrategyType {
         }
 
         return null;
+    }
+
+    /**
+     * 根据名字获取executor路由策略类型描述
+     */
+    public static String getDescByName(String name) {
+        RouteStrategyType routeStrategyType = getByName(name);
+        return Objects.nonNull(routeStrategyType) ? routeStrategyType.desc : "unknown: ".concat(name);
     }
 }

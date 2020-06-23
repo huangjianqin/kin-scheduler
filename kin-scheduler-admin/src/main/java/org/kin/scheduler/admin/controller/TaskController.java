@@ -2,7 +2,7 @@ package org.kin.scheduler.admin.controller;
 
 import org.kin.framework.utils.StringUtils;
 import org.kin.scheduler.admin.core.KinSchedulerContext;
-import org.kin.scheduler.admin.core.TaskInfoDTO;
+import org.kin.scheduler.admin.core.domain.TaskInfoDTO;
 import org.kin.scheduler.admin.dao.TaskInfoDao;
 import org.kin.scheduler.admin.domain.Permission;
 import org.kin.scheduler.admin.domain.TaskType;

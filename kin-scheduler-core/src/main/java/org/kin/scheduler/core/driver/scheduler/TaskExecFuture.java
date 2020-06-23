@@ -112,6 +112,23 @@ public class TaskExecFuture<R extends Serializable> implements Future<R> {
     }
 
     /**
+     * task 调度失败
+     */
+    public void fail(String taskId, TaskStatus taskStatus, String reason) {
+        done = true;
+        CALLBACK_EXECUTORS.execute(() -> {
+            for (TaskExecCallback<R> callback : callbacks) {
+                callback.execFinish(taskId, taskStatus, null, "", "", reason);
+            }
+        });
+        synchronized (this) {
+            if (waiters > 0) {
+                notifyAll();
+            }
+        }
+    }
+
+    /**
      * 添加callback
      */
     public TaskExecFuture<R> addCallback(TaskExecCallback<R> callback) {
