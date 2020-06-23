@@ -7,6 +7,7 @@ import org.kin.scheduler.admin.domain.TaskType;
 import org.kin.scheduler.admin.entity.JobInfo;
 import org.kin.scheduler.admin.entity.TaskInfo;
 import org.kin.scheduler.admin.entity.TaskLog;
+import org.kin.scheduler.admin.utils.MailUtils;
 import org.kin.scheduler.core.driver.route.RouteStrategyType;
 import org.kin.scheduler.core.driver.scheduler.TaskExecCallback;
 import org.kin.scheduler.core.driver.scheduler.TaskExecFuture;
@@ -14,10 +15,7 @@ import org.kin.scheduler.core.task.TaskExecStrategy;
 import org.kin.scheduler.core.task.domain.TaskStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 
-import javax.mail.internet.MimeMessage;
 import java.io.Serializable;
 import java.text.MessageFormat;
 import java.util.*;
@@ -157,30 +155,21 @@ public class TaskTrigger {
                 contentSB.append("<br>HandleCode=" + handlerMsg.toString());
 
                 String personal = "kin-scheduler-Admin";
-                String title = "任务错误告警".concat("(Task-")
-                        .concat(String.valueOf(taskLog.getId()))
-                        .concat("-")
-                        .concat(taskLog.getDesc())
-                        .concat(")");
+                String title = "任务错误告警"
+                        .concat("(Job-").concat(String.valueOf(jobInfo.getId()))
+                        .concat("Task-").concat(String.valueOf(taskLog.getId()))
+                        .concat("-").concat(taskLog.getDesc()).concat(")");
                 String content = MessageFormat.format(MAIL_BODY_TEMPLATE,
                         jobInfo != null ? jobInfo.getTitle() : "null",
                         taskLog.getTaskId(),
                         taskLog.getDesc(),
                         contentSB.toString());
 
-                JavaMailSender mailSender = KinSchedulerContext.instance().getMailSender();
                 Set<String> emailSet = new HashSet<>(Arrays.asList(taskInfo.getAlarmEmail().split(",")));
                 for (String email : emailSet) {
-                    // make mail
                     try {
-                        MimeMessage mimeMessage = mailSender.createMimeMessage();
-                        MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
-                        helper.setFrom(KinSchedulerContext.instance().getEmailUserName(), personal);
-                        helper.setTo(email);
-                        helper.setSubject(title);
-                        helper.setText(content, true);
-
-                        mailSender.send(mimeMessage);
+                        //发送警告邮件
+                        MailUtils.sendHtmlMail(KinSchedulerContext.instance().getEmailUserName(), personal, email, title, content);
                     } catch (Exception e) {
                         log.error("task fail alarm email send error, TaskLogId:{}", taskLog.getId(), e);
                     }
