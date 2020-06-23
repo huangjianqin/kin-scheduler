@@ -11,10 +11,10 @@ spring:
 
   datasource:
     type: com.alibaba.druid.pool.DruidDataSource
-    url: jdbc:mysql://localhost:3306/kin_scheduler?useUnicode=true&autoReconnect=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull
+    url: jdbc:mysql://localhost:3306/kin_scheduler?useUnicode=true&autoReconnect=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&serverTimezone=Asia/Shanghai
     username: root
     password: 123456
-    driver-class-name: com.mysql.jdbc.Driver
+    driver-class-name: com.mysql.cj.jdbc.Driver
     druid:
       initialSize: 0
       minIdle: 0
@@ -29,7 +29,7 @@ spring:
       testOnBorrow: false
       testOnReturn: false
       # 配置监控统计拦截的filters，去掉后监控界面sql无法统计，'wall'用于防火墙
-      filters: stat,wall,log4j
+      filters: stat,wall
       validation-query: SELECT 1
     # 数据库有表就不执行
     # 可以定义你的建库文件
@@ -47,10 +47,12 @@ spring:
     username: 459564034@qq.com
     password: ~~hjq8585.+
     properties:
-      mail.smtp.auth=true
-      mail.smtp.starttls.enable=true
-      mail.smtp.starttls.required=true
-      mail.smtp.socketFactory.class=javax.net.ssl.SSLSocketFactory
+      mail:
+        smtp:
+          auth: true
+          starttls.enable: true
+          starttls.required: true
+          socketFactory.class: javax.net.ssl.SSLSocketFactory
   mvc:
     static-path-pattern: /static/**
     view:
@@ -72,11 +74,13 @@ spring:
 mybatis:
   mapper-locations: classpath:/mapper/*Mapper.xml
 
-kin:
-  scheduler:
-    host: 0.0.0.0
-    port: 46668
-    logPath: logs
-    serialize: kryo
-    compression: false
+# 应用配置
+#kin:
+#  scheduler:
+#    parallism: 5
+#    host: 0.0.0.0
+#    port: 46668
+#    logPath: logs
+#    serialize: kryo
+#    compression: false
 

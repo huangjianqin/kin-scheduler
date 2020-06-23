@@ -14,6 +14,7 @@ import org.kin.scheduler.core.task.TaskExecStrategy;
 import org.kin.scheduler.core.task.domain.TaskStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 
 import javax.mail.internet.MimeMessage;
@@ -167,18 +168,19 @@ public class TaskTrigger {
                         taskLog.getDesc(),
                         contentSB.toString());
 
+                JavaMailSender mailSender = KinSchedulerContext.instance().getMailSender();
                 Set<String> emailSet = new HashSet<>(Arrays.asList(taskInfo.getAlarmEmail().split(",")));
                 for (String email : emailSet) {
                     // make mail
                     try {
-                        MimeMessage mimeMessage = KinSchedulerContext.instance().getMailSender().createMimeMessage();
+                        MimeMessage mimeMessage = mailSender.createMimeMessage();
                         MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
                         helper.setFrom(KinSchedulerContext.instance().getEmailUserName(), personal);
                         helper.setTo(email);
                         helper.setSubject(title);
                         helper.setText(content, true);
 
-                        KinSchedulerContext.instance().getMailSender().send(mimeMessage);
+                        mailSender.send(mimeMessage);
                     } catch (Exception e) {
                         log.error("task fail alarm email send error, TaskLogId:{}", taskLog.getId(), e);
                     }

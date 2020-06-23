@@ -51,7 +51,7 @@ public class TaskScheduleKeeper {
     private void init() {
         triggerThreads =
                 new PartitionTaskExecutor(
-                        KinSchedulerContext.instance().getSchedulerParallism(),
+                        KinSchedulerContext.instance().getParallism(),
                         EfficientHashPartitioner.INSTANCE,
                         "admin-scheduler-thread-");
         scheduleKeeper = Keeper.keep(this::schedule);

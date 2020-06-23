@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.mail.javamail.JavaMailSender;
 
@@ -30,32 +31,33 @@ import java.util.Objects;
  * @date 2020-03-08
  */
 @Configuration
+@PropertySource({"classpath:application.yml", "classpath:bootstrap.yml"})
 public class KinSchedulerContext implements InitializingBean, ApplicationListener<ContextRefreshedEvent> {
     private static KinSchedulerContext INSTANCE;
 
     /** 应用名 */
-    @Value("${application.name}")
+    @Value("${application.name:kin-scheduler}")
     private String appName;
     /** mail用户 */
     @Value("${spring.mail.username}")
     private String emailUserName;
-    /** scheduler并发 */
-    @Value("${kin.scheduler.parallism}")
-    private int schedulerParallism;
+    /** scheduler并发数 */
+    @Value("${kin.scheduler.parallism:5}")
+    private int parallism;
     /** host */
-    @Value("${kin.scheduler.host}")
+    @Value("${kin.scheduler.host:0.0.0.0}")
     private String host;
     /** port */
-    @Value("${kin.scheduler.port}")
+    @Value("${kin.scheduler.port:46668}")
     private int port;
     /** 日志路径 */
-    @Value("${kin.scheduler.logPath}")
+    @Value("${kin.scheduler.logPath:/logs}")
     private String logPath;
     /** 通信序列化方式 */
-    @Value("${kin.scheduler.serialize}")
+    @Value("${kin.scheduler.serialize:kryo}")
     private String serialize = SerializerType.KRYO.name();
     /** 通信是否支持压缩 */
-    @Value("${kin.scheduler.compression}")
+    @Value("${kin.scheduler.compression:false}")
     private boolean compression;
 
     @Autowired
@@ -154,12 +156,12 @@ public class KinSchedulerContext implements InitializingBean, ApplicationListene
         this.emailUserName = emailUserName;
     }
 
-    public int getSchedulerParallism() {
-        return schedulerParallism;
+    public int getParallism() {
+        return parallism;
     }
 
-    public void setSchedulerParallism(int schedulerParallism) {
-        this.schedulerParallism = schedulerParallism;
+    public void setParallism(int parallism) {
+        this.parallism = parallism;
     }
 
     public TaskInfoDao getTaskInfoDao() {
