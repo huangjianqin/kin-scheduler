@@ -37,4 +37,9 @@ public class UserController {
         return userService.logout(request, response);
     }
 
+    @RequestMapping(value = "/create", method = RequestMethod.POST)
+    @ResponseBody
+    public WebResponse<String> create(String account, String password, int role, String name) {
+        return userService.create(account, password, role, name);
+    }
 }

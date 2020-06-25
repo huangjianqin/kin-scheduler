@@ -15,6 +15,7 @@ import org.springframework.util.DigestUtils;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.math.BigInteger;
+import java.util.Objects;
 
 /**
  * @author huangjianqin
@@ -92,4 +93,31 @@ public class UserServiceImpl implements UserService {
         }
         return null;
     }
+
+    @Override
+    public WebResponse<String> create(String account, String password, int role, String name) {
+        if (StringUtils.isBlank(account) || StringUtils.isBlank(password) || StringUtils.isBlank(name)) {
+            return WebResponse.fail("参数缺失");
+        }
+
+        User user = userDao.loadByAccount(account);
+        if (Objects.nonNull(user)) {
+            return WebResponse.fail(String.format("账号'%s' 已被注册", account));
+        }
+
+        if (User.ADMIN != role && User.USER != role) {
+            return WebResponse.fail(String.format("不存在角色 '%s'", role));
+        }
+
+        user = new User();
+        user.setAccount(account);
+        user.setPassword(DigestUtils.md5DigestAsHex(password.getBytes()));
+        user.setRole(role);
+        user.setName(name);
+
+        userDao.save(user);
+
+        return WebResponse.success(String.format("用户 '%s' 注册成功", account));
+    }
+
 }
