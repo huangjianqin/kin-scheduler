@@ -50,8 +50,10 @@ public class JobServiceImpl implements JobService {
 
         // package result
         Map<String, Object> maps = new HashMap<String, Object>();
-        maps.put("num", listCount);        // 总记录数
-        maps.put("data", list);                    // 分页列表
+        // 总记录数
+        maps.put("num", listCount);
+        // 分页列表
+        maps.put("data", list);
         return maps;
     }
 
@@ -65,6 +67,8 @@ public class JobServiceImpl implements JobService {
         Date now = new Date();
         taskInfo.setAddTime(now);
         taskInfo.setUpdateTime(now);
+        //清掉触发状态
+        taskInfo.stop();
 
         taskInfoDao.save(taskInfo);
         if (taskInfo.getId() < 1) {
@@ -74,16 +78,27 @@ public class JobServiceImpl implements JobService {
         return WebResponse.success(String.valueOf(taskInfo.getId()));
     }
 
+    /**
+     * 校验task信息是否有误
+     *
+     * @param taskInfo task信息
+     */
     private WebResponse<String> validTaskInfo(TaskInfo taskInfo) {
         // valid
         JobInfo job = jobInfoDao.load(taskInfo.getJobId());
         if (Objects.nonNull(job)) {
             return WebResponse.fail("不存在作业");
         }
-        TimeType timeType = TimeType.getByName(taskInfo.getTimeType());
-        if (Objects.isNull(timeType) || !timeType.validTimeFormat(taskInfo.getTimeStr())) {
+
+        try {
+            TimeType timeType = TimeType.getByName(taskInfo.getTimeType());
+            if (!timeType.validTimeFormat(taskInfo.getTimeStr())) {
+                return WebResponse.fail("时间格式错误");
+            }
+        } catch (Exception e) {
             return WebResponse.fail("时间格式错误");
         }
+
         if (StringUtils.isBlank(taskInfo.getDesc())) {
             return WebResponse.fail("task描述为空");
         }
@@ -142,7 +157,7 @@ public class JobServiceImpl implements JobService {
             return WebResponse.fail("不存在任务");
         }
 
-        // next trigger time (5s后生效，避开预读周期)
+        //刷新下次触发时间
         long nextTriggerTime = exist.getTriggerNextTime();
         if (exist.getTriggerStatus() == 1 && !taskInfo.getTimeStr().equals(exist.getTimeStr())) {
             try {
@@ -179,6 +194,8 @@ public class JobServiceImpl implements JobService {
         }
 
         taskInfoDao.delete(id);
+        //取消task执行
+        KinSchedulerContext.instance().getDriver().cancelTask(String.valueOf(task.getId()));
         return WebResponse.success();
     }
 
@@ -191,15 +208,17 @@ public class JobServiceImpl implements JobService {
             return WebResponse.fail("用户不匹配");
         }
 
-        // next trigger time (5s后生效，避开预读周期)
-        long nextTriggerTime = taskInfo.getTriggerNextTime();
-        if (taskInfo.getTriggerStatus() == 1 && !taskInfo.getTimeStr().equals(taskInfo.getTimeStr())) {
-            try {
-                nextTriggerTime = TimeType.getByName(taskInfo.getTimeType()).parseTime(taskInfo.getTimeStr());
-            } catch (Exception e) {
-                log.error(e.getMessage(), e);
-                return WebResponse.fail("解析时间错误");
-            }
+        if (taskInfo.getTriggerStatus() == 1) {
+            return WebResponse.fail("task正在调度中");
+        }
+
+        //刷新下次触发时间
+        long nextTriggerTime;
+        try {
+            nextTriggerTime = TimeType.getByName(taskInfo.getTimeType()).parseTime(taskInfo.getTimeStr());
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            return WebResponse.fail("解析时间错误");
         }
 
         taskInfo.setTriggerStatus(TaskInfo.START);
@@ -223,20 +242,18 @@ public class JobServiceImpl implements JobService {
         return WebResponse.success();
     }
 
-    @Override
-    public void stop(TaskInfo taskInfo) {
+    private void stop(TaskInfo taskInfo) {
         taskInfo.stop();
         taskInfoDao.update(taskInfo);
     }
 
     @Override
     public Map<String, Object> dashboardInfo() {
-
         int taskInfoCount = taskInfoDao.count();
         int taskLogCount = taskLogDao.countByHandleCode(-1);
         int taskLogSuccessCount = taskLogDao.countByHandleCode(Constants.SUCCESS_CODE);
 
-        Map<String, Object> dashboardMap = new HashMap<String, Object>();
+        Map<String, Object> dashboardMap = new HashMap<>(3);
         dashboardMap.put("jobInfoCount", taskInfoCount);
         dashboardMap.put("jobLogCount", taskLogCount);
         dashboardMap.put("jobLogSuccessCount", taskLogSuccessCount);
@@ -255,7 +272,7 @@ public class JobServiceImpl implements JobService {
             return WebResponse.fail("task trigger fail");
         }
 
-        WebResponse<String> response = null;
+        WebResponse<String> response;
         try {
             KinSchedulerContext.instance().getDriver().cancelTask(String.valueOf(taskLog.getTaskId()));
             taskLog.setHandleCode(Constants.CANCEL_CODE);

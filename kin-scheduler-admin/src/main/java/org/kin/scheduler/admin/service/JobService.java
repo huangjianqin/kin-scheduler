@@ -23,8 +23,6 @@ public interface JobService {
 
     WebResponse<String> stop(User user, int id);
 
-    void stop(TaskInfo taskInfo);
-
     Map<String, Object> dashboardInfo();
 
     WebResponse<String> kill(int id);

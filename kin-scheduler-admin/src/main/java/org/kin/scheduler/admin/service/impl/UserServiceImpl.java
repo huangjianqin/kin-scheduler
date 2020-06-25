@@ -27,8 +27,7 @@ public class UserServiceImpl implements UserService {
 
     private String makeToken(User user) {
         String tokenJson = JSON.write(user);
-        String tokenHex = new BigInteger(tokenJson.getBytes()).toString(16);
-        return tokenHex;
+        return new BigInteger(tokenJson.getBytes()).toString(16);
     }
 
     private User parseToken(String tokenHex) {

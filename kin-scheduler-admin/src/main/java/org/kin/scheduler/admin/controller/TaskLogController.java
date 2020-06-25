@@ -80,7 +80,7 @@ public class TaskLogController {
             }
         }
 
-        Map<String, Object> result = new HashMap<String, Object>();
+        Map<String, Object> result = new HashMap<>(7);
         result.put("dayList", dayList);
         result.put("runningList", runningList);
         result.put("sucList", sucList);
@@ -106,7 +106,7 @@ public class TaskLogController {
         Date triggerTimeEnd = null;
         if (filterTime != null && filterTime.trim().length() > 0) {
             String[] temp = filterTime.split(" - ");
-            if (temp != null && temp.length == 2) {
+            if (temp.length == 2) {
                 triggerTimeStart = TimeUtils.parseDateTime(temp[0]);
                 triggerTimeEnd = TimeUtils.parseDateTime(temp[1]);
             }
@@ -114,14 +114,14 @@ public class TaskLogController {
 
         // page query
         List<TaskLog> list = taskLogDao.pageList(start, length, user.getId(), user.getRole(), jobId, taskId, triggerTimeStart, triggerTimeEnd, logStatus);
-        int list_count = taskLogDao.pageListCount(start, length, user.getId(), user.getRole(), jobId, taskId, triggerTimeStart, triggerTimeEnd, logStatus);
+        int listCount = taskLogDao.pageListCount(start, length, user.getId(), user.getRole(), jobId, taskId, triggerTimeStart, triggerTimeEnd, logStatus);
 
         // package result
-        Map<String, Object> maps = new HashMap<String, Object>();
+        Map<String, Object> maps = new HashMap<>(3);
         // 总记录数
-        maps.put("recordsTotal", list_count);
+        maps.put("recordsTotal", listCount);
         // 过滤后的总记录数
-        maps.put("recordsFiltered", list_count);
+        maps.put("recordsFiltered", listCount);
         // 分页列表
         maps.put("data", list);
         return maps;
