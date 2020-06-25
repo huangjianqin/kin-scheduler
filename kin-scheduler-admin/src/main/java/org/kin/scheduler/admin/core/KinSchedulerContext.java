@@ -126,6 +126,8 @@ public class KinSchedulerContext implements InitializingBean, ApplicationListene
 
         }
         rpcEnv.stop();
+
+        TaskScheduleKeeper.instance().stop();
     }
 
     /**

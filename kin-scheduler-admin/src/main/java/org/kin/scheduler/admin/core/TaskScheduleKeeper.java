@@ -1,6 +1,5 @@
 package org.kin.scheduler.admin.core;
 
-import org.kin.framework.JvmCloseCleaner;
 import org.kin.framework.concurrent.TimeRing;
 import org.kin.framework.concurrent.keeper.Keeper;
 import org.kin.framework.concurrent.partition.PartitionTaskExecutor;
@@ -63,8 +62,6 @@ public class TaskScheduleKeeper {
         scheduleKeeper = Keeper.keep(this::schedule);
         timeRing = TimeRing.second(2, this::trigger);
         timeRing.start();
-
-        JvmCloseCleaner.DEFAULT().add(JvmCloseCleaner.MAX_PRIORITY, this::stop);
     }
 
     /**
