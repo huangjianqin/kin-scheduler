@@ -25,7 +25,12 @@
     </dependencyManagement>
 
     <dependencies>
-        <!-- starter-web：spring-webmvc + autoconfigure + logback + yaml + tomcat -->
+        <dependency>
+            <groupId>org.kin</groupId>
+            <artifactId>kin-framework-web</artifactId>
+            <version>${kin-framework-web.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>org.kin</groupId>
             <artifactId>kin-scheduler-core</artifactId>

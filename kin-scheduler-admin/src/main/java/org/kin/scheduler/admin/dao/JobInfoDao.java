@@ -12,13 +12,33 @@ import java.util.List;
  */
 @Mapper
 public interface JobInfoDao {
+    /**
+     * 查找所有job
+     */
     List<JobInfo> findAll();
 
+    /**
+     * 存库
+     *
+     * @param jobInfo job信息
+     */
     int save(JobInfo jobInfo);
 
+    /**
+     * 更新库
+     * @param jobInfo job信息
+     */
     int update(JobInfo jobInfo);
 
+    /**
+     * 删除
+     * @param id job id
+     */
     int remove(@Param("id") int id);
 
+    /**
+     * 加载job
+     * @param id job id
+     */
     JobInfo load(@Param("id") int id);
 }

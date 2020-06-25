@@ -2,9 +2,8 @@ package org.kin.scheduler.admin.service.impl;
 
 import org.kin.framework.utils.JSON;
 import org.kin.framework.utils.StringUtils;
+import org.kin.framework.web.domain.WebResponse;
 import org.kin.scheduler.admin.dao.UserDao;
-import org.kin.scheduler.admin.domain.CookieKeies;
-import org.kin.scheduler.admin.domain.WebResponse;
 import org.kin.scheduler.admin.entity.User;
 import org.kin.scheduler.admin.service.UserService;
 import org.kin.scheduler.admin.utils.CookieUtils;
@@ -61,19 +60,19 @@ public class UserServiceImpl implements UserService {
         String loginToken = makeToken(user);
 
         // do login
-        CookieUtils.set(response, CookieKeies.LOGIN_IDENTITY, loginToken, ifRemember);
+        CookieUtils.set(response, CookieUtils.LOGIN_IDENTITY, loginToken, ifRemember);
         return WebResponse.success("登陆成功", null);
     }
 
     @Override
     public WebResponse<String> logout(HttpServletRequest request, HttpServletResponse response) {
-        CookieUtils.remove(request, response, CookieKeies.LOGIN_IDENTITY);
+        CookieUtils.remove(request, response, CookieUtils.LOGIN_IDENTITY);
         return WebResponse.success("登出成功", null);
     }
 
     @Override
     public User getLoginUser(HttpServletRequest request, HttpServletResponse response) {
-        String cookieToken = CookieUtils.getValue(request, CookieKeies.LOGIN_IDENTITY);
+        String cookieToken = CookieUtils.getValue(request, CookieUtils.LOGIN_IDENTITY);
         if (cookieToken != null) {
             User cookieUser;
             try {

@@ -1,9 +1,9 @@
 package org.kin.scheduler.admin.controller;
 
 import org.kin.framework.utils.StringUtils;
+import org.kin.framework.web.domain.Permission;
+import org.kin.framework.web.domain.WebResponse;
 import org.kin.scheduler.admin.dao.JobInfoDao;
-import org.kin.scheduler.admin.domain.Permission;
-import org.kin.scheduler.admin.domain.WebResponse;
 import org.kin.scheduler.admin.entity.JobInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;

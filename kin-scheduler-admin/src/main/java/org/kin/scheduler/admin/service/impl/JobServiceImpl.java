@@ -2,20 +2,20 @@ package org.kin.scheduler.admin.service.impl;
 
 import org.kin.framework.utils.ExceptionUtils;
 import org.kin.framework.utils.StringUtils;
+import org.kin.framework.web.domain.WebResponse;
 import org.kin.scheduler.admin.core.KinSchedulerContext;
 import org.kin.scheduler.admin.dao.JobInfoDao;
 import org.kin.scheduler.admin.dao.TaskInfoDao;
 import org.kin.scheduler.admin.dao.TaskLogDao;
-import org.kin.scheduler.admin.domain.Constants;
 import org.kin.scheduler.admin.domain.TaskType;
 import org.kin.scheduler.admin.domain.TimeType;
-import org.kin.scheduler.admin.domain.WebResponse;
 import org.kin.scheduler.admin.entity.JobInfo;
 import org.kin.scheduler.admin.entity.TaskInfo;
 import org.kin.scheduler.admin.entity.TaskLog;
 import org.kin.scheduler.admin.entity.User;
 import org.kin.scheduler.admin.service.JobService;
 import org.kin.scheduler.admin.service.UserService;
+import org.kin.scheduler.admin.utils.MailUtils;
 import org.kin.scheduler.admin.vo.TaskInfoVO;
 import org.kin.scheduler.core.driver.route.RouteStrategyType;
 import org.kin.scheduler.core.task.TaskExecStrategy;
@@ -251,7 +251,7 @@ public class JobServiceImpl implements JobService {
     public Map<String, Object> dashboardInfo() {
         int taskInfoCount = taskInfoDao.count();
         int taskLogCount = taskLogDao.countByHandleCode(-1);
-        int taskLogSuccessCount = taskLogDao.countByHandleCode(Constants.SUCCESS_CODE);
+        int taskLogSuccessCount = taskLogDao.countByHandleCode(TaskLog.SUCCESS);
 
         Map<String, Object> dashboardMap = new HashMap<>(3);
         dashboardMap.put("jobInfoCount", taskInfoCount);
@@ -268,16 +268,18 @@ public class JobServiceImpl implements JobService {
         if (taskInfo == null) {
             return WebResponse.fail("unknown task");
         }
-        if (Constants.SUCCESS_CODE != taskLog.getTriggerCode()) {
+        if (TaskLog.SUCCESS != taskLog.getTriggerCode()) {
             return WebResponse.fail("task trigger fail");
         }
 
         WebResponse<String> response;
         try {
             KinSchedulerContext.instance().getDriver().cancelTask(String.valueOf(taskLog.getTaskId()));
-            taskLog.setHandleCode(Constants.CANCEL_CODE);
+            taskLog.setHandleCode(TaskLog.FAILURE);
             taskLog.setHandleTime(new Date());
             taskLogDao.updateHandleInfo(taskLog);
+
+            MailUtils.sendAlarmEmail(taskInfo, taskLog, "被取消了");
 
             response = WebResponse.success();
         } catch (Exception e) {

@@ -1,7 +1,7 @@
 package org.kin.scheduler.admin.controller;
 
-import org.kin.scheduler.admin.domain.Permission;
-import org.kin.scheduler.admin.domain.WebResponse;
+import org.kin.framework.web.domain.Permission;
+import org.kin.framework.web.domain.WebResponse;
 import org.kin.scheduler.admin.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;

@@ -4,10 +4,10 @@ import org.kin.framework.utils.CollectionUtils;
 import org.kin.framework.utils.ExceptionUtils;
 import org.kin.framework.utils.StringUtils;
 import org.kin.framework.utils.TimeUtils;
+import org.kin.framework.web.domain.Permission;
+import org.kin.framework.web.domain.WebResponse;
 import org.kin.scheduler.admin.core.KinSchedulerContext;
 import org.kin.scheduler.admin.dao.TaskLogDao;
-import org.kin.scheduler.admin.domain.Permission;
-import org.kin.scheduler.admin.domain.WebResponse;
 import org.kin.scheduler.admin.entity.TaskLog;
 import org.kin.scheduler.admin.entity.User;
 import org.kin.scheduler.admin.service.UserService;
@@ -181,7 +181,7 @@ public class TaskLogController {
 
     @RequestMapping("/clearLog")
     @ResponseBody
-    @Permission
+    @Permission(admin = true)
     public WebResponse<String> clearLog(int jobId, int taskId, int type) {
 
         Date clearBeforeTime = null;

@@ -2,7 +2,6 @@ package org.kin.scheduler.admin.core;
 
 import org.kin.kinrpc.message.core.RpcEnv;
 import org.kin.scheduler.admin.core.domain.TaskInfoDTO;
-import org.kin.scheduler.admin.domain.Constants;
 import org.kin.scheduler.admin.domain.TaskType;
 import org.kin.scheduler.admin.entity.TaskLog;
 import org.kin.scheduler.core.driver.Application;
@@ -78,7 +77,7 @@ public class KinTaskScheduler extends TaskScheduler<TaskInfoDTO> {
             taskLog.setWorkerId(selected.getWorkerId());
             if (Objects.nonNull(future)) {
                 //future不为null就是成功调度了
-                taskLog.setTriggerCode(Constants.SUCCESS_CODE);
+                taskLog.setTriggerCode(TaskLog.SUCCESS);
                 taskLog.setLogPath(future.getTaskSubmitResp().getLogPath());
                 taskLog.setOutputPath(future.getTaskSubmitResp().getOutputPath());
 

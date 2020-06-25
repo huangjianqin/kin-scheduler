@@ -1,6 +1,6 @@
 package org.kin.scheduler.admin.service;
 
-import org.kin.scheduler.admin.domain.WebResponse;
+import org.kin.framework.web.domain.WebResponse;
 import org.kin.scheduler.admin.entity.User;
 
 import javax.servlet.http.HttpServletRequest;
@@ -32,7 +32,8 @@ public interface UserService {
 
     /**
      * 获取该session登录中的用户
-     * @param request 请求
+     *
+     * @param request  请求
      * @param response 返回
      */
     User getLoginUser(HttpServletRequest request, HttpServletResponse response);

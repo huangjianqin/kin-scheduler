@@ -9,8 +9,11 @@ import java.util.Date;
  * @date 2020-03-07
  */
 public class TaskInfo {
+    /** 初始触发状态 */
     public static final int INIT = 0;
+    /** 触发中 */
     public static final int START = 1;
+    /** 触发结束 */
     public static final int END = 2;
 
     /** 唯一id */
@@ -54,6 +57,9 @@ public class TaskInfo {
     /** 下次调度时间 */
     private long triggerNextTime;
 
+    /**
+     * 重置触发状态
+     */
     public void stop() {
         setTriggerStatus(INIT);
         setTriggerLastTime(0);
@@ -68,6 +74,9 @@ public class TaskInfo {
                 execStrategy, routeStrategy, param);
     }
 
+    /**
+     * 触发结束
+     */
     public void end() {
         setTriggerStatus(END);
     }

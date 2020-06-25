@@ -1,7 +1,7 @@
 package org.kin.scheduler.admin;
 
-import org.kin.scheduler.admin.intercepter.CookiesInterceptor;
-import org.kin.scheduler.admin.intercepter.PermissionInterceptor;
+import org.kin.framework.web.interceptor.CookiesInterceptor;
+import org.kin.scheduler.admin.interceptor.KinSchedulerPermissionInterceptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
@@ -17,8 +17,14 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  */
 @Configuration
 public class KinSchedulerWebConfig extends SpringBootServletInitializer implements WebMvcConfigurer {
+    /**
+     * 权限拦截器
+     */
     @Autowired
-    private PermissionInterceptor permissionInterceptor;
+    private KinSchedulerPermissionInterceptor kinSchedulerPermissionInterceptor;
+    /**
+     * cookies缓存拦截器
+     */
     @Autowired
     private CookiesInterceptor cookiesInterceptor;
 
@@ -31,6 +37,6 @@ public class KinSchedulerWebConfig extends SpringBootServletInitializer implemen
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(cookiesInterceptor).addPathPatterns("/**");
-        registry.addInterceptor(permissionInterceptor).addPathPatterns("/**");
+        registry.addInterceptor(kinSchedulerPermissionInterceptor).addPathPatterns("/**");
     }
 }

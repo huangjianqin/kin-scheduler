@@ -9,6 +9,11 @@ import java.util.Date;
  * @date 2020-03-07
  */
 public class TaskLog {
+    /** 失败状态 */
+    public static final int FAILURE = 0;
+    /** 成功状态 */
+    public static final int SUCCESS = 200;
+
     /** 唯一id */
     private int id;
     /** 所属taskId */

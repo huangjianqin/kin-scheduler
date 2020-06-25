@@ -1,12 +1,12 @@
 package org.kin.scheduler.admin.controller;
 
 import org.kin.framework.utils.StringUtils;
+import org.kin.framework.web.domain.Permission;
+import org.kin.framework.web.domain.WebResponse;
 import org.kin.scheduler.admin.core.KinSchedulerContext;
 import org.kin.scheduler.admin.core.domain.TaskInfoDTO;
 import org.kin.scheduler.admin.dao.TaskInfoDao;
-import org.kin.scheduler.admin.domain.Permission;
 import org.kin.scheduler.admin.domain.TaskType;
-import org.kin.scheduler.admin.domain.WebResponse;
 import org.kin.scheduler.admin.entity.TaskInfo;
 import org.kin.scheduler.admin.entity.User;
 import org.kin.scheduler.admin.service.JobService;

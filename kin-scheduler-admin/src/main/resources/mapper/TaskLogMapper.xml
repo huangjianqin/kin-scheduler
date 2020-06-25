@@ -227,7 +227,7 @@
         </trim>
     </delete>
 
-    <select id="findFailJobLogIds" resultType="int">
+    <select id="findFailTaskLogIds" resultType="int">
 		SELECT id FROM `task_log`
 		WHERE !(
 			(trigger_code in (0, 200) and handle_code = 0)

@@ -5,7 +5,9 @@ package org.kin.scheduler.admin.entity;
  * @date 2020-03-07
  */
 public class User {
+    /** 普通用户类型 */
     public static final int USER = 0;
+    /** 管理员类型 */
     public static final int ADMIN = 1;
 
     /** 唯一id */
