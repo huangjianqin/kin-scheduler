@@ -118,6 +118,8 @@ public class KinSchedulerContext implements InitializingBean, ApplicationListene
 
     @PreDestroy
     public void shutdown() {
+        TaskScheduleKeeper.instance().stop();
+
         driver.stop();
         master.stop();
         try {
@@ -126,8 +128,6 @@ public class KinSchedulerContext implements InitializingBean, ApplicationListene
 
         }
         rpcEnv.stop();
-
-        TaskScheduleKeeper.instance().stop();
     }
 
     /**
