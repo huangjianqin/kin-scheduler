@@ -62,6 +62,7 @@ public class ScriptHandler implements TaskHandler<ScriptParam, TaskExecResult> {
                         realRunEnvPath = realRunEnvPath.concat(File.separator).concat(taskDescription.getJobId()).concat(glueType.getSuffix());
                     }
                     resourcesStore.cloneResources(scriptParam.getScriptResources(), scriptParam.getUser(), scriptParam.getPassword(), realRunEnvPath);
+                    log.info("copy source '{}' to path '{}'", scriptParam.getScriptResources(), realRunEnvPath);
                 }
 
                 log.info("exec script '{}', params '{}', workingDirectory >>> {}", glueType, scriptParam, workingDirectory);
