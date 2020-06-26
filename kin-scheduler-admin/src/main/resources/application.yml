@@ -35,7 +35,7 @@ spring:
     # 可以定义你的建库文件
     schema: classpath:schema.sql
     # 可以定义你的数据文件
-    data: classpath:data.sql
+    #    data: classpath:data.sql
     # 有了错误是否继续运行
     #    continueOnError: false
     # 每次都初始化
@@ -44,7 +44,7 @@ spring:
   mail:
     host: smtp.qq.com
     port: 25
-    username: 459564034@qq.com
+    #    username:
     # 填授权码
     password: xxx
     properties:

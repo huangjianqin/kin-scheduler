@@ -106,7 +106,7 @@ public class TaskScheduleKeeper {
             preparedStatement.execute();
 
             //事务开始, 所有其他操作必须等事务commit or rollback
-            // 预读 PRE_READ_MS 毫秒内调度任务
+            //预读 PRE_READ_MS 毫秒内调度任务
             TaskInfoDao taskInfoDao = KinSchedulerContext.instance().getTaskInfoDao();
             long nowTime = System.currentTimeMillis();
             List<TaskInfo> waittingTaskInfos = taskInfoDao.scheduleTaskQuery(nowTime + PRE_READ_MS);

@@ -27,8 +27,8 @@ CREATE TABLE `task_info` (
     `time_type`   VARCHAR(50) NOT NULL COMMENT '时间类型',
     `time_str`    VARCHAR(50) NOT NULL COMMENT '时间表达式',
     `desc`    text NOT NULL COMMENT '任务描述',
-    `add_time`    datatime NOT NULL COMMENT '任务添加时间',
-    `update_time` datatime NOT NULL COMMENT '任务更新时间',
+    `add_time`  datetime    COMMENT '任务添加时间',
+    `update_time` datetime  COMMENT '任务更新时间',
     `user_id`    int(11) NOT NULL COMMENT '所属用户id',
     `route_strategy`    VARCHAR(50) NOT NULL COMMENT 'executor路由策略',
     `type`    VARCHAR(50) NOT NULL COMMENT '任务类型',
@@ -57,15 +57,15 @@ CREATE TABLE `task_log` (
     `exec_timeout`    tinyint NOT NULL DEFAULT '0' COMMENT '任务执行超时',
     `retry_times` tinyint NOT NULL DEFAULT '0'  COMMENT '任务当前执行重试次数',
     `retry_times_limit` tinyint NOT NULL DEFAULT '0'  COMMENT '任务执行重试次数上限',
-    `trigger_time`  datatime =NULL COMMENT '任务调度时间',
-    `trigger_code`  tinyint  =NULL COMMENT '任务调度结果',
-    `handle_time`  datatime NULL COMMENT '任务处理时间',
+    `trigger_time`  datetime     COMMENT '任务调度时间',
+    `trigger_code`  tinyint  NULL COMMENT '任务调度结果',
+    `handle_time`  datetime  COMMENT '任务处理时间',
     `handle_code`  tinyint  NULL COMMENT '任务处理结果',
     `log_path`  VARCHAR(400) NULL COMMENT '任务日志路径',
     PRIMARY KEY (`id`)
 )   ENGINE = InnoDB DEFAULT CHARSET = utf8;
 
-CREATE TABLE `task_log` (
+CREATE TABLE `task_lock` (
     `lock_name` VARCHAR(50) NOT NULL COMMENT '锁名称',
-    PRIMARY KEY('lock_name')
+    PRIMARY KEY(`lock_name`)
 )   ENGINE = InnoDB DEFAULT CHARSET = utf8;
