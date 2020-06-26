@@ -104,7 +104,6 @@ public class KinSchedulerContext implements InitializingBean, ApplicationListene
             //spring 容器初始化后, 初始化rpc环境和master
             rpcEnv = new RpcEnv(host, port, SysUtils.getSuitableThreadNum(),
                     Serializers.getSerializer(serialize), compression);
-            rpcEnv.startServer();
 
             Config config = new Config();
             config.setMasterHost(host);
