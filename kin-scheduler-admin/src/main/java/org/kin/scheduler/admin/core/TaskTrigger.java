@@ -148,6 +148,8 @@ public class TaskTrigger {
             if (Objects.isNull(taskInfo)) {
                 return;
             }
+            taskInfo.stop();
+            KinSchedulerContext.instance().getTaskInfoDao().update(taskInfo);
             //发送警告邮件
             MailUtils.sendAlarmEmail(taskInfo, taskLog, String.format("task提交重试次数已超过%s次", taskLog.getRetryTimesLimit()));
         }
