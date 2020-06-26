@@ -13,7 +13,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
  * @author huangjianqin
  * @date 2020-03-07
  */
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {"org.kin.scheduler", "org.kin.framework.web"})
 @EnableCaching
 @EnableTransactionManagement(proxyTargetClass = true)
 public class KinSchedulerApplication {
