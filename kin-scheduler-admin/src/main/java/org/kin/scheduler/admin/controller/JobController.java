@@ -7,9 +7,11 @@ import org.kin.scheduler.admin.dao.JobInfoDao;
 import org.kin.scheduler.admin.entity.JobInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -37,6 +39,15 @@ public class JobController {
         }
 
         return null;
+    }
+
+    @RequestMapping("/pageList")
+    @ResponseBody
+    @Permission
+    public List<JobInfo> pageList(@RequestParam(required = false, defaultValue = "0") int start,
+                                  @RequestParam(required = false, defaultValue = "10") int length,
+                                  String appName, String title) {
+        return jobInfoDao.pageList(start, length, appName, title);
     }
 
     @RequestMapping("/save")

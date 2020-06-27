@@ -90,7 +90,7 @@ public class TaskController {
     @RequestMapping("/trigger")
     @ResponseBody
     @Permission
-    public WebResponse<String> triggerJob(int id, String forceParam) {
+    public WebResponse<String> triggerTask(int id, String forceParam) {
         TaskInfo taskInfo = taskInfoDao.load(id);
         if (Objects.isNull(taskInfo)) {
             return WebResponse.fail("unknown task");

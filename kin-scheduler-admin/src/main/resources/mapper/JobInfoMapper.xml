@@ -17,11 +17,20 @@
 		t.`order`
 	</sql>
 
-    <select id="findAll" resultMap="JobInfo">
+    <select id="pageList" resultMap="JobInfo">
         SELECT
         <include refid="Base_Column_List"/>
         FROM job_info AS t
+        <trim prefix="WHERE" prefixOverrides="AND | OR">
+            <if test="appName != null and appName != ''">
+                AND t.app_name like CONCAT(CONCAT('%', #{appName}), '%')
+            </if>
+            <if test="title != null and title != ''">
+                AND t.title like CONCAT(CONCAT('%', #{title}), '%')
+            </if>
+        </trim>
         ORDER BY t.order ASC
+        LIMIT #{offset}, #{pageSize}
     </select>
 
     <insert id="save" parameterType="org.kin.scheduler.admin.entity.JobInfo" useGeneratedKeys="true" keyProperty="id">

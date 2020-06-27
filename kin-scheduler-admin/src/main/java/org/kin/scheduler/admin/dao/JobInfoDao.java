@@ -13,9 +13,17 @@ import java.util.List;
 @Mapper
 public interface JobInfoDao {
     /**
-     * 查找所有job
+     * task分页
+     *
+     * @param offset        偏移量, 相当于第n页*每页显示数量
+     * @param pageSize      每页显示数量
+     * @param appName   appName规则
+     * @param title title规则
      */
-    List<JobInfo> findAll();
+    List<JobInfo> pageList(@Param("offset") int offset,
+                           @Param("pageSize") int pageSize,
+                           @Param("appName") String appName,
+                           @Param("title") String title);
 
     /**
      * 存库
