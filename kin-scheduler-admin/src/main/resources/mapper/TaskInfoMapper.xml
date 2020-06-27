@@ -44,13 +44,12 @@
 		t.desc,
 		t.add_time,
 		t.update_time,
-		t.userId,
 		t.type,
 		t.param,
 		t.exec_strategy,
 		t.exec_timeout,
 		t.retry_times,
-		t.alarmEmail
+		t.alarm_email,
 		t.child_task_ids,
 		t.trigger_status,
 		t.trigger_last_time,
@@ -58,7 +57,7 @@
 	</sql>
 
     <select id="pageList" parameterType="java.util.HashMap" resultMap="TaskInfoVO">
-        SELECT<include refid="Base_Column_List"/>,userName
+        SELECT<include refid="Base_Column_List"/>, u.userId, u.userName
         FROM task_info AS t LEFT JOIN `user` u ON t.userId = u.id
         <trim prefix="WHERE" prefixOverrides="AND | OR">
             <if test="jobId gt 0">
@@ -188,7 +187,7 @@
 	</delete>
 
     <select id="getTasksByJob" parameterType="java.util.HashMap" resultMap="TaskInfoVO">
-        SELECT<include refid="Base_Column_List"/>, userName
+        SELECT<include refid="Base_Column_List"/>, u.userId, userName
         FROM task_info AS t LEFT JOIN `user` u on t.user_id = u.id
         WHERE t.job_id = #{jobId}
     </select>
