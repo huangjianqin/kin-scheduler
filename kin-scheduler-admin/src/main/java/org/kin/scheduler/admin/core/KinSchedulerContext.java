@@ -121,11 +121,6 @@ public class KinSchedulerContext implements InitializingBean, ApplicationListene
 
         driver.stop();
         master.stop();
-        try {
-            Thread.sleep(300);
-        } catch (InterruptedException e) {
-
-        }
         rpcEnv.stop();
     }
 
