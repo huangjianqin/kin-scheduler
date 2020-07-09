@@ -44,6 +44,7 @@ public class WorkerUtils {
 
                     if (NetUtils.isPortInRange(workerPort)) {
                         int finalWorkerPort = workerPort;
+                        workerPort++;
                         executors.execute(() -> {
                             Thread curThread = Thread.currentThread();
                             threads.add(curThread);
