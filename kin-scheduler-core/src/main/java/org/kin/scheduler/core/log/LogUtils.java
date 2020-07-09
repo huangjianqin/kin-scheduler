@@ -58,6 +58,54 @@ public class LogUtils {
         return getLogger(loggerName, appenderName, getExecutorLogFileName(basePath, workerId, executorId));
     }
 
+    public static Logger getLogger(String loggerName, String appenderName, String file) {
+        LoggerContext lc = (LoggerContext) org.slf4j.LoggerFactory.getILoggerFactory();
+        return getLogger(lc, loggerName, appenderName, file);
+    }
+
+    public static Logger getLogger(LoggerContext lc, String loggerName, String appenderName, String file) {
+        Logger exists = lc.exists(loggerName);
+        if (Objects.nonNull(exists)) {
+            return exists;
+        }
+
+        ThresholdFilter infoFilter = new ThresholdFilter();
+        infoFilter.setLevel("INFO");
+        infoFilter.setContext(lc);
+        infoFilter.start();
+
+        PatternLayoutEncoder encoder = new PatternLayoutEncoder();
+        encoder.setContext(lc);
+        encoder.setPattern("[%p] %d{yyyy-MM-dd HH:mm:ss SSS} [%t] |  %C.%M\\(%L\\) : %msg%n%ex");
+        encoder.start();
+
+        FileAppender<ILoggingEvent> fileAppender = new FileAppender<>();
+        fileAppender.setContext(lc);
+        fileAppender.setName(appenderName);
+        fileAppender.addFilter(infoFilter);
+        fileAppender.setEncoder(encoder);
+        fileAppender.setAppend(true);
+
+        fileAppender.setFile(file);
+        fileAppender.start();
+
+        //从已有的logger中获取打印控制台的appender
+        Appender<ILoggingEvent> consoleAppender = null;
+        for (Logger logger : lc.getLoggerList()) {
+            consoleAppender = logger.getAppender("CONSOLE");
+            if (Objects.nonNull(consoleAppender)) {
+                break;
+            }
+        }
+
+        LogbackFactory logbackFactory = LogbackFactory.create(loggerName, lc);
+        logbackFactory.add(fileAppender);
+        if (Objects.nonNull(consoleAppender)) {
+            logbackFactory.add(consoleAppender);
+        }
+        return logbackFactory.level(Level.INFO).additive(false).get();
+    }
+
     /**
      * @return task log name
      */
@@ -125,48 +173,4 @@ public class LogUtils {
     public static String getFileName(String basePath, String file, String suffix) {
         return basePath.concat(File.separator).concat(DATE_FORMAT.format(new Date())).concat(File.separator).concat(file).concat(suffix);
     }
-
-    public static Logger getLogger(String loggerName, String appenderName, String file) {
-        LoggerContext lc = (LoggerContext) org.slf4j.LoggerFactory.getILoggerFactory();
-        return getLogger(lc, loggerName, appenderName, file);
-    }
-
-    public static Logger getLogger(LoggerContext lc, String loggerName, String appenderName, String file) {
-        ThresholdFilter infoFilter = new ThresholdFilter();
-        infoFilter.setLevel("INFO");
-        infoFilter.setContext(lc);
-        infoFilter.start();
-
-        PatternLayoutEncoder encoder = new PatternLayoutEncoder();
-        encoder.setContext(lc);
-        encoder.setPattern("[%p] %d{yyyy-MM-dd HH:mm:ss SSS} [%t] |  %C.%M\\(%L\\) : %msg%n%ex");
-        encoder.start();
-
-        FileAppender<ILoggingEvent> fileAppender = new FileAppender<>();
-        fileAppender.setContext(lc);
-        fileAppender.setName(appenderName);
-        fileAppender.addFilter(infoFilter);
-        fileAppender.setEncoder(encoder);
-        fileAppender.setAppend(true);
-
-        fileAppender.setFile(file);
-        fileAppender.start();
-
-        //从已有的logger中获取打印控制台的appender
-        Appender<ILoggingEvent> consoleAppender = null;
-        for (Logger logger : lc.getLoggerList()) {
-            consoleAppender = logger.getAppender("CONSOLE");
-            if (Objects.nonNull(consoleAppender)) {
-                break;
-            }
-        }
-
-        LogbackFactory logbackFactory = LogbackFactory.create(loggerName, lc);
-        logbackFactory.add(fileAppender);
-        if (Objects.nonNull(consoleAppender)) {
-            logbackFactory.add(consoleAppender);
-        }
-        return logbackFactory.level(Level.INFO).additive(false).get();
-    }
-
 }

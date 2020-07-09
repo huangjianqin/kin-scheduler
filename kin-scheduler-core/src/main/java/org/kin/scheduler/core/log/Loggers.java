@@ -9,9 +9,6 @@ import java.util.Objects;
  * @date 2020-03-03
  */
 public class Loggers {
-    /** 理论上每个进程只有一个master or worker */
-    private static Logger log;
-
     /**
      * task相关
      * task执行线程绑定的logger
@@ -24,27 +21,11 @@ public class Loggers {
 
     //-----------------------------------------------------------------------------------------------------------------
     public static Logger master(String logPath, String masterId) {
-        if (Objects.isNull(log)) {
-            synchronized (Loggers.class) {
-                if (Objects.isNull(log)) {
-                    return log = LogUtils.getMasterLogger(logPath, masterId);
-                }
-            }
-        }
-
-        return null;
+        return LogUtils.getMasterLogger(logPath, masterId);
     }
 
     public static Logger worker(String logPath, String workerId) {
-        if (Objects.isNull(log)) {
-            synchronized (Loggers.class) {
-                if (Objects.isNull(log)) {
-                    return log = LogUtils.getWorkerLogger(logPath, workerId);
-                }
-            }
-        }
-
-        return null;
+        return LogUtils.getWorkerLogger(logPath, workerId);
     }
 
     //-----------------------------------------------------------------------------------------------------------------

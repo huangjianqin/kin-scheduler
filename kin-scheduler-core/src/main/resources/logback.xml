@@ -87,6 +87,11 @@
         <appender-ref ref="asyncERROR"/>
     </logger>
 
+    <logger name="org.kin.transport" level="WARN">
+        <appender-ref ref="asyncRpc"/>
+        <appender-ref ref="asyncERROR"/>
+    </logger>
+
     <logger name="org.kin.kinrpc" level="WARN">
         <appender-ref ref="asyncRpc"/>
         <appender-ref ref="asyncERROR"/>
