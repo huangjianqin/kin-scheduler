@@ -90,7 +90,7 @@ public class TaskTrigger {
                 log.error("task({}) log not found >>>>> {}, {}, {}, {}, {}", taskId, taskStatus, result, logPath, outputPath, reason);
                 return;
             }
-            String taskLogIdStr = logPath.substring(index);
+            String taskLogIdStr = logPath.substring(index + 1);
             if (StringUtils.isBlank(taskLogIdStr)) {
                 log.error("task({}) log not found >>>>> {}, {}, {}, {}, {}", taskId, taskStatus, result, logPath, outputPath, reason);
                 return;

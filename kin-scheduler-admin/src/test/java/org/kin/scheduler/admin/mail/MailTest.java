@@ -30,7 +30,8 @@ public class MailTest implements InitializingBean {
         try {
             helper = new MimeMessageHelper(mimeMessage, true);
             helper.setFrom(emailUserName, "kin-scheduler-Admin");
-            helper.setTo("jianqin_huang@163.com");
+            //TODO 邮箱地址
+//            helper.setTo("");
             helper.setSubject("邮件测试");
             helper.setText("<br>测试1: 111".concat("<br>测试2: 2222"), true);
             mailSender.send(mimeMessage);

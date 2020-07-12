@@ -1,6 +1,7 @@
 package org.kin.scheduler.admin.domain;
 
 import org.kin.framework.utils.JSON;
+import org.kin.scheduler.core.task.handler.params.GlueParam;
 import org.kin.scheduler.core.task.handler.params.ScriptParam;
 
 import java.io.Serializable;
@@ -23,7 +24,16 @@ public enum TaskType {
     /**
      * glue task
      */
-    GLUE(ScriptParam.class, "GLUE") {
+    GLUE(GlueParam.class, "GLUE") {
+        @Override
+        public boolean validParam(String paramJson) {
+            return true;
+        }
+    },
+    /**
+     * script task
+     */
+    SCRIPT(ScriptParam.class, "脚本") {
         @Override
         public boolean validParam(String paramJson) {
             return true;
@@ -49,7 +59,7 @@ public enum TaskType {
      */
     public static TaskType getByName(String name) {
         for (TaskType taskType : VALUES) {
-            if (taskType.name().toLowerCase().equals(name)) {
+            if (taskType.name().toLowerCase().equals(name.toLowerCase())) {
                 return taskType;
             }
         }

@@ -3,11 +3,14 @@ package org.kin.scheduler.admin.interceptor;
 import org.kin.framework.web.interceptor.PermissionInterceptor;
 import org.kin.scheduler.admin.entity.User;
 import org.kin.scheduler.admin.service.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.Objects;
 
 /**
  * @author huangjianqin
@@ -15,17 +18,23 @@ import javax.servlet.http.HttpServletResponse;
  */
 @Component
 public class KinSchedulerPermissionInterceptor extends PermissionInterceptor {
+    private static final Logger log = LoggerFactory.getLogger("permission");
+
     @Autowired
     private UserService userService;
 
     @Override
-    public void customCheckLogin(HttpServletRequest request, HttpServletResponse response, boolean needAdmin) {
+    public boolean customCheckLogin(HttpServletRequest request, HttpServletResponse response, boolean needAdmin) {
         User user = userService.getLoginUser(request, response);
-        if (user == null) {
+        if (Objects.isNull(user)) {
             //TODO 跳转到登陆页面
+            return false;
         }
         if (needAdmin && !user.isAdmin()) {
-            throw new RuntimeException("权限拦截");
+            log.warn("用户{}({})尝试使用管理员权限", user.getAccount(), user.getId());
+            return false;
         }
+
+        return true;
     }
 }

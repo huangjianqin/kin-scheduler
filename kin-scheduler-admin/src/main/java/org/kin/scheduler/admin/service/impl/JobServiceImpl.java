@@ -58,7 +58,13 @@ public class JobServiceImpl implements JobService {
     }
 
     @Override
-    public WebResponse<String> add(TaskInfo taskInfo) {
+    public WebResponse<String> add(User user, TaskInfo taskInfo) {
+        if (Objects.isNull(user)) {
+            return WebResponse.fail("用户不存在");
+        }
+
+        taskInfo.setUserId(user.getId());
+
         WebResponse<String> validWebResponse = validTaskInfo(taskInfo);
         if (Objects.nonNull(validWebResponse)) {
             return validWebResponse;
@@ -86,7 +92,7 @@ public class JobServiceImpl implements JobService {
     private WebResponse<String> validTaskInfo(TaskInfo taskInfo) {
         // valid
         JobInfo job = jobInfoDao.load(taskInfo.getJobId());
-        if (Objects.nonNull(job)) {
+        if (Objects.isNull(job)) {
             return WebResponse.fail("不存在作业");
         }
 
@@ -108,7 +114,7 @@ public class JobServiceImpl implements JobService {
         if (Objects.isNull(RouteStrategyType.getByName(taskInfo.getRouteStrategy()))) {
             return WebResponse.fail("未知task executor分配策略");
         }
-        TaskType taskType = TaskType.getByName(taskInfo.getParam());
+        TaskType taskType = TaskType.getByName(taskInfo.getType());
         if (Objects.isNull(taskType) || !taskType.validParam(taskInfo.getParam())) {
             return WebResponse.fail("未知task类型及参数");
         }

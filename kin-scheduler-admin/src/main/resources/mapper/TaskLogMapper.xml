@@ -142,7 +142,7 @@
 		`route_strategy`,
 		`exec_timeout`,
 		`retry_times`,
-		`retry_times_limit`,
+		`retry_times_limit`
         ) VALUES (
         #{taskId},
         #{jobId},
@@ -154,20 +154,20 @@
         #{routeStrategy},
         #{execTimeout},
         #{retryTimes},
-        #{retryTimesLimit},
+        #{retryTimesLimit}
         );
     </insert>
 
-    <update id="updateTriggerInfo">
+    <update id="updateTriggerInfo" parameterType="org.kin.scheduler.admin.entity.TaskLog">
 		UPDATE task_log
 		SET
 			`trigger_time`= #{triggerTime},
 			`trigger_code`= #{triggerCode},
-			`log_path`= #{logPath},
+			`log_path`= #{logPath}
 		WHERE `id`= #{id}
 	</update>
 
-    <update id="updateHandleInfo">
+    <update id="updateHandleInfo" parameterType="org.kin.scheduler.admin.entity.TaskLog">
 		UPDATE task_log
 		SET
 			`handle_time`= #{handleTime},

@@ -12,17 +12,17 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-		u.id,
-		u.account,
-		u.password,
-		u.role
-		u.name
+		t.id,
+		t.account,
+		t.password,
+		t.role,
+		t.name
 	</sql>
 
     <select id="pageList" parameterType="java.util.HashMap" resultMap="User">
         SELECT
         <include refid="Base_Column_List"/>
-        FROM `user` AS u
+        FROM `user` AS t
         <trim prefix="WHERE" prefixOverrides="AND | OR">
             <if test="account != null and account != ''">
                 AND t.account like CONCAT(CONCAT('%', #{account}), '%')
@@ -37,7 +37,7 @@
 
     <select id="pageListCount" parameterType="java.util.HashMap" resultType="int">
         SELECT count(1)
-        FROM `user` AS u
+        FROM `user` AS t
         <trim prefix="WHERE" prefixOverrides="AND | OR">
             <if test="account != null and account != ''">
                 AND t.account like CONCAT(CONCAT('%', #{account}), '%')
@@ -52,7 +52,7 @@
     <select id="loadByAccount" parameterType="java.util.HashMap" resultMap="User">
         SELECT
         <include refid="Base_Column_List"/>
-        FROM `user` AS u
+        FROM `user` AS t
         WHERE t.account = #{account}
     </select>
 
@@ -63,7 +63,7 @@
 			role,
 			`name`
 		) VALUES (
-			#{username},
+			#{account},
 			#{password},
 			#{role},
 			#{name}

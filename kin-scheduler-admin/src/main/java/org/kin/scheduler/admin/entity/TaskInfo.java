@@ -48,7 +48,7 @@ public class TaskInfo {
     private String alarmEmail;
 
     /** 子任务ID，多个逗号分隔 */
-    private String childTaskIds;
+    private String childTaskIds = "";
 
     /** 调度状态 */
     private int triggerStatus;

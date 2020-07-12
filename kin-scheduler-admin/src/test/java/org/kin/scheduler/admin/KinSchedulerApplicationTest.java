@@ -8,7 +8,7 @@ import org.kin.scheduler.core.worker.utils.WorkerUtils;
  */
 public class KinSchedulerApplicationTest {
     public static void main(String[] args) {
-        WorkerUtils.runMoreWorker();
+        WorkerUtils.runMoreWorker("application.yml");
         KinSchedulerApplication.main(args);
     }
 }

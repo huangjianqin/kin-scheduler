@@ -33,7 +33,7 @@
     </resultMap>
 
     <resultMap id="TaskInfoVO" type="org.kin.scheduler.admin.vo.TaskInfoVO" extends="TaskInfo">
-        <result column="user_name" property="userName"/>
+        <result column="user_name" property=""/>
     </resultMap>
 
     <sql id="Base_Column_List">
@@ -50,6 +50,7 @@
 		t.exec_timeout,
 		t.retry_times,
 		t.alarm_email,
+		t.route_strategy,
 		t.child_task_ids,
 		t.trigger_status,
 		t.trigger_last_time,
@@ -57,8 +58,8 @@
 	</sql>
 
     <select id="pageList" parameterType="java.util.HashMap" resultMap="TaskInfoVO">
-        SELECT<include refid="Base_Column_List"/>, u.userId, u.userName
-        FROM task_info AS t LEFT JOIN `user` u ON t.userId = u.id
+        SELECT<include refid="Base_Column_List"/>, u.id as userId, u.name as userName
+        FROM task_info AS t LEFT JOIN `user` u ON t.user_id = u.id
         <trim prefix="WHERE" prefixOverrides="AND | OR">
             <if test="jobId gt 0">
                 AND t.job_id = #{jobId}
@@ -73,7 +74,7 @@
                 AND t.type like CONCAT(CONCAT('%', #{type}), '%')
             </if>
             <if test="userName != null and userName != ''">
-                AND u.userName like CONCAT(CONCAT('%', #{userName}), '%')
+                AND u.name like CONCAT(CONCAT('%', #{userName}), '%')
             </if>
         </trim>
         ORDER BY id DESC
@@ -82,7 +83,7 @@
 
     <select id="pageListCount" parameterType="java.util.HashMap" resultType="int">
         SELECT count(1)
-        FROM task_info AS t LEFT JOIN `user` u ON t.userId = u.id
+        FROM task_info AS t LEFT JOIN `user` u ON t.user_id = u.id
         <trim prefix="WHERE" prefixOverrides="AND | OR">
             <if test="jobId gt 0">
                 AND t.job_id = #{jobId}
@@ -97,16 +98,16 @@
                 AND t.type like CONCAT(CONCAT('%', #{type}), '%')
             </if>
             <if test="userName != null and userName != ''">
-                AND u.userName like CONCAT(CONCAT('%', #{userName}), '%')
+                AND u.name like CONCAT(CONCAT('%', #{userName}), '%')
             </if>
         </trim>
-        ORDER BY id DESC
+        ORDER BY t.id DESC
         LIMIT #{offset}, #{pageSize}
     </select>
 
-    <insert id="save" parameterType="org.kin.scheduler.admin.entity.TaskInfo">
+    <insert id="save" parameterType="org.kin.scheduler.admin.entity.TaskInfo" useGeneratedKeys="true" keyProperty="id"
+            keyColumn="id">
         INSERT INTO task_info (
-        id,
         job_id,
         time_type,
         time_str,
@@ -114,19 +115,18 @@
         add_time,
         update_time,
         user_id,
+        alarm_email,
         route_strategy,
         `type`,
         param,
         exec_strategy,
         exec_timeout,
         retry_times,
-        alarm_email,
         child_task_ids,
         trigger_status,
         trigger_last_time,
         trigger_next_time
         ) VALUES (
-        #{id},
         #{jobId},
         #{timeType},
         #{timeStr},
@@ -136,13 +136,12 @@
         #{userId},
         #{alarmEmail},
         #{routeStrategy},
-        #{executorHandler},
         #{type},
         #{param},
         #{execStrategy},
         #{execTimeout},
         #{retryTimes},
-        #{alarmEmail},
+        #{childTaskIds},
         #{triggerStatus},
         #{triggerLastTime},
         #{triggerNextTime}
@@ -151,7 +150,7 @@
 
     <select id="load" parameterType="java.util.HashMap" resultMap="TaskInfo">
         SELECT
-        <include refid="Base_Column_List"/>
+        <include refid="Base_Column_List"/>, user_id
         FROM task_info AS t
         WHERE t.id = #{id}
     </select>
@@ -172,7 +171,7 @@
             exec_strategy=#{execStrategy},
             exec_timeout=#{execTimeout},
             retry_times=#{retryTimes},
-            alarm_email=#{alarmEmail}
+            alarm_email=#{alarmEmail},
             child_task_ids=#{childTaskIds},
             trigger_status=#{triggerStatus},
             trigger_last_time=#{triggerLastTime},
@@ -187,7 +186,7 @@
 	</delete>
 
     <select id="getTasksByJob" parameterType="java.util.HashMap" resultMap="TaskInfoVO">
-        SELECT<include refid="Base_Column_List"/>, u.userId, userName
+        SELECT<include refid="Base_Column_List"/>, u.id as userId, u.name as userName
         FROM task_info AS t LEFT JOIN `user` u on t.user_id = u.id
         WHERE t.job_id = #{jobId}
     </select>

@@ -4,10 +4,7 @@ import org.kin.framework.web.domain.Permission;
 import org.kin.framework.web.domain.WebResponse;
 import org.kin.scheduler.admin.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -25,7 +22,11 @@ public class UserController {
     @RequestMapping(value = "/login", method = RequestMethod.POST)
     @ResponseBody
     @Permission(login = false)
-    public WebResponse<String> login(HttpServletRequest request, HttpServletResponse response, String account, String password, String ifRemember) {
+    public WebResponse<String> login(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            String account, String password,
+            @RequestParam(defaultValue = "false") String ifRemember) {
         boolean ifRem = ifRemember != null && ifRemember.trim().length() > 0 && "on".equals(ifRemember);
         return userService.login(request, response, account, password, ifRem);
     }
@@ -39,7 +40,7 @@ public class UserController {
 
     @RequestMapping(value = "/create", method = RequestMethod.POST)
     @ResponseBody
-    public WebResponse<String> create(String account, String password, int role, String name) {
+    public WebResponse<String> create(String account, String password, @RequestParam(defaultValue = "0") int role, String name) {
         return userService.create(account, password, role, name);
     }
 }

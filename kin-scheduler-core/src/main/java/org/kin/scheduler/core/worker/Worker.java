@@ -146,7 +146,7 @@ public class Worker extends ThreadSafeRpcEndpoint {
         if (!registerWorkerResp.isSuccess()) {
             log.error("worker '{}' register error >>> {}", workerId, registerWorkerResp.getDesc());
         } else {
-            log.info("worker '{}' registered", workerId);
+            log.info("worker '{}' registered >>>>> cpu:{}, memory:{}", workerId, config.getCpuCore(), 0);
         }
     }
 

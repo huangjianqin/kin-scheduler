@@ -28,7 +28,7 @@ public enum TaskExecStrategy {
      */
     public static TaskExecStrategy getByName(String strategy) {
         for (TaskExecStrategy execStrategy : VALUES) {
-            if (execStrategy.name().equals(strategy)) {
+            if (execStrategy.name().toLowerCase().equals(strategy.toLowerCase())) {
                 return execStrategy;
             }
         }

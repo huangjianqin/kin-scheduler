@@ -163,7 +163,7 @@ public class Master extends ThreadSafeRpcEndpoint {
                 worker = new WorkerContext(workerInfo, workerRef);
                 workers.put(workerId, worker);
 
-                log.info("worker '{}' registered", workerId);
+                log.info("worker '{}' registered >>>>> cpu:{}, memory:{}", workerId, workerInfo.getMaxCpuCore(), workerInfo.getMaxMemory());
                 workerRef.send(RegisterWorkerResp.success());
                 //调度资源
                 scheduleResource();
@@ -326,7 +326,7 @@ public class Master extends ThreadSafeRpcEndpoint {
                 .filter(wc -> wc.getResource().getCpuCore() >= minCoresPerExecutor &&
                         //1.每个worker可以多个executor
                         //2.该worker还未分配executor
-                        (!oneExecutorPerWorker || driver.containsWorkerResource(wc.getWorkerInfo().getWorkerId())))
+                        (!oneExecutorPerWorker || !driver.containsWorkerResource(wc.getWorkerInfo().getWorkerId())))
                 .collect(Collectors.toList());
 
         //C.根据资源分配策略获取准备要分配资源的worker

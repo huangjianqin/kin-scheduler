@@ -40,7 +40,10 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public WebResponse<String> login(HttpServletRequest request, HttpServletResponse response, String account, String password, boolean ifRemember) {
+    public WebResponse<String> login(
+            HttpServletRequest request, HttpServletResponse response,
+            String account, String password,
+            boolean ifRemember) {
         // param
         if (StringUtils.isBlank(account) || StringUtils.isBlank(password)) {
             return WebResponse.fail("参数缺失");

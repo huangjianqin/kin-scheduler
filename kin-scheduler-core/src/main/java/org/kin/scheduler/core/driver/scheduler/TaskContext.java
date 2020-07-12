@@ -35,7 +35,7 @@ public class TaskContext {
     /** 该task的output路径 */
     private String outputPath;
 
-    private TaskExecFuture future;
+    private volatile TaskExecFuture future;
 
     public TaskContext(TaskDescription taskDescription) {
         this.taskDescription = taskDescription;

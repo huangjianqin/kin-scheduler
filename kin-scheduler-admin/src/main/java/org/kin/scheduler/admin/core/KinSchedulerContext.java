@@ -48,22 +48,22 @@ public class KinSchedulerContext implements InitializingBean, ApplicationListene
     @Value("${spring.mail.username}")
     private String emailUserName;
     /** scheduler并发数 */
-    @Value("${kin.scheduler.parallism:5}")
+    @Value("${kin.scheduler.parallism}")
     private int parallism;
     /** host */
-    @Value("${kin.scheduler.host:0.0.0.0}")
+    @Value("${kin.scheduler.host}")
     private String host;
     /** port */
-    @Value("${kin.scheduler.port:46668}")
+    @Value("${kin.scheduler.port}")
     private int port;
     /** 日志路径 */
-    @Value("${kin.scheduler.logPath:/logs}")
+    @Value("${kin.scheduler.logPath}")
     private String logPath;
     /** 通信序列化方式 */
-    @Value("${kin.scheduler.serialize:kryo}")
+    @Value("${kin.scheduler.serialize}")
     private String serialize = SerializerType.KRYO.name();
     /** 通信是否支持压缩 */
-    @Value("${kin.scheduler.compression:false}")
+    @Value("${kin.scheduler.compression}")
     private boolean compression;
 
     //----------------------------------------dao------------------------------------------------------------

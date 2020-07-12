@@ -22,12 +22,22 @@ import java.util.concurrent.Executors;
  * @date 2020-06-27
  */
 public class WorkerUtils {
-    /**
-     * 在同一jvm下, 根据配置文件(默认scheduler-workers)定义的worker id(每行一个), 启动n个worker
-     */
+    public static void runMoreWorker(String configPath) {
+        //读取{ configPath }来获取worker起始端口
+        Config config = Configs.getCfgFromYml(configPath);
+        runMoreWorker(config);
+    }
+
     public static void runMoreWorker() {
         //读取scheduler.yml来获取worker起始端口
         Config config = Configs.getCfg();
+        runMoreWorker(config);
+    }
+
+    /**
+     * 在同一jvm下, 根据配置文件(默认scheduler-workers)定义的worker id(每行一个), 启动n个worker
+     */
+    public static void runMoreWorker(Config config) {
         int workerPort = config.getWorkerPort();
 
         ExecutorService executors = Executors.newCachedThreadPool();

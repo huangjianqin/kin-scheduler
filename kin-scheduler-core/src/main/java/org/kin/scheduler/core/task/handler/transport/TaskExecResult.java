@@ -29,4 +29,11 @@ public class TaskExecResult implements Serializable {
     public void setData(Serializable data) {
         this.data = data;
     }
+
+    @Override
+    public String toString() {
+        return "TaskExecResult{" +
+                "data=" + data +
+                '}';
+    }
 }

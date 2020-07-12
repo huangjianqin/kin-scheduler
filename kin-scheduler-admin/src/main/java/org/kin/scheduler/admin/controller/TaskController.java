@@ -52,8 +52,7 @@ public class TaskController {
     @Permission
     public WebResponse<String> add(HttpServletRequest request, HttpServletResponse response, TaskInfo taskInfo) {
         User user = userService.getLoginUser(request, response);
-        taskInfo.setUserId(user.getId());
-        return jobService.add(taskInfo);
+        return jobService.add(user, taskInfo);
     }
 
     @RequestMapping("/update")
@@ -90,7 +89,7 @@ public class TaskController {
     @RequestMapping("/trigger")
     @ResponseBody
     @Permission
-    public WebResponse<String> triggerTask(int id, String forceParam) {
+    public WebResponse<String> triggerTask(int id, @RequestParam(defaultValue = "") String forceParam) {
         TaskInfo taskInfo = taskInfoDao.load(id);
         if (Objects.isNull(taskInfo)) {
             return WebResponse.fail("unknown task");

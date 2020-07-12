@@ -28,7 +28,7 @@ public interface JobService {
      * 新建task
      * @param taskInfo task描述
      */
-    WebResponse<String> add(TaskInfo taskInfo);
+    WebResponse<String> add(User user, TaskInfo taskInfo);
 
     /**
      * 更新task内容

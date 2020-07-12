@@ -55,7 +55,7 @@ public enum TimeType {
 
     public static TimeType getByName(String type) {
         for (TimeType timeType : VALUES) {
-            if (timeType.name().equals(type)) {
+            if (timeType.name().toLowerCase().equals(type.toLowerCase())) {
                 return timeType;
             }
         }
