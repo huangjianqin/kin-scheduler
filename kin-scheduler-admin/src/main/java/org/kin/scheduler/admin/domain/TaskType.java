@@ -13,15 +13,6 @@ import java.util.Objects;
  */
 public enum TaskType {
     /**
-     * 打印task
-     */
-    PRINT(String.class, "控制台输出") {
-        @Override
-        public boolean validParam(String paramJson) {
-            return true;
-        }
-    },
-    /**
      * glue task
      */
     GLUE(GlueParam.class, "GLUE") {
