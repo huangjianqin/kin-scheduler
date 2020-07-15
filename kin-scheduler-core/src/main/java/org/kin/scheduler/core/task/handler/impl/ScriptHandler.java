@@ -57,7 +57,7 @@ public class ScriptHandler implements TaskHandler<ScriptParam, TaskExecResult> {
                 ScriptResourcesStore resourcesStore = ScriptResourcesStore.getByName(scriptParam.getScriptResourcesStore());
                 if (Objects.nonNull(resourcesStore)) {
                     //复制 ｜ 创建 项目脚本代码
-                    if (resourcesStore.equals(ScriptResourcesStore.RESOURCE_CODE)) {
+                    if (resourcesStore.equals(ScriptResourcesStore.SOURCE_CODE)) {
                         //创建脚本文件
                         realRunEnvPath = realRunEnvPath.concat(File.separator).concat(taskDescription.getJobId()).concat(glueType.getSuffix());
                     }
@@ -65,12 +65,20 @@ public class ScriptHandler implements TaskHandler<ScriptParam, TaskExecResult> {
                     log.info("copy source '{}' to path '{}'", scriptParam.getScriptResources(), realRunEnvPath);
                 }
 
-                log.info("exec script '{}', params '{}', workingDirectory >>> {}", glueType, scriptParam, workingDirectory);
+                log.info("exec script:'{}', param:'{}', shardingIndex:'{}', shardingTotal:'{}', workingDirectory:'{}'",
+                        glueType, scriptParam, scriptParam.getShardingIndex(), scriptParam.getShardingTotal(), workingDirectory);
 
-                int exitValue = CommandUtils.execCommand(scriptParam.getCommand(), Loggers.getTaskOutputFileName(), workingDirectory);
-                if (exitValue == 0) {
-                    return TaskExecResult.of(exitValue);
+                int scriptParamsLen = scriptParam.getParams().length;
+                String[] execParams = new String[scriptParamsLen + 2];
+                for (int i = 0; i < scriptParamsLen; i++) {
+                    execParams[i] = scriptParam.getParams()[i];
                 }
+                execParams[scriptParamsLen] = String.valueOf(scriptParam.getShardingIndex());
+                execParams[scriptParamsLen + 1] = String.valueOf(scriptParam.getShardingTotal());
+
+                int exitValue = CommandUtils.execCommand(scriptParam.getCommand(),
+                        Loggers.getTaskOutputFileName(), workingDirectory, execParams);
+                return TaskExecResult.of(exitValue);
             }
         }
 

@@ -1,6 +1,7 @@
 package org.kin.scheduler.core.task.handler.params;
 
 import java.io.Serializable;
+import java.util.Arrays;
 
 /**
  * glue task参数
@@ -11,11 +12,18 @@ import java.io.Serializable;
 public class GlueParam implements Serializable {
     protected String command;
     protected String type;
+    /** 参数 */
+    protected String[] params;
 
-    public GlueParam of(String command, String type) {
+    public static GlueParam of(String command, String type) {
+        return GlueParam.of(command, type, new String[0]);
+    }
+
+    public static GlueParam of(String command, String type, String[] params) {
         GlueParam glueParam = new GlueParam();
         glueParam.command = command;
         glueParam.type = type;
+        glueParam.params = params;
         return glueParam;
     }
 
@@ -36,11 +44,20 @@ public class GlueParam implements Serializable {
         this.type = type;
     }
 
+    public String[] getParams() {
+        return params;
+    }
+
+    public void setParams(String[] params) {
+        this.params = params;
+    }
+
     @Override
     public String toString() {
         return "GlueParam{" +
                 "command='" + command + '\'' +
                 ", type='" + type + '\'' +
+                ", params=" + Arrays.toString(params) +
                 '}';
     }
 }

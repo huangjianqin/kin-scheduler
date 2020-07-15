@@ -50,11 +50,11 @@ public class GlueHandler implements TaskHandler<GlueParam, TaskExecResult> {
 
                     return (TaskExecResult) taskHandler.exec(taskDescription);
                 } else {
+                    log.info("exec command:'{}', param:'{}'", glueType, glueParam.getParams());
+
                     //命令
-                    int exitValue = CommandUtils.execCommand(glueParam.getCommand(), Loggers.getTaskOutputFileName());
-                    if (exitValue == 0) {
-                        return TaskExecResult.of(exitValue);
-                    }
+                    int exitValue = CommandUtils.execCommand(glueParam.getCommand(), Loggers.getTaskOutputFileName(), "", glueParam.getParams());
+                    return TaskExecResult.of(exitValue);
                 }
             }
         }

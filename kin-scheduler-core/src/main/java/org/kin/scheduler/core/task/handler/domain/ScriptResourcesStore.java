@@ -39,7 +39,7 @@ public enum ScriptResourcesStore {
     /**
      * 源代码
      */
-    RESOURCE_CODE("源代码") {
+    SOURCE_CODE("源代码") {
         @Override
         public boolean cloneResources(String scriptResources, String user, String password, String path) throws Exception {
             return FileUtils.createFile(path, scriptResources);
