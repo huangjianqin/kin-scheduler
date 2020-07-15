@@ -34,7 +34,7 @@
         <dependency>
             <groupId>org.kin</groupId>
             <artifactId>kin-scheduler-core</artifactId>
-            <version>0.1.0.0</version>
+            <version>${project.version}</version>
         </dependency>
 
         <!-- starter-web：spring-webmvc + autoconfigure + logback + yaml + tomcat -->
