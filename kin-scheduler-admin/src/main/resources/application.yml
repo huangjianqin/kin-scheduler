@@ -5,6 +5,8 @@ server:
     uri-encoding: UTF-8
 
 spring:
+  application:
+    name: kin-scheduler
   http:
     encoding.charset: UTF-8
     encoding.force: true

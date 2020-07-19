@@ -18,7 +18,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.mail.javamail.JavaMailSender;
 
@@ -36,13 +35,12 @@ import java.util.Objects;
  * @date 2020-03-08
  */
 @Configuration
-@PropertySource({"classpath:application.yml", "classpath:bootstrap.yml"})
 public class KinSchedulerContext implements InitializingBean, ApplicationListener<ContextRefreshedEvent> {
     private static KinSchedulerContext INSTANCE;
 
     //----------------------------------------应用参数------------------------------------------------------------
     /** 应用名 */
-    @Value("${application.name:kin-scheduler}")
+    @Value("${spring.application.name:kin-scheduler}")
     private String appName;
     /** mail用户 */
     @Value("${spring.mail.username}")
