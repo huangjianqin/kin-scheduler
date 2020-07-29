@@ -1,6 +1,13 @@
 package org.kin.scheduler.core.task.handler.domain;
 
-import org.kin.framework.utils.*;
+import org.apache.commons.io.FileUtils;
+import org.kin.framework.utils.GitUtils;
+import org.kin.framework.utils.NetUtils;
+import org.kin.framework.utils.SVNUtils;
+import org.kin.framework.utils.StringUtils;
+
+import java.io.File;
+import java.nio.charset.StandardCharsets;
 
 /**
  * 脚本文件存储位置类型
@@ -42,7 +49,8 @@ public enum ScriptResourcesStore {
     SOURCE_CODE("源代码") {
         @Override
         public boolean cloneResources(String scriptResources, String user, String password, String path) throws Exception {
-            return FileUtils.createFile(path, scriptResources);
+            FileUtils.write(new File(path), scriptResources, StandardCharsets.UTF_8);
+            return true;
         }
     };
     public static ScriptResourcesStore[] STORES = values();
