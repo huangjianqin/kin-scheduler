@@ -24,8 +24,8 @@ public class LRUAllocateStrategy implements AllocateStrategy {
     private int monitorTime;
 
     @Override
-    public List<WorkerContext> allocate(List<WorkerContext> workerContexts) {
-        if (CollectionUtils.isNonEmpty(workerContexts)) {
+    public List<WorkerContext> allocate(List<WorkerContext> workers) {
+        if (CollectionUtils.isNonEmpty(workers)) {
             synchronized (lruMap) {
                 int now = TimeUtils.timestamp();
                 if (now >= monitorTime + EXPIRE_TIME) {
@@ -34,10 +34,10 @@ public class LRUAllocateStrategy implements AllocateStrategy {
                 }
 
                 //put
-                Map<String, WorkerContext> workerId2Context = new HashMap<>(workerContexts.size());
-                for (WorkerContext workerContext : workerContexts) {
-                    workerId2Context.put(workerContext.getWorkerInfo().getWorkerId(), workerContext);
-                    lruMap.put(workerContext.getWorkerInfo().getWorkerId(), true);
+                Map<String, WorkerContext> workerId2Context = new HashMap<>(workers.size());
+                for (WorkerContext worker : workers) {
+                    workerId2Context.put(worker.getWorkerInfo().getWorkerId(), worker);
+                    lruMap.put(worker.getWorkerInfo().getWorkerId(), true);
                 }
 
                 //remove invalid

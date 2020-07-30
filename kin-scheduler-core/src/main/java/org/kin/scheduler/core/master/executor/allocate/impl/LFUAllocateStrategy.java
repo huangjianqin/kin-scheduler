@@ -23,8 +23,8 @@ public class LFUAllocateStrategy implements AllocateStrategy {
     private int monitorTime;
 
     @Override
-    public List<WorkerContext> allocate(List<WorkerContext> workerContexts) {
-        if (CollectionUtils.isNonEmpty(workerContexts)) {
+    public List<WorkerContext> allocate(List<WorkerContext> workers) {
+        if (CollectionUtils.isNonEmpty(workers)) {
             synchronized (lfuMap) {
                 int now = TimeUtils.timestamp();
                 if (now >= monitorTime + EXPIRE_TIME) {
@@ -33,13 +33,13 @@ public class LFUAllocateStrategy implements AllocateStrategy {
                 }
 
                 //put
-                Map<String, WorkerContext> workerId2Context = new HashMap<>(workerContexts.size());
-                for (WorkerContext workerContext : workerContexts) {
-                    String workerId = workerContext.getWorkerInfo().getWorkerId();
-                    workerId2Context.put(workerId, workerContext);
+                Map<String, WorkerContext> workerId2Context = new HashMap<>(workers.size());
+                for (WorkerContext worker : workers) {
+                    String workerId = worker.getWorkerInfo().getWorkerId();
+                    workerId2Context.put(workerId, worker);
                     if (!lfuMap.containsKey(workerId) || lfuMap.get(workerId) > 1000000) {
                         //缓解首次的压力
-                        lfuMap.put(workerId, ThreadLocalRandom.current().nextInt(workerContexts.size()));
+                        lfuMap.put(workerId, ThreadLocalRandom.current().nextInt(workers.size()));
                     }
                 }
 

@@ -18,17 +18,20 @@ public class LaunchExecutor implements Serializable {
     private String appName;
     /** scheduler endpoint地址 */
     private String executorSchedulerAddress;
+    /** executorId */
+    private String executorId;
     /** executor所需cpu核心数 */
     private int cpuCore;
 
     public LaunchExecutor() {
     }
 
-    public static LaunchExecutor of(RpcEndpointRef masterRef, String appName, String executorSchedulerAddress, int cpuCore) {
+    public static LaunchExecutor of(RpcEndpointRef masterRef, String appName, String executorSchedulerAddress, String executorId, int cpuCore) {
         LaunchExecutor message = new LaunchExecutor();
         message.masterRef = masterRef;
         message.appName = appName;
         message.executorSchedulerAddress = executorSchedulerAddress;
+        message.executorId = executorId;
         message.cpuCore = cpuCore;
         return message;
     }
@@ -55,6 +58,14 @@ public class LaunchExecutor implements Serializable {
 
     public void setExecutorSchedulerAddress(String executorSchedulerAddress) {
         this.executorSchedulerAddress = executorSchedulerAddress;
+    }
+
+    public String getExecutorId() {
+        return executorId;
+    }
+
+    public void setExecutorId(String executorId) {
+        this.executorId = executorId;
     }
 
     public int getCpuCore() {

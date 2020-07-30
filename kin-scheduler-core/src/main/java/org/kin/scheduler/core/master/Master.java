@@ -11,7 +11,6 @@ import org.kin.kinrpc.message.core.RpcEnv;
 import org.kin.kinrpc.message.core.RpcMessageCallContext;
 import org.kin.kinrpc.message.core.ThreadSafeRpcEndpoint;
 import org.kin.scheduler.core.cfg.Config;
-import org.kin.scheduler.core.domain.WorkerResource;
 import org.kin.scheduler.core.driver.ApplicationDescription;
 import org.kin.scheduler.core.driver.transport.ApplicationEnd;
 import org.kin.scheduler.core.driver.transport.ReadFile;
@@ -20,12 +19,15 @@ import org.kin.scheduler.core.executor.domain.ExecutorState;
 import org.kin.scheduler.core.executor.transport.ExecutorStateChanged;
 import org.kin.scheduler.core.log.Loggers;
 import org.kin.scheduler.core.master.domain.ApplicationContext;
-import org.kin.scheduler.core.master.domain.ExecutorResource;
+import org.kin.scheduler.core.master.domain.ExecutorDesc;
 import org.kin.scheduler.core.master.domain.WorkerContext;
 import org.kin.scheduler.core.master.executor.allocate.AllocateStrategy;
 import org.kin.scheduler.core.master.transport.*;
 import org.kin.scheduler.core.worker.domain.WorkerInfo;
-import org.kin.scheduler.core.worker.transport.*;
+import org.kin.scheduler.core.worker.transport.RegisterWorker;
+import org.kin.scheduler.core.worker.transport.TaskExecFileContent;
+import org.kin.scheduler.core.worker.transport.UnRegisterWorker;
+import org.kin.scheduler.core.worker.transport.WorkerHeartbeat;
 
 import java.io.Serializable;
 import java.util.*;
@@ -126,8 +128,6 @@ public class Master extends ThreadSafeRpcEndpoint {
             executorStateChanged((ExecutorStateChanged) message);
         } else if (message instanceof CheckHeartbeatTimeout) {
             checkHeartbeatTimeout();
-        } else if (message instanceof LaunchExecutorResp) {
-            launchExecutorResult((LaunchExecutorResp) message);
         }
         //scheduler endpoint相关
         else if (message instanceof RegisterApplication) {
@@ -181,11 +181,13 @@ public class Master extends ThreadSafeRpcEndpoint {
      * @param workerId workerId
      */
     private void unregisterWorker(String workerId) {
-        if (!isStopped && StringUtils.isNotBlank(workerId) && workers.containsKey(workerId)) {
-            workers.remove(workerId);
+        if (!isStopped && StringUtils.isNotBlank(workerId)) {
+            WorkerContext worker = workers.remove(workerId);
+            if (Objects.isNull(worker)) {
+                return;
+            }
 
-            //广播Driver更新Executor资源
-            executorStateChanged(workerId);
+            workerStateChanged(worker);
         }
     }
 
@@ -198,9 +200,9 @@ public class Master extends ThreadSafeRpcEndpoint {
     private void workerHeartbeat(WorkerHeartbeat heartbeat) {
         if (!isStopped) {
             String hearbeatWorkerId = heartbeat.getWorkerId();
-            WorkerContext workerContext = workers.get(hearbeatWorkerId);
-            if (Objects.nonNull(workerContext)) {
-                workerContext.setLastHeartbeatTime(System.currentTimeMillis());
+            WorkerContext worker = workers.get(hearbeatWorkerId);
+            if (Objects.nonNull(worker)) {
+                worker.setLastHeartbeatTime(System.currentTimeMillis());
             } else {
                 //发现心跳worker还没注册, 通知其注册
                 heartbeat.getWorkerRef().send(WorkerReRegister.INSTANCE);
@@ -231,12 +233,12 @@ public class Master extends ThreadSafeRpcEndpoint {
                 }
                 //TODO 启动状态暂时不处理
             } else {
-                ExecutorResource executorResource = driver.removeExecutorResource(executorId);
-                if (Objects.nonNull(executorResource)) {
-                    WorkerResource workerResource = executorResource.getWorkerResource();
-                    WorkerContext workerContext = workers.get(workerResource.getWorkerId());
-                    if (Objects.nonNull(workerContext)) {
-                        workerContext.getResource().recoverCpuCore(workerResource.getCpuCore());
+                ExecutorDesc executorDesc = driver.removeExecutorResource(executorId);
+                if (Objects.nonNull(executorDesc)) {
+                    WorkerContext worker = workers.get(executorDesc.getWorker().getWorkerInfo().getWorkerId());
+                    if (Objects.nonNull(worker)) {
+                        worker.recoverCpuCore(executorDesc.getUsedCpuCore());
+                        worker.recoverMemory(executorDesc.getUsedMemory());
                     }
                     try {
                         driver.ref().send(ExecutorStateUpdate.of(Collections.emptyList(), Collections.singletonList(executorId)));
@@ -253,19 +255,25 @@ public class Master extends ThreadSafeRpcEndpoint {
     /**
      * 移除无效worker相关executor资源占用
      */
-    private void executorStateChanged(String unAvailableWorkerId) {
-        for (ApplicationContext driver : drivers.values()) {
-            //无用Executor
-            List<String> unAvailableExecutorIds =
-                    driver.getUsedExecutorResources().stream()
-                            .filter(er -> er.getWorkerResource().getWorkerId().equals(unAvailableWorkerId))
-                            .map(ExecutorResource::getExecutorId)
-                            .collect(Collectors.toList());
-            driver.ref().send(ExecutorStateUpdate.of(Collections.emptyList(), unAvailableExecutorIds));
-
-            tryWaitingResource(driver);
+    private void workerStateChanged(WorkerContext worker) {
+        if (!worker.getWorkerInfo().isAllowEmbeddedExecutor()) {
+            return;
         }
-        scheduleResource();
+        boolean needSchedule = false;
+        //内嵌executor的worker才需要处理, 因为executor与worker同生共死
+        for (ApplicationContext driver : drivers.values()) {
+            //无用Executor ids
+            List<String> unavailableExecutorIds =
+                    driver.workerUnavailable(worker.getWorkerInfo().getWorkerId());
+            if (CollectionUtils.isNonEmpty(unavailableExecutorIds)) {
+                driver.ref().send(ExecutorStateUpdate.of(Collections.emptyList(), unavailableExecutorIds));
+                tryWaitingResource(driver);
+                needSchedule = true;
+            }
+        }
+        if (needSchedule) {
+            scheduleResource();
+        }
     }
 
     //-------------------------------------------------------------driver endpoint 相关-------------------------------------------
@@ -320,19 +328,21 @@ public class Master extends ThreadSafeRpcEndpoint {
         }
 
         //B.寻找可以分配资源的worker
-        List<WorkerContext> registeredWorkerContexts = new ArrayList<>(workers.values());
-        registeredWorkerContexts = registeredWorkerContexts.stream()
+        List<WorkerContext> registeredWorkers = new ArrayList<>(workers.values());
+        registeredWorkers = registeredWorkers.stream()
                 //worker资源满足minCoresPerExecutor
-                .filter(wc -> wc.getResource().getCpuCore() >= minCoresPerExecutor &&
+                //TODO 考虑占用内存是否足够
+                .filter(wc -> wc.isAlive() &&
+                        wc.hasEnoughCpuCore(minCoresPerExecutor) &&
                         //1.每个worker可以多个executor
                         //2.该worker还未分配executor
                         (!oneExecutorPerWorker || !driver.containsWorkerResource(wc.getWorkerInfo().getWorkerId())))
                 .collect(Collectors.toList());
 
         //C.根据资源分配策略获取准备要分配资源的worker
-        List<WorkerContext> strategiedWorkerContexts = allocateStrategy.allocate(registeredWorkerContexts);
-        if (CollectionUtils.isNonEmpty(strategiedWorkerContexts)) {
-            for (WorkerContext availableWorkerContext : strategiedWorkerContexts) {
+        List<WorkerContext> strategiedWorkers = allocateStrategy.allocate(registeredWorkers);
+        if (CollectionUtils.isNonEmpty(strategiedWorkers)) {
+            for (WorkerContext availableWorker : strategiedWorkers) {
                 //D.executor源分配
                 try {
                     cpuCoreLeft = driver.getCpuCoreLeft();
@@ -341,7 +351,7 @@ public class Master extends ThreadSafeRpcEndpoint {
                         break;
                     }
 
-                    WorkerInfo availableWorkerInfo = availableWorkerContext.getWorkerInfo();
+                    WorkerInfo availableWorkerInfo = availableWorker.getWorkerInfo();
                     String availableWorkerId = availableWorkerInfo.getWorkerId();
 
                     //executor需要分配的cpu核心数
@@ -354,9 +364,16 @@ public class Master extends ThreadSafeRpcEndpoint {
 
                     WorkerContext worker = workers.get(availableWorkerId);
 
+                    //修改worker已使用资源
+                    worker.useCpuCore(minAllocateCpuCore);
+                    worker.useMemory(0);
+
+                    //修改driver已使用资源
+                    String executorId = driver.useExecutorResource(worker, minAllocateCpuCore);
+
                     //启动Executor
                     worker.ref().send(LaunchExecutor.of(ref(), driver.getAppDesc().getAppName(),
-                            driver.ref().getEndpointAddress().getRpcAddress().address(), minAllocateCpuCore));
+                            driver.ref().getEndpointAddress().getRpcAddress().address(), executorId, minAllocateCpuCore));
                 } catch (Exception e) {
                     log.error("master '" + name + "' allocate executor error >>> ", e);
                 }
@@ -364,33 +381,6 @@ public class Master extends ThreadSafeRpcEndpoint {
         }
         //E.如果driver资源还未分配足够, 进入等待队列继续等待足够资源
         tryWaitingResource(driver);
-    }
-
-    /**
-     * worker 启动executor结果返回
-     */
-    private void launchExecutorResult(LaunchExecutorResp launchResult) {
-        String executorId = launchResult.getExecutorId();
-        String appName = launchResult.getAppName();
-        String workerId = launchResult.getWorkerId();
-        if (launchResult.isSuccess()) {
-            //启动Executor成功
-            int minAllocateCpuCore = launchResult.getCpuCore();
-
-            WorkerContext worker = workers.get(workerId);
-            if (Objects.nonNull(worker)) {
-                //修改worker已使用资源
-                worker.getResource().useCpuCore(minAllocateCpuCore);
-            }
-
-            ApplicationContext driver = drivers.get(appName);
-            if (Objects.nonNull(driver)) {
-                //修改driver已使用资源
-                driver.useExecutorResource(executorId, WorkerResource.of(workerId, minAllocateCpuCore));
-            }
-        } else {
-            log.warn("launchExecutor error >>>>> app '{}', worker '{}'>>>>{}", appName, workerId, launchResult.getDesc());
-        }
     }
 
     /**
@@ -431,12 +421,8 @@ public class Master extends ThreadSafeRpcEndpoint {
                 this.waitingDrivers = waitingDrivers;
 
                 //回收应用占用的资源
-                for (ExecutorResource usedExecutorResource : driver.getUsedExecutorResources()) {
-                    WorkerResource workerResource = usedExecutorResource.getWorkerResource();
-                    WorkerContext workerContext = workers.get(workerResource.getWorkerId());
-                    if (Objects.nonNull(workerContext)) {
-                        workerContext.getResource().recoverCpuCore(workerResource.getCpuCore());
-                    }
+                for (ExecutorDesc executorDesc : driver.getExecutorDescs()) {
+                    executorDesc.releaseResources();
                 }
                 scheduleResource();
                 log.info("applicaton '{}' shutdown", driver.getAppDesc());
@@ -480,11 +466,34 @@ public class Master extends ThreadSafeRpcEndpoint {
 
         HashSet<String> registeredWorkerIds = new HashSet<>(workers.keySet());
         for (String registeredWorkerId : registeredWorkerIds) {
-            WorkerContext workerContext = workers.get(registeredWorkerId);
-            if (Objects.nonNull(workerContext) &&
-                    workerContext.getLastHeartbeatTime() - System.currentTimeMillis() > config.getHeartbeatTime()) {
-                //定时检测心跳超时, 并移除超时worker
-                unregisterWorker(workerContext.getWorkerInfo().getWorkerId());
+            WorkerContext worker = workers.get(registeredWorkerId);
+            if (Objects.isNull(worker)) {
+                continue;
+            }
+
+            //失联时间
+            long lossTime = worker.getLastHeartbeatTime() - System.currentTimeMillis();
+            if (lossTime > config.getHeartbeatTime()) {
+                if (worker.isAlive()) {
+                    //先判断为无效, 超过一定阈值后才认为彻底无效, 并移除相关数据
+                    worker.dead();
+                    workerStateChanged(worker);
+                } else {
+                    if (lossTime >= TimeUnit.MINUTES.toMillis(1)) {
+                        //超过1分钟
+                        //超过一定阈值才彻底放弃
+                        //定时检测心跳超时, 并移除超时worker
+                        unregisterWorker(worker.getWorkerInfo().getWorkerId());
+                    }
+                }
+            } else {
+                if (worker.isDead()) {
+                    //恢复心跳, 复活
+                    worker.alive();
+                    if (worker.hasResources()) {
+                        scheduleResource();
+                    }
+                }
             }
         }
     }

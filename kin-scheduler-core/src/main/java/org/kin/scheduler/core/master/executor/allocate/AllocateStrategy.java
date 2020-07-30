@@ -12,8 +12,8 @@ import java.util.List;
  */
 public interface AllocateStrategy {
     /**
-     * @param workerContexts 可以分配资源的worker
+     * @param workers 可以分配资源的worker
      * @return 满足分配策略的worker资源
      */
-    List<WorkerContext> allocate(List<WorkerContext> workerContexts);
+    List<WorkerContext> allocate(List<WorkerContext> workers);
 }

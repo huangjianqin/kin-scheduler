@@ -20,11 +20,11 @@ public class HashAllocateStrategy implements AllocateStrategy {
     private static final int LIMIT = 9;
 
     @Override
-    public List<WorkerContext> allocate(List<WorkerContext> workerContexts) {
-        if (CollectionUtils.isNonEmpty(workerContexts)) {
+    public List<WorkerContext> allocate(List<WorkerContext> workers) {
+        if (CollectionUtils.isNonEmpty(workers)) {
             TreeMap<Integer, WorkerContext> map = new TreeMap<>();
-            for (WorkerContext workerContext : workerContexts) {
-                map.put(HashUtils.efficientHash(workerContext, LIMIT), workerContext);
+            for (WorkerContext worker : workers) {
+                map.put(HashUtils.efficientHash(worker, LIMIT), worker);
             }
 
             WorkerContext selected = map.firstEntry().getValue();

@@ -17,9 +17,9 @@ import java.util.concurrent.ThreadLocalRandom;
 public class RandomAllocateStrategy implements AllocateStrategy {
 
     @Override
-    public List<WorkerContext> allocate(List<WorkerContext> workerContexts) {
-        if (CollectionUtils.isNonEmpty(workerContexts)) {
-            return Collections.singletonList(workerContexts.get(ThreadLocalRandom.current().nextInt(workerContexts.size())));
+    public List<WorkerContext> allocate(List<WorkerContext> workers) {
+        if (CollectionUtils.isNonEmpty(workers)) {
+            return Collections.singletonList(workers.get(ThreadLocalRandom.current().nextInt(workers.size())));
         }
 
         return null;

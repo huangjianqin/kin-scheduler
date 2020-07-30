@@ -18,9 +18,9 @@ public class RoundRobinAllocateStrategy implements AllocateStrategy {
     private AtomicInteger round = new AtomicInteger(0);
 
     @Override
-    public List<WorkerContext> allocate(List<WorkerContext> workerContexts) {
-        if (CollectionUtils.isNonEmpty(workerContexts)) {
-            return Collections.singletonList(workerContexts.get(next(workerContexts.size())));
+    public List<WorkerContext> allocate(List<WorkerContext> workers) {
+        if (CollectionUtils.isNonEmpty(workers)) {
+            return Collections.singletonList(workers.get(next(workers.size())));
         }
 
         return null;

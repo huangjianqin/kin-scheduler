@@ -14,7 +14,7 @@ import java.util.List;
 public class AllAllocateStrategy implements AllocateStrategy {
 
     @Override
-    public List<WorkerContext> allocate(List<WorkerContext> workerContexts) {
-        return workerContexts;
+    public List<WorkerContext> allocate(List<WorkerContext> workers) {
+        return workers;
     }
 }

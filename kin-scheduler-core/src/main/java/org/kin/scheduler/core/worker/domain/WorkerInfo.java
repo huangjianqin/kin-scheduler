@@ -17,12 +17,15 @@ public class WorkerInfo implements Serializable {
     private int maxCpuCore;
     /** worker占用内存数 */
     private long maxMemory;
+    /** 是否允许worker内置Executor(与Worker共享资源) */
+    private boolean allowEmbeddedExecutor;
 
-    public static WorkerInfo of(String workerId, int maxCpuCore, long maxMemory) {
+    public static WorkerInfo of(String workerId, int maxCpuCore, long maxMemory, boolean allowEmbeddedExecutor) {
         WorkerInfo workerInfo = new WorkerInfo();
         workerInfo.workerId = workerId;
         workerInfo.maxCpuCore = maxCpuCore;
         workerInfo.maxMemory = maxMemory;
+        workerInfo.allowEmbeddedExecutor = allowEmbeddedExecutor;
         return workerInfo;
     }
 
@@ -52,6 +55,13 @@ public class WorkerInfo implements Serializable {
         this.maxMemory = maxMemory;
     }
 
+    public boolean isAllowEmbeddedExecutor() {
+        return allowEmbeddedExecutor;
+    }
+
+    public void setAllowEmbeddedExecutor(boolean allowEmbeddedExecutor) {
+        this.allowEmbeddedExecutor = allowEmbeddedExecutor;
+    }
 
     @Override
     public boolean equals(Object o) {
