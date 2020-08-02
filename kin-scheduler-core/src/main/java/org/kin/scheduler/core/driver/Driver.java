@@ -88,7 +88,7 @@ public class Driver {
         } catch (Exception e) {
             throw new RegisterApplicationFailureException(e.getMessage());
         }
-        log.info("driver(appName={}, master={}) started", app.getAppName(), app.getMasterAddress());
+        log.info("driver(appName={}, master={}) started on {}", app.getAppName(), app.getMasterAddress(), rpcEnv.address().address());
     }
 
     public void stop() {
@@ -105,8 +105,6 @@ public class Driver {
             taskScheduler.stop();
         }
 
-        //shutdown rpc环境
-        rpcEnv.stop();
         TaskExecFuture.CALLBACK_EXECUTORS.shutdown();
         log.info("driver(appName={}, master={}) closed", app.getAppName(), app.getMasterAddress());
     }
@@ -184,5 +182,11 @@ public class Driver {
      */
     public final boolean cancelTask(String taskId) {
         return taskScheduler.cancelTask(taskId);
+    }
+
+    //----------------------------------------------------------------------------------------------------------------------------
+
+    public RpcEnv rpcEnv() {
+        return rpcEnv;
     }
 }

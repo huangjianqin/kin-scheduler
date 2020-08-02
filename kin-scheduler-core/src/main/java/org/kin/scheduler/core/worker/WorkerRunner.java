@@ -1,5 +1,6 @@
 package org.kin.scheduler.core.worker;
 
+import org.kin.framework.JvmCloseCleaner;
 import org.kin.kinrpc.message.core.RpcEnv;
 import org.kin.scheduler.core.cfg.Config;
 import org.kin.scheduler.core.cfg.Configs;
@@ -30,15 +31,15 @@ public class WorkerRunner {
             rpcEnv.startServer();
             Worker worker = new Worker(rpcEnv, workerId, config);
             try {
-                worker.start();
+                worker.createEndpoint();
                 synchronized (worker) {
                     try {
+                        JvmCloseCleaner.DEFAULT().add(rpcEnv::stop);
                         worker.wait();
                     } catch (InterruptedException e) {
 
                     }
                 }
-                worker.stop();
             } finally {
                 rpcEnv.stop();
             }

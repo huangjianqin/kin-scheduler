@@ -62,38 +62,52 @@ public class WorkerContext {
     }
 
     /**
+     * @return 返回剩余的cpu核心数
+     */
+    public int getLeftCpuCore() {
+        return workerInfo.getMaxCpuCore() - this.usedCpuCore;
+    }
+
+    /**
      * 是否有足够cpu核心数
      */
     public boolean hasEnoughCpuCore(int cpuCore) {
-        return this.usedCpuCore >= cpuCore;
+        return getLeftCpuCore() >= cpuCore;
     }
 
     /**
      * 占用内存
      */
-    public void useMemory(int memory) {
+    public void useMemory(long memory) {
         this.usedMemory -= memory;
     }
 
     /**
      * 回收已占用内存
      */
-    public void recoverMemory(int memory) {
+    public void recoverMemory(long memory) {
         this.usedMemory += memory;
+    }
+
+    /**
+     * @return 返回剩余的内存数
+     */
+    public long getLeftMemory() {
+        return workerInfo.getMaxMemory() - this.usedMemory;
     }
 
     /**
      * 是否有足够内存
      */
-    public boolean hasEnoughMemory(int memory) {
-        return this.usedMemory >= memory;
+    public boolean hasEnoughMemory(long memory) {
+        return getLeftMemory() >= memory;
     }
 
     /**
      * 是否有资源
      */
     public boolean hasResources() {
-        return workerInfo.getMaxCpuCore() - usedCpuCore > 0 && workerInfo.getMaxMemory() - usedMemory > 0;
+        return getLeftCpuCore() > 0 && getLeftMemory() > 0;
     }
 
     /**

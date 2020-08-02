@@ -1,7 +1,6 @@
 package org.kin.scheduler.core.master;
 
 import ch.qos.logback.classic.Logger;
-import org.kin.framework.JvmCloseCleaner;
 import org.kin.framework.concurrent.ExecutionContext;
 import org.kin.framework.utils.CollectionUtils;
 import org.kin.framework.utils.StringUtils;
@@ -10,6 +9,8 @@ import org.kin.kinrpc.message.core.RpcEndpointRef;
 import org.kin.kinrpc.message.core.RpcEnv;
 import org.kin.kinrpc.message.core.RpcMessageCallContext;
 import org.kin.kinrpc.message.core.ThreadSafeRpcEndpoint;
+import org.kin.kinrpc.message.core.message.RemoteDisconnected;
+import org.kin.kinrpc.transport.domain.RpcAddress;
 import org.kin.scheduler.core.cfg.Config;
 import org.kin.scheduler.core.driver.ApplicationDescription;
 import org.kin.scheduler.core.driver.transport.ApplicationEnd;
@@ -26,7 +27,6 @@ import org.kin.scheduler.core.master.transport.*;
 import org.kin.scheduler.core.worker.domain.WorkerInfo;
 import org.kin.scheduler.core.worker.transport.RegisterWorker;
 import org.kin.scheduler.core.worker.transport.TaskExecFileContent;
-import org.kin.scheduler.core.worker.transport.UnRegisterWorker;
 import org.kin.scheduler.core.worker.transport.WorkerHeartbeat;
 
 import java.io.Serializable;
@@ -75,32 +75,22 @@ public class Master extends ThreadSafeRpcEndpoint {
     }
 
     //-------------------------------------------------------------------------------------------------
-    public void start() {
+    public void createEndpoint() {
         if (isStopped) {
             return;
         }
         rpcEnv.register(name, this);
     }
 
-    public void stop() {
-        if (isStopped) {
-            return;
-        }
-        rpcEnv.unregister(name, this);
-    }
-
     @Override
     protected void onStart() {
         super.onStart();
 
-        rpcEnv.startServer();
         //定时心跳超时检查
         commonWorkers.scheduleAtFixedRate(() -> send2Self(CheckHeartbeatTimeout.INSTANCE),
                 config.getHeartbeatCheckInterval(), config.getHeartbeatCheckInterval(), TimeUnit.MILLISECONDS);
 
-        JvmCloseCleaner.DEFAULT().add(JvmCloseCleaner.MAX_PRIORITY, this::stop);
-
-        log.info("Master '{}' started", name);
+        log.info("Master '{}' started on {}", name, rpcEnv.address().address());
     }
 
     @Override
@@ -120,8 +110,6 @@ public class Master extends ThreadSafeRpcEndpoint {
         //master endpoint相关
         if (message instanceof RegisterWorker) {
             registerWorker((RegisterWorker) message);
-        } else if (message instanceof UnRegisterWorker) {
-            unregisterWorker(((UnRegisterWorker) message).getWorkerId());
         } else if (message instanceof WorkerHeartbeat) {
             workerHeartbeat((WorkerHeartbeat) message);
         } else if (message instanceof ExecutorStateChanged) {
@@ -133,11 +121,12 @@ public class Master extends ThreadSafeRpcEndpoint {
         else if (message instanceof RegisterApplication) {
             registerApplication(context, (RegisterApplication) message);
         } else if (message instanceof ApplicationEnd) {
-            applicationEnd((ApplicationEnd) message);
+            applicationEnd(((ApplicationEnd) message).getAppName());
         } else if (message instanceof ReadFile) {
             commonWorkers.execute(() -> readFile(context, (ReadFile) message));
+        } else if (message instanceof RemoteDisconnected) {
+            remoteDisconnected(((RemoteDisconnected) message).getRpcAddress());
         }
-
     }
 
     //------------------------------------------------------------Master endpoint-------------------------------------------------------------------
@@ -163,7 +152,9 @@ public class Master extends ThreadSafeRpcEndpoint {
                 worker = new WorkerContext(workerInfo, workerRef);
                 workers.put(workerId, worker);
 
-                log.info("worker '{}' registered >>>>> cpu:{}, memory:{}", workerId, workerInfo.getMaxCpuCore(), workerInfo.getMaxMemory());
+                log.info("worker '{}' registered >>>>> address:{}, cpu:{}, memory:{}",
+                        workerId, workerRef.getEndpointAddress().getRpcAddress().address(),
+                        workerInfo.getMaxCpuCore(), workerInfo.getMaxMemory());
                 workerRef.send(RegisterWorkerResp.success());
                 //调度资源
                 scheduleResource();
@@ -188,6 +179,7 @@ public class Master extends ThreadSafeRpcEndpoint {
             }
 
             workerStateChanged(worker);
+            log.info("worker '{}' unregistered", workerId);
         }
     }
 
@@ -409,10 +401,9 @@ public class Master extends ThreadSafeRpcEndpoint {
     /**
      * 通知master application完成, 释放资源
      *
-     * @param applicationEnd 也就是appName
+     * @param appName
      */
-    private void applicationEnd(ApplicationEnd applicationEnd) {
-        String appName = applicationEnd.getAppName();
+    private void applicationEnd(String appName) {
         if (!isStopped) {
             ApplicationContext driver = drivers.remove(appName);
             if (Objects.nonNull(driver)) {
@@ -448,6 +439,24 @@ public class Master extends ThreadSafeRpcEndpoint {
             }
         }
         context.reply(TaskExecFileContent.fail(workerId, path, fromLineNum, String.format("unknow worker(workerId='%s')", workerId)));
+    }
+
+    //-------------------------------------------------------------内部-------------------------------------------
+    private void remoteDisconnected(RpcAddress rpcAddress) {
+        List<WorkerContext> disconnectedWorker = workers.values().stream()
+                .filter(wc -> wc.ref().getEndpointAddress().getRpcAddress().equals(rpcAddress))
+                .collect(Collectors.toList());
+        for (WorkerContext workerContext : disconnectedWorker) {
+            unregisterWorker(workerContext.getWorkerInfo().getWorkerId());
+        }
+
+
+        List<ApplicationContext> disconnectedApplications = drivers.values().stream()
+                .filter(ac -> ac.ref().getEndpointAddress().getRpcAddress().equals(rpcAddress))
+                .collect(Collectors.toList());
+        for (ApplicationContext disconnectedApplication : disconnectedApplications) {
+            applicationEnd(disconnectedApplication.getAppDesc().getAppName());
+        }
     }
 
     /**

@@ -1,7 +1,6 @@
 package org.kin.scheduler.core.worker;
 
 import ch.qos.logback.classic.Logger;
-import org.kin.framework.JvmCloseCleaner;
 import org.kin.framework.concurrent.keeper.Keeper;
 import org.kin.framework.utils.CommandUtils;
 import org.kin.framework.utils.ExceptionUtils;
@@ -11,6 +10,8 @@ import org.kin.kinrpc.message.core.RpcEndpointRef;
 import org.kin.kinrpc.message.core.RpcEnv;
 import org.kin.kinrpc.message.core.RpcMessageCallContext;
 import org.kin.kinrpc.message.core.ThreadSafeRpcEndpoint;
+import org.kin.kinrpc.message.core.message.RemoteDisconnected;
+import org.kin.kinrpc.transport.domain.RpcAddress;
 import org.kin.scheduler.core.cfg.Config;
 import org.kin.scheduler.core.driver.transport.ReadFile;
 import org.kin.scheduler.core.executor.Executor;
@@ -20,12 +21,10 @@ import org.kin.scheduler.core.log.Loggers;
 import org.kin.scheduler.core.master.Master;
 import org.kin.scheduler.core.master.transport.LaunchExecutor;
 import org.kin.scheduler.core.master.transport.RegisterWorkerResp;
-import org.kin.scheduler.core.master.transport.UnRegisterWorkerResp;
 import org.kin.scheduler.core.master.transport.WorkerReRegister;
 import org.kin.scheduler.core.worker.domain.WorkerInfo;
 import org.kin.scheduler.core.worker.transport.RegisterWorker;
 import org.kin.scheduler.core.worker.transport.TaskExecFileContent;
-import org.kin.scheduler.core.worker.transport.UnRegisterWorker;
 import org.kin.scheduler.core.worker.transport.WorkerHeartbeat;
 
 import java.io.*;
@@ -52,6 +51,8 @@ public class Worker extends ThreadSafeRpcEndpoint {
     /** 定时发送心跳keeper */
     private Keeper.KeeperStopper heartbeatKeeper;
     private volatile boolean isStopped;
+    /** 是否已注册 */
+    private volatile boolean registered;
 
     public Worker(RpcEnv rpcEnv, String workerId, Config config) {
         super(rpcEnv);
@@ -59,8 +60,6 @@ public class Worker extends ThreadSafeRpcEndpoint {
         this.config = config;
         this.masterRef = rpcEnv.createEndpointRef(config.getMasterHost(), config.getMasterPort(), Master.DEFAULT_NAME);
         log = Loggers.worker(config.getLogPath(), workerId);
-
-        JvmCloseCleaner.DEFAULT().add(JvmCloseCleaner.MAX_PRIORITY, this::stop);
     }
 
     @Override
@@ -70,17 +69,21 @@ public class Worker extends ThreadSafeRpcEndpoint {
         registerWorker();
         //启动定时心跳
         heartbeatKeeper = Keeper.keep(this::sendHeartbeat);
-
-        log.info("worker({}) started", workerId);
+        log.info("worker({}) started on {}", workerId, rpcEnv.address().address());
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-
+        if (isStopped) {
+            return;
+        }
         isStopped = true;
-        //取消注册
-        unRegisterWorker();
+        //关闭内嵌executor
+        for (Executor executor : embeddedExecutors.values()) {
+            executor.stop();
+        }
+        //TODO 关闭进程级executor
         if (Objects.nonNull(heartbeatKeeper)) {
             heartbeatKeeper.stop();
         }
@@ -94,8 +97,6 @@ public class Worker extends ThreadSafeRpcEndpoint {
         Serializable message = context.getMessage();
         if (message instanceof RegisterWorkerResp) {
             registerWorkerResp((RegisterWorkerResp) message);
-        } else if (message instanceof UnRegisterWorkerResp) {
-            unRegisterWorkerResp();
         } else if (message instanceof LaunchExecutor) {
             launchExecutor((LaunchExecutor) message);
         } else if (message instanceof ReadFile) {
@@ -104,21 +105,16 @@ public class Worker extends ThreadSafeRpcEndpoint {
             registerWorker();
         } else if (message instanceof ExecutorStateChanged) {
             executorStateChanged((ExecutorStateChanged) message);
+        } else if (message instanceof RemoteDisconnected) {
+            remoteDisconnected(((RemoteDisconnected) message).getRpcAddress());
         }
     }
 
-    public void start() {
+    public void createEndpoint() {
         if (isStopped) {
             return;
         }
         rpcEnv.register(workerId, this);
-    }
-
-    public void stop() {
-        if (isStopped) {
-            return;
-        }
-        rpcEnv.unregister(workerId, this);
     }
 
     //---------------------------------------Worker endpoint-------------------------------------------------------------------------
@@ -127,7 +123,7 @@ public class Worker extends ThreadSafeRpcEndpoint {
      * 通知master注册worker
      */
     private void registerWorker() {
-        if (isStopped) {
+        if (isStopped || registered) {
             return;
         }
         //注册worker
@@ -141,40 +137,19 @@ public class Worker extends ThreadSafeRpcEndpoint {
         if (isStopped) {
             return;
         }
-        if (!registerWorkerResp.isSuccess()) {
-            log.error("worker '{}' register error >>> {}", workerId, registerWorkerResp.getDesc());
-        } else {
+        if (registerWorkerResp.isSuccess()) {
             log.info("worker '{}' registered >>>>> cpu:{}, memory:{}", workerId, config.getCpuCore(), 0);
+            registered = true;
+        } else {
+            log.error("worker '{}' register error >>> {}", workerId, registerWorkerResp.getDesc());
         }
-    }
-
-    /**
-     * 通知master注销worker
-     */
-    private void unRegisterWorker() {
-        if (isStopped) {
-            return;
-        }
-        //取消注册worker
-        masterRef.send(UnRegisterWorker.of(workerId));
-    }
-
-    /**
-     * 注销worker返回
-     */
-    private void unRegisterWorkerResp() {
-        if (isStopped) {
-            return;
-        }
-        //取消注册worker
-        log.info("worker '{}' unRegistered", workerId);
     }
 
     /**
      * worker定时发送心跳逻辑
      */
     private void sendHeartbeat() {
-        if (isStopped) {
+        if (isStopped || !registered) {
             return;
         }
         long heartbeatTime = config.getHeartbeatTime();
@@ -191,7 +166,7 @@ public class Worker extends ThreadSafeRpcEndpoint {
     }
 
     private String appExecutorId(String appName, String executorId) {
-        return appName.concat("/").concat("executorId");
+        return appName.concat("/").concat(executorId);
     }
 
     /**
@@ -213,7 +188,7 @@ public class Worker extends ThreadSafeRpcEndpoint {
             if (config.isAllowEmbeddedExecutor()) {
                 Executor executor = new Executor(rpcEnv, appName, workerId, executorId, config.getLogPath(),
                         launchInfo.getExecutorSchedulerAddress(), executorWorkerAddress, true);
-                executor.start();
+                executor.createEndpoint();
 
                 embeddedExecutors.put(appExecutorId(appName, executorId), executor);
 
@@ -313,6 +288,19 @@ public class Worker extends ThreadSafeRpcEndpoint {
                     embeddedExecutors.remove(
                             appExecutorId(executorStateChanged.getAppName(), executorStateChanged.getExecutorId()));
             invalidExecutor.stop();
+        }
+    }
+
+    private void remoteDisconnected(RpcAddress rpcAddress) {
+        if (isStopped) {
+            return;
+        }
+
+        if (masterRef.getEndpointAddress().getRpcAddress().equals(rpcAddress)) {
+            //master 断链
+            registered = false;
+            rpcEnv.removeOutBox(masterRef.getEndpointAddress().getRpcAddress());
+            rpcEnv.removeClient(masterRef.getEndpointAddress().getRpcAddress());
         }
     }
 }

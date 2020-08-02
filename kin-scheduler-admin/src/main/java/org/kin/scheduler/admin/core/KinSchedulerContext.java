@@ -102,6 +102,8 @@ public class KinSchedulerContext implements InitializingBean, ApplicationListene
             //spring 容器初始化后, 初始化rpc环境和master
             rpcEnv = new RpcEnv(host, port, SysUtils.getSuitableThreadNum(),
                     Serializers.getSerializer(serialize), compression);
+            //启动服务器
+            rpcEnv.startServer();
 
             Config config = new Config();
             config.setMasterHost(host);
@@ -109,16 +111,13 @@ public class KinSchedulerContext implements InitializingBean, ApplicationListene
             config.setLogPath(logPath);
 
             master = new Master(rpcEnv, config);
-            master.start();
+            master.createEndpoint();
         }
     }
 
     @PreDestroy
     public void shutdown() {
         TaskScheduleKeeper.instance().stop();
-
-        driver.stop();
-        master.stop();
         rpcEnv.stop();
     }
 

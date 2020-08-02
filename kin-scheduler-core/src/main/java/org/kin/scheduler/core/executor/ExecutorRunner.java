@@ -1,5 +1,6 @@
 package org.kin.scheduler.core.executor;
 
+import org.kin.framework.JvmCloseCleaner;
 import org.kin.framework.utils.SysUtils;
 import org.kin.kinrpc.message.core.RpcEnv;
 import org.kin.kinrpc.transport.serializer.Serializers;
@@ -33,9 +34,10 @@ public class ExecutorRunner {
             //创建executor
             Executor executor = new Executor(rpcEnv, appName, workerId, executorId, logBasePath, driverAddress, workerAddress, false);
             try {
-                executor.start();
+                executor.createEndpoint();
                 synchronized (executor) {
                     try {
+                        JvmCloseCleaner.DEFAULT().add(rpcEnv::stop);
                         executor.wait();
                     } catch (InterruptedException e) {
                         throw e;
@@ -51,7 +53,6 @@ public class ExecutorRunner {
                 executor.executorStateChanged(ExecutorState.FAIL);
             } finally {
                 //executor stop
-                executor.stop();
                 rpcEnv.stop();
             }
         }

@@ -1,5 +1,6 @@
 package org.kin.scheduler.core.master;
 
+import org.kin.framework.JvmCloseCleaner;
 import org.kin.kinrpc.message.core.RpcEnv;
 import org.kin.scheduler.core.cfg.Config;
 import org.kin.scheduler.core.cfg.Configs;
@@ -17,19 +18,19 @@ public class MasterRunner {
         //创建rpc环境
         RpcEnv rpcEnv = new RpcEnv(config.getMasterHost(), config.getMasterPort(), config.getCpuCore(),
                 config.getSerializer(), config.isCompression());
-        //启动server
         rpcEnv.startServer();
+        //启动server
         Master master = new Master(rpcEnv, config);
         try {
-            master.start();
+            master.createEndpoint();
             synchronized (master) {
                 try {
+                    JvmCloseCleaner.DEFAULT().add(rpcEnv::stop);
                     master.wait();
                 } catch (InterruptedException e) {
 
                 }
             }
-            master.stop();
         } finally {
             rpcEnv.stop();
         }
