@@ -86,6 +86,7 @@
     <!--                                       logger                                                       -->
     <logger name="error" level="ERROR">
         <appender-ref ref="asyncERROR"/>
+        <appender-ref ref="CONSOLE"/>
     </logger>
 
     <logger name="org.kin.transport" level="WARN">
@@ -101,12 +102,12 @@
     <logger name="org.kin.scheduler" level="INFO">
         <appender-ref ref="asyncScheduler"/>
         <appender-ref ref="asyncERROR"/>
+        <appender-ref ref="CONSOLE"/>
     </logger>
 
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="asyncSTDOUT"/>
-        <appender-ref ref="asyncERROR"/>
     </root>
 
     <!--<appender name="FILE" class="ch.qos.logback.core.FileAppender">-->

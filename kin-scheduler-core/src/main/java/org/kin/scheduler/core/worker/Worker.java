@@ -16,7 +16,6 @@ import org.kin.scheduler.core.cfg.Config;
 import org.kin.scheduler.core.driver.transport.ReadFile;
 import org.kin.scheduler.core.executor.Executor;
 import org.kin.scheduler.core.executor.transport.ExecutorStateChanged;
-import org.kin.scheduler.core.log.LogUtils;
 import org.kin.scheduler.core.log.Loggers;
 import org.kin.scheduler.core.master.Master;
 import org.kin.scheduler.core.master.transport.LaunchExecutor;
@@ -199,8 +198,8 @@ public class Worker extends ThreadSafeRpcEndpoint {
                 int commandExecResult = 0;
                 String reason = "";
                 try {
-                    commandExecResult = CommandUtils.execCommand("java -jar kin-scheduler-admin.jar ExecutorRunner",
-                            LogUtils.getExecutorLogFileName(config.getLogPath(), workerId, executorId), "/",
+                    commandExecResult = CommandUtils.execCommand("java -server -cp lib/* org.kin.scheduler.core.executor.ExecutorRunner",
+                            "", "./",
                             appName, workerId, executorId, config.getWorkerHost(), String.valueOf(executorPort),
                             config.getLogPath(), launchInfo.getExecutorSchedulerAddress(), executorWorkerAddress,
                             config.getSerialize(), Boolean.toString(config.isCompression()));

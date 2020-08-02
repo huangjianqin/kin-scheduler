@@ -55,6 +55,20 @@ public class ExecutorRunner {
                 //executor stop
                 rpcEnv.stop();
             }
+        } else {
+            System.err.println("参数有误!!!");
+            StringBuffer helpStrBuff = new StringBuffer();
+            helpStrBuff.append("参数1: ").append("应用ming");
+            helpStrBuff.append("参数2: ").append("workerId");
+            helpStrBuff.append("参数3: ").append("executorId");
+            helpStrBuff.append("参数4: ").append("绑定的host");
+            helpStrBuff.append("参数5: ").append("绑定的端口");
+            helpStrBuff.append("参数6: ").append("日志base路径");
+            helpStrBuff.append("参数7: ").append("driver远程连接地址");
+            helpStrBuff.append("参数8: ").append("worker远程连接地址");
+            helpStrBuff.append("参数9: ").append("序列化方式");
+            helpStrBuff.append("参数10: ").append("通信是否支持压缩");
+            System.err.println(helpStrBuff.toString());
         }
     }
 }
