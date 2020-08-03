@@ -99,7 +99,8 @@ public class Executor extends ThreadSafeRpcEndpoint {
         workerRef.send(ExecutorStateChanged.running(appName, executorId));
         //往scheduler注册exeuctor
         schedulerRef.send(RegisterExecutor.of(workerId, executorId, ref()));
-        log.info("executor({}) started on {}", executorId, rpcEnv.address().address());
+        log.info("executor({}) started on {} with {} processor",
+                executorId, rpcEnv.address().address(), Runtime.getRuntime().availableProcessors());
     }
 
     @Override

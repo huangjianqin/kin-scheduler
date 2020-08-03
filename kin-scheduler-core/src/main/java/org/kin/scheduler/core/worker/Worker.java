@@ -28,6 +28,7 @@ import org.kin.scheduler.core.worker.transport.WorkerHeartbeat;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -191,14 +192,23 @@ public class Worker extends ThreadSafeRpcEndpoint {
 
                 embeddedExecutors.put(appExecutorId(appName, executorId), executor);
 
-                log.info("lauch executor success >>> appName:{}, executorId:{}, executorAddress:{}", appName, executorId, NetUtils.getIpPort(config.getWorkerHost(), executorPort));
+                log.info("lauch executor success >>> appName:{}, executorId:{}, executorAddress:{}",
+                        appName, executorId, NetUtils.getIpPort(config.getWorkerHost(), executorPort));
             } else {
                 //启动新jvm来启动Executor
-                //TODO 通过启动进程控制CPU使用数
+                /**
+                 * 控制jvm使用处理器数量
+                 * JDK 8u191之后 可通过-XX:ActiveProcessorCount=2
+                 * JDK 8u121之后 可通过 taskset -c 0-1 command param....
+                 */
                 int commandExecResult = 0;
                 String reason = "";
+                String command =
+                        MessageFormat.format(
+                                "java -server -XX:ActiveProcessorCount={0} -cp lib/* org.kin.scheduler.core.executor.ExecutorRunner",
+                                cpuCore);
                 try {
-                    commandExecResult = CommandUtils.execCommand("java -server -cp lib/* org.kin.scheduler.core.executor.ExecutorRunner",
+                    commandExecResult = CommandUtils.execCommand(command,
                             "", "./",
                             appName, workerId, executorId, config.getWorkerHost(), String.valueOf(executorPort),
                             config.getLogPath(), launchInfo.getExecutorSchedulerAddress(), executorWorkerAddress,
@@ -207,7 +217,8 @@ public class Worker extends ThreadSafeRpcEndpoint {
                     reason = ExceptionUtils.getExceptionDesc(e);
                 }
                 if (commandExecResult == 0) {
-                    log.info("lauch executor success >>> appName:{}, executorId:{}, executorAddress:{}", appName, executorId, NetUtils.getIpPort(config.getWorkerHost(), executorPort));
+                    log.info("lauch executor success >>> appName:{}, executorId:{}, executorAddress:{}",
+                            appName, executorId, NetUtils.getIpPort(config.getWorkerHost(), executorPort));
                 } else {
                     log.error("lauch executor fail >>> ".concat("executor launch fail >>>>>").concat(System.lineSeparator()).concat(reason));
                 }
