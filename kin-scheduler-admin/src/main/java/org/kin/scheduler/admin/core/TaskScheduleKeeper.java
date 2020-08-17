@@ -2,8 +2,8 @@ package org.kin.scheduler.admin.core;
 
 import org.kin.framework.concurrent.TimeRing;
 import org.kin.framework.concurrent.keeper.Keeper;
+import org.kin.framework.concurrent.partition.EfficientHashPartitioner;
 import org.kin.framework.concurrent.partition.PartitionTaskExecutor;
-import org.kin.framework.concurrent.partition.partitioner.impl.EfficientHashPartitioner;
 import org.kin.framework.utils.CollectionUtils;
 import org.kin.scheduler.admin.dao.TaskInfoDao;
 import org.kin.scheduler.admin.domain.TimeType;
