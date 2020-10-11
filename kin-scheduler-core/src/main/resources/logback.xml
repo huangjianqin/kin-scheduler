@@ -16,10 +16,10 @@
             <pattern>[%p] %d{yyyy-MM-dd HH:mm:ss SSS} [%t] | %C.%M\(%L\) : %msg%n%ex</pattern>
         </encoder>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>DEBUG</level>
+            <level>INFO</level>
         </filter>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>${logDir}/%d{yyyy-MM-dd}/stdout.log</fileNamePattern>
+            <fileNamePattern>${logDir}/%d{yyyy-MM-dd}/stdout.log.%d{yyyy-MM-dd}</fileNamePattern>
             <!--<maxHistory>30</maxHistory>-->
         </rollingPolicy>
     </appender>
@@ -33,12 +33,12 @@
             <level>ERROR</level>
         </filter>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>${logDir}/%d{yyyy-MM-dd}/error.log</fileNamePattern>
+            <fileNamePattern>${logDir}/%d{yyyy-MM-dd}/error.log.%d{yyyy-MM-dd}</fileNamePattern>
             <!--<maxHistory>30</maxHistory>-->
         </rollingPolicy>
     </appender>
 
-    <appender name="rpc" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <appender name="RPC" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <Append>true</Append>
         <encoder>
             <pattern>[%p] %d{yyyy-MM-dd HH:mm:ss SSS} [%t] | %C.%M\(%L\) : %msg%n%ex</pattern>
@@ -52,7 +52,7 @@
         </rollingPolicy>
     </appender>
 
-    <appender name="scheduler" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <appender name="SCHEDULER" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <Append>true</Append>
         <encoder>
             <pattern>[%p] %d{yyyy-MM-dd HH:mm:ss SSS} [%t] | %C.%M\(%L\) : %msg%n%ex</pattern>
@@ -66,49 +66,29 @@
         </rollingPolicy>
     </appender>
 
-    <!--                                       async                                                       -->
-    <appender name="asyncSTDOUT" class="ch.qos.logback.classic.AsyncAppender">
-        <appender-ref ref="STDOUT"/>
-    </appender>
-
-    <appender name="asyncERROR" class="ch.qos.logback.classic.AsyncAppender">
-        <appender-ref ref="ERROR"/>
-    </appender>
-
-    <appender name="asyncRpc" class="ch.qos.logback.classic.AsyncAppender">
-        <appender-ref ref="rpc"/>
-    </appender>
-
-    <appender name="asyncScheduler" class="ch.qos.logback.classic.AsyncAppender">
-        <appender-ref ref="scheduler"/>
-    </appender>
-
     <!--                                       logger                                                       -->
     <logger name="error" level="ERROR">
-        <appender-ref ref="asyncERROR"/>
-        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="ERROR"/>
     </logger>
 
-    <logger name="org.kin.transport" level="WARN">
-        <appender-ref ref="asyncRpc"/>
-        <appender-ref ref="asyncERROR"/>
-    </logger>
+    <logger name="org.kin.transport" level="WARN"/>
 
     <logger name="org.kin.kinrpc" level="WARN">
-        <appender-ref ref="asyncRpc"/>
-        <appender-ref ref="asyncERROR"/>
+        <appender-ref ref="RPC"/>
+        <appender-ref ref="ERROR"/>
     </logger>
 
     <logger name="org.kin.scheduler" level="INFO">
-        <appender-ref ref="asyncScheduler"/>
-        <appender-ref ref="asyncERROR"/>
-        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="SCHEDULER"/>
+        <appender-ref ref="ERROR"/>
     </logger>
 
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
-        <appender-ref ref="asyncSTDOUT"/>
+        <appender-ref ref="STDOUT"/>
+        <appender-ref ref="ERROR"/>
     </root>
+
 
     <!--<appender name="FILE" class="ch.qos.logback.core.FileAppender">-->
     <!--<File>/log</File>-->
