@@ -47,7 +47,7 @@ public class Driver {
     //---------------------------------------------------------------------------------------------------------------------
     public static Driver common(Application app) {
         RpcEnv rpcEnv = new RpcEnv("0.0.0.0", app.getDriverPort(), SysUtils.CPU_NUM,
-                Serializers.getSerializer(app.getSerialize()), app.isCompression());
+                Serializers.getSerializer(app.getSerializerCode()), app.getCompressionType());
         rpcEnv.startServer();
         return new Driver(rpcEnv, app, new DefaultTaskScheduler(rpcEnv, app));
     }

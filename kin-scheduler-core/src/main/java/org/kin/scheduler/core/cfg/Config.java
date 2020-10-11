@@ -4,6 +4,7 @@ import org.kin.framework.utils.SysUtils;
 import org.kin.kinrpc.transport.serializer.Serializer;
 import org.kin.kinrpc.transport.serializer.SerializerType;
 import org.kin.kinrpc.transport.serializer.Serializers;
+import org.kin.transport.netty.CompressionType;
 
 /**
  * 配置封装类
@@ -31,9 +32,9 @@ public class Config {
     /** CPU核心数, 默认等于系统cpu核心数 */
     private int cpuCore = SysUtils.CPU_NUM;
     /** 通信序列化方式, 默认是kryo */
-    private String serialize = SerializerType.KRYO.name();
-    /** 通信是否支持压缩, more不支持 */
-    private boolean compression;
+    private String serializer = SerializerType.KRYO.name();
+    /** 通信是否支持压缩 */
+    private CompressionType compressionType = CompressionType.NONE;
 
     public void check() {
     }
@@ -42,8 +43,8 @@ public class Config {
         return heartbeatTime + 2000;
     }
 
-    public Serializer getSerializer() {
-        return Serializers.getSerializer(serialize);
+    public Serializer getSerializerObj() {
+        return Serializers.getSerializer(serializer);
     }
 
     //setter && getter
@@ -120,19 +121,19 @@ public class Config {
         this.cpuCore = cpuCore;
     }
 
-    public String getSerialize() {
-        return serialize;
+    public String getSerializer() {
+        return serializer;
     }
 
-    public void setSerialize(String serialize) {
-        this.serialize = serialize;
+    public void setSerializer(String serializer) {
+        this.serializer = serializer;
     }
 
-    public boolean isCompression() {
-        return compression;
+    public CompressionType getCompressionType() {
+        return compressionType;
     }
 
-    public void setCompression(boolean compression) {
-        this.compression = compression;
+    public void setCompressionType(CompressionType compressionType) {
+        this.compressionType = compressionType;
     }
 }

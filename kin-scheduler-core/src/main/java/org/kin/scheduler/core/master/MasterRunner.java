@@ -17,7 +17,7 @@ public class MasterRunner {
 
         //创建rpc环境
         RpcEnv rpcEnv = new RpcEnv(config.getMasterHost(), config.getMasterPort(), config.getCpuCore(),
-                config.getSerializer(), config.isCompression());
+                config.getSerializerObj(), config.getCompressionType());
         rpcEnv.startServer();
         //启动server
         Master master = new Master(rpcEnv, config);

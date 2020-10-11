@@ -1,10 +1,13 @@
 package org.kin.scheduler.core.executor;
 
+import com.google.common.base.Preconditions;
 import org.kin.framework.JvmCloseCleaner;
 import org.kin.framework.utils.SysUtils;
 import org.kin.kinrpc.message.core.RpcEnv;
+import org.kin.kinrpc.transport.serializer.Serializer;
 import org.kin.kinrpc.transport.serializer.Serializers;
 import org.kin.scheduler.core.executor.domain.ExecutorState;
+import org.kin.transport.netty.CompressionType;
 
 /**
  * worker以commandline方式启动Executor
@@ -23,12 +26,19 @@ public class ExecutorRunner {
             String logBasePath = args[5];
             String driverAddress = args[6];
             String workerAddress = args[7];
-            String serialize = args[8];
-            boolean compression = Boolean.parseBoolean(args[9]);
+            String serializerName = args[8];
+
+            Serializer serializer = Serializers.getSerializer(serializerName);
+
+            int compressionTypeId = Integer.parseInt(args[9]);
+            CompressionType compressionType = CompressionType.getById(compressionTypeId);
+
+            Preconditions.checkNotNull(serializer, String.format("can't find Serializer with type = %s", serializerName));
+            Preconditions.checkNotNull(compressionType, String.format("can't find CompressionType with id = %s", compressionTypeId));
 
             //创建rpc env
             //外部进程通过commandline方式限制进程能使用的cpu核心数
-            RpcEnv rpcEnv = new RpcEnv(host, port, SysUtils.getSuitableThreadNum(), Serializers.getSerializer(serialize), compression);
+            RpcEnv rpcEnv = new RpcEnv(host, port, SysUtils.getSuitableThreadNum(), serializer, compressionType);
             //启动server
             rpcEnv.startServer();
             //创建executor

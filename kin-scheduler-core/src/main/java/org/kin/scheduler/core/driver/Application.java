@@ -1,8 +1,12 @@
 package org.kin.scheduler.core.driver;
 
+import com.google.common.base.Preconditions;
 import org.kin.framework.utils.SysUtils;
+import org.kin.kinrpc.transport.serializer.Serializer;
 import org.kin.kinrpc.transport.serializer.SerializerType;
+import org.kin.kinrpc.transport.serializer.Serializers;
 import org.kin.scheduler.core.master.executor.allocate.AllocateStrategyType;
+import org.kin.transport.netty.CompressionType;
 
 /**
  * application配置
@@ -28,9 +32,9 @@ public class Application {
     /** application是否缓存结果 */
     private boolean dropResult;
     /** 通信序列化方式, 默认是kryo */
-    private String serialize = SerializerType.KRYO.name();
-    /** 通信是否支持压缩, more不支持 */
-    private boolean compression;
+    private int serializerCode = SerializerType.KRYO.getCode();
+    /** 通信是否支持压缩 */
+    private CompressionType compressionType = CompressionType.NONE;
 
     public Application() {
     }
@@ -95,13 +99,20 @@ public class Application {
         return this;
     }
 
-    public Application serialize(String serialize) {
-        this.serialize = serialize;
+    public Application serializer(String serializerName) {
+        Serializer serializer = Serializers.getSerializer(serializerName);
+        Preconditions.checkNotNull(String.format("%s serializer must loaded", serializerName));
+        this.serializerCode = serializer.type();
         return this;
     }
 
-    public Application compression() {
-        this.compression = true;
+    public Application serializer(SerializerType serializerType) {
+        this.serializerCode = serializerType.getCode();
+        return this;
+    }
+
+    public Application compression(CompressionType compressionType) {
+        this.compressionType = compressionType;
         return this;
     }
 
@@ -138,11 +149,11 @@ public class Application {
         return dropResult;
     }
 
-    public String getSerialize() {
-        return serialize;
+    public int getSerializerCode() {
+        return serializerCode;
     }
 
-    public boolean isCompression() {
-        return compression;
+    public CompressionType getCompressionType() {
+        return compressionType;
     }
 }

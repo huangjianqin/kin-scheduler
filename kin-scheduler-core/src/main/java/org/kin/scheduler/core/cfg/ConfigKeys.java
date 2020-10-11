@@ -98,7 +98,7 @@ public enum ConfigKeys {
     Serialize("通信序列化方式") {
         @Override
         void updateConfig(Config config, Properties properties) {
-            config.setSerialize(ConfigUtils.getValue(properties, this));
+            config.setSerializer(ConfigUtils.getValue(properties, this));
         }
     },
     /**
@@ -107,7 +107,7 @@ public enum ConfigKeys {
     Compression("通信是否支持压缩") {
         @Override
         void updateConfig(Config config, Properties properties) {
-            config.setCompression(ConfigUtils.getValue(properties, this));
+            config.setCompressionType(ConfigUtils.getValue(properties, this));
         }
     };
 

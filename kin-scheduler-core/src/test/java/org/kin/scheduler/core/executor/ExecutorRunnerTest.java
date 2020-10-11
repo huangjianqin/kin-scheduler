@@ -21,6 +21,6 @@ public class ExecutorRunnerTest {
                 "", "./",
                 "测试", "worker-1", "executor-1", config.getWorkerHost(), String.valueOf(5000),
                 config.getLogPath(), "localHost:8080", "localHost:5000",
-                config.getSerialize(), Boolean.toString(config.isCompression()));
+                config.getSerializer(), Integer.toString(config.getCompressionType().getId()));
     }
 }
