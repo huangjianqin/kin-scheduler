@@ -43,79 +43,6 @@ public class Application {
         this.appName = appName;
     }
 
-    //-----------------------------------------------------------------------------------------------
-    public static Application build() {
-        return new Application();
-    }
-
-    public static Application build(String appName) {
-        return new Application(appName);
-    }
-
-    //-----------------------------------------------------------------------------------------------
-
-    public Application appName(String appName) {
-        this.appName = appName;
-        return this;
-    }
-
-    public Application master(String masterAddress) {
-        this.masterAddress = masterAddress;
-        return this;
-    }
-
-    public Application master(String masterAddress, AllocateStrategyType allocateStrategyType) {
-        master(masterAddress);
-        return allocateStrategy(allocateStrategyType);
-    }
-
-    public Application driverPort(int driverPort) {
-        this.driverPort = driverPort;
-        return this;
-    }
-
-    public Application allocateStrategy(AllocateStrategyType allocateStrategyType) {
-        this.allocateStrategyType = allocateStrategyType;
-        return this;
-    }
-
-    public Application cpuCore(int cpuCoreNum) {
-        this.cpuCoreNum = cpuCoreNum;
-        return this;
-    }
-
-    public Application minCoresPerExecutor(int minCoresPerExecutor) {
-        this.minCoresPerExecutor = minCoresPerExecutor;
-        return this;
-    }
-
-    public Application oneExecutorPerWorker() {
-        this.oneExecutorPerWorker = true;
-        return this;
-    }
-
-    public Application dropResult() {
-        this.dropResult = true;
-        return this;
-    }
-
-    public Application serializer(String serializerName) {
-        Serializer serializer = Serializers.getSerializer(serializerName);
-        Preconditions.checkNotNull(String.format("%s serializer must loaded", serializerName));
-        this.serializerCode = serializer.type();
-        return this;
-    }
-
-    public Application serializer(SerializerType serializerType) {
-        this.serializerCode = serializerType.getCode();
-        return this;
-    }
-
-    public Application compression(CompressionType compressionType) {
-        this.compressionType = compressionType;
-        return this;
-    }
-
     //getter
     public String getAppName() {
         return appName;
@@ -155,5 +82,92 @@ public class Application {
 
     public CompressionType getCompressionType() {
         return compressionType;
+    }
+
+    //-----------------------------------------builder------------------------------------------------------
+    public static ApplicationBuilder builder() {
+        return new ApplicationBuilder();
+    }
+
+    public static ApplicationBuilder builder(String appName) {
+        return new ApplicationBuilder(appName);
+    }
+
+    public static class ApplicationBuilder {
+        private Application application;
+
+        public ApplicationBuilder() {
+            this("kin-scheduler");
+        }
+
+        public Application build() {
+            return application;
+        }
+
+        public ApplicationBuilder(String appName) {
+            this.application = new Application(appName);
+        }
+
+        public ApplicationBuilder appName(String appName) {
+            application.appName = appName;
+            return this;
+        }
+
+        public ApplicationBuilder master(String masterAddress) {
+            application.masterAddress = masterAddress;
+            return this;
+        }
+
+        public ApplicationBuilder master(String masterAddress, AllocateStrategyType allocateStrategyType) {
+            master(masterAddress);
+            return allocateStrategy(allocateStrategyType);
+        }
+
+        public ApplicationBuilder driverPort(int driverPort) {
+            application.driverPort = driverPort;
+            return this;
+        }
+
+        public ApplicationBuilder allocateStrategy(AllocateStrategyType allocateStrategyType) {
+            application.allocateStrategyType = allocateStrategyType;
+            return this;
+        }
+
+        public ApplicationBuilder cpuCore(int cpuCoreNum) {
+            application.cpuCoreNum = cpuCoreNum;
+            return this;
+        }
+
+        public ApplicationBuilder minCoresPerExecutor(int minCoresPerExecutor) {
+            application.minCoresPerExecutor = minCoresPerExecutor;
+            return this;
+        }
+
+        public ApplicationBuilder oneExecutorPerWorker() {
+            application.oneExecutorPerWorker = true;
+            return this;
+        }
+
+        public ApplicationBuilder dropResult() {
+            application.dropResult = true;
+            return this;
+        }
+
+        public ApplicationBuilder serializer(String serializerName) {
+            Serializer serializer = Serializers.getSerializer(serializerName);
+            Preconditions.checkNotNull(String.format("%s serializer must loaded", serializerName));
+            application.serializerCode = serializer.type();
+            return this;
+        }
+
+        public ApplicationBuilder serializer(SerializerType serializerType) {
+            application.serializerCode = serializerType.getCode();
+            return this;
+        }
+
+        public ApplicationBuilder compression(CompressionType compressionType) {
+            application.compressionType = compressionType;
+            return this;
+        }
     }
 }

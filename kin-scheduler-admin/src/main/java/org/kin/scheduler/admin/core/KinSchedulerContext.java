@@ -140,7 +140,7 @@ public class KinSchedulerContext implements InitializingBean, ApplicationListene
                 if (Objects.isNull(driver)) {
                     driver = new KinDriver(
                             rpcEnv,
-                            Application.build()
+                            Application.builder()
                                     .appName(getAppName())
                                     .master(NetUtils.getIpPort(host, port))
                                     .driverPort(port)
@@ -153,6 +153,7 @@ public class KinSchedulerContext implements InitializingBean, ApplicationListene
                                     .oneExecutorPerWorker()
                                     //异步模式
                                     .dropResult()
+                                    .build()
                     );
                     driver.start();
                 }
