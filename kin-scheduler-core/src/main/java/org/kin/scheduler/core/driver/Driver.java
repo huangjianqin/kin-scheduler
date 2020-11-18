@@ -6,7 +6,7 @@ import org.kin.framework.utils.NetUtils;
 import org.kin.framework.utils.SysUtils;
 import org.kin.kinrpc.message.core.RpcEndpointRef;
 import org.kin.kinrpc.message.core.RpcEnv;
-import org.kin.kinrpc.transport.serializer.Serializers;
+import org.kin.kinrpc.serializer.Serializers;
 import org.kin.scheduler.core.driver.exception.RegisterApplicationFailureException;
 import org.kin.scheduler.core.driver.scheduler.TaskContext;
 import org.kin.scheduler.core.driver.scheduler.TaskExecFuture;
@@ -154,9 +154,9 @@ public class Driver {
      * call线程
      * 从worker上读取文件
      *
-     * @param workerId      worker id
-     * @param taskId        task id
-     * @param fromLineNum   开始的行数
+     * @param workerId    worker id
+     * @param path        log path
+     * @param fromLineNum 开始的行数
      */
     protected final TaskExecFileContent readFile(String workerId, String path, int fromLineNum) {
         try {

@@ -10,8 +10,8 @@ import org.kin.kinrpc.message.core.RpcEndpointRef;
 import org.kin.kinrpc.message.core.RpcEnv;
 import org.kin.kinrpc.message.core.RpcMessageCallContext;
 import org.kin.kinrpc.message.core.ThreadSafeRpcEndpoint;
-import org.kin.kinrpc.message.core.message.RemoteDisconnected;
-import org.kin.kinrpc.transport.domain.RpcAddress;
+import org.kin.kinrpc.message.core.message.ClientDisconnected;
+import org.kin.kinrpc.transport.kinrpc.KinRpcAddress;
 import org.kin.scheduler.core.cfg.Config;
 import org.kin.scheduler.core.driver.transport.ReadFile;
 import org.kin.scheduler.core.executor.Executor;
@@ -91,7 +91,7 @@ public class Worker extends ThreadSafeRpcEndpoint {
     }
 
     @Override
-    public void receive(RpcMessageCallContext context) {
+    public void onReceiveMessage(RpcMessageCallContext context) {
         super.receive(context);
 
         Serializable message = context.getMessage();
@@ -105,8 +105,8 @@ public class Worker extends ThreadSafeRpcEndpoint {
             registerWorker();
         } else if (message instanceof ExecutorStateChanged) {
             executorStateChanged((ExecutorStateChanged) message);
-        } else if (message instanceof RemoteDisconnected) {
-            remoteDisconnected(((RemoteDisconnected) message).getRpcAddress());
+        } else if (message instanceof ClientDisconnected) {
+            remoteDisconnected(((ClientDisconnected) message).getRpcAddress());
         }
     }
 
@@ -301,7 +301,7 @@ public class Worker extends ThreadSafeRpcEndpoint {
         }
     }
 
-    private void remoteDisconnected(RpcAddress rpcAddress) {
+    private void remoteDisconnected(KinRpcAddress rpcAddress) {
         if (isStopped) {
             return;
         }

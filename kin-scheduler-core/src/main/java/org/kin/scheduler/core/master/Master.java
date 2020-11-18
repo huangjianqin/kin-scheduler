@@ -8,8 +8,8 @@ import org.kin.kinrpc.message.core.RpcEndpointRef;
 import org.kin.kinrpc.message.core.RpcEnv;
 import org.kin.kinrpc.message.core.RpcMessageCallContext;
 import org.kin.kinrpc.message.core.ThreadSafeRpcEndpoint;
-import org.kin.kinrpc.message.core.message.RemoteDisconnected;
-import org.kin.kinrpc.transport.domain.RpcAddress;
+import org.kin.kinrpc.message.core.message.ClientDisconnected;
+import org.kin.kinrpc.transport.kinrpc.KinRpcAddress;
 import org.kin.scheduler.core.cfg.Config;
 import org.kin.scheduler.core.driver.ApplicationDescription;
 import org.kin.scheduler.core.driver.transport.ApplicationEnd;
@@ -102,7 +102,7 @@ public class Master extends ThreadSafeRpcEndpoint {
     }
 
     @Override
-    public void receive(RpcMessageCallContext context) {
+    public void onReceiveMessage(RpcMessageCallContext context) {
         super.receive(context);
         Serializable message = context.getMessage();
         //master endpoint相关
@@ -122,8 +122,8 @@ public class Master extends ThreadSafeRpcEndpoint {
             applicationEnd(((ApplicationEnd) message).getAppName());
         } else if (message instanceof ReadFile) {
             commonWorkers.execute(() -> readFile(context, (ReadFile) message));
-        } else if (message instanceof RemoteDisconnected) {
-            remoteDisconnected(((RemoteDisconnected) message).getRpcAddress());
+        } else if (message instanceof ClientDisconnected) {
+            remoteDisconnected(((ClientDisconnected) message).getRpcAddress());
         }
     }
 
@@ -440,7 +440,7 @@ public class Master extends ThreadSafeRpcEndpoint {
     }
 
     //-------------------------------------------------------------内部-------------------------------------------
-    private void remoteDisconnected(RpcAddress rpcAddress) {
+    private void remoteDisconnected(KinRpcAddress rpcAddress) {
         List<WorkerContext> disconnectedWorker = workers.values().stream()
                 .filter(wc -> wc.ref().getEndpointAddress().getRpcAddress().equals(rpcAddress))
                 .collect(Collectors.toList());

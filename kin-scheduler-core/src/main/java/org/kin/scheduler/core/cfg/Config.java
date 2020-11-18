@@ -1,9 +1,9 @@
 package org.kin.scheduler.core.cfg;
 
 import org.kin.framework.utils.SysUtils;
-import org.kin.kinrpc.transport.serializer.Serializer;
-import org.kin.kinrpc.transport.serializer.SerializerType;
-import org.kin.kinrpc.transport.serializer.Serializers;
+import org.kin.kinrpc.serializer.Serializer;
+import org.kin.kinrpc.serializer.SerializerType;
+import org.kin.kinrpc.serializer.Serializers;
 import org.kin.transport.netty.CompressionType;
 
 /**

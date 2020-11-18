@@ -122,7 +122,7 @@ public class Executor extends ThreadSafeRpcEndpoint {
     }
 
     @Override
-    public void receive(RpcMessageCallContext context) {
+    public void onReceiveMessage(RpcMessageCallContext context) {
         super.receive(context);
 
         Serializable message = context.getMessage();

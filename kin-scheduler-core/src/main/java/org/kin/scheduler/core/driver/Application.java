@@ -2,9 +2,9 @@ package org.kin.scheduler.core.driver;
 
 import com.google.common.base.Preconditions;
 import org.kin.framework.utils.SysUtils;
-import org.kin.kinrpc.transport.serializer.Serializer;
-import org.kin.kinrpc.transport.serializer.SerializerType;
-import org.kin.kinrpc.transport.serializer.Serializers;
+import org.kin.kinrpc.serializer.Serializer;
+import org.kin.kinrpc.serializer.SerializerType;
+import org.kin.kinrpc.serializer.Serializers;
 import org.kin.scheduler.core.master.executor.allocate.AllocateStrategyType;
 import org.kin.transport.netty.CompressionType;
 
