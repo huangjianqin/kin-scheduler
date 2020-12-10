@@ -4,6 +4,7 @@ import ch.qos.logback.classic.Logger;
 import org.kin.framework.concurrent.ExecutionContext;
 import org.kin.framework.utils.CollectionUtils;
 import org.kin.framework.utils.StringUtils;
+import org.kin.framework.utils.SysUtils;
 import org.kin.kinrpc.message.core.RpcEndpointRef;
 import org.kin.kinrpc.message.core.RpcEnv;
 import org.kin.kinrpc.message.core.RpcMessageCallContext;
@@ -69,7 +70,7 @@ public class Master extends ThreadSafeRpcEndpoint {
         this.name = name;
         this.config = config;
         log = Loggers.master(config.getLogPath(), name);
-        commonWorkers = ExecutionContext.cache(name.concat("-common"), 2, name.concat("-common-schedule"));
+        commonWorkers = ExecutionContext.elastic(1, SysUtils.getSuitableThreadNum(), name.concat("-common"), 2, name.concat("-common-schedule"));
     }
 
     //-------------------------------------------------------------------------------------------------

@@ -3,10 +3,7 @@ package org.kin.scheduler.core.executor;
 import ch.qos.logback.classic.Logger;
 import com.google.common.base.Preconditions;
 import org.kin.framework.concurrent.ExecutionContext;
-import org.kin.framework.utils.CollectionUtils;
-import org.kin.framework.utils.ExceptionUtils;
-import org.kin.framework.utils.NetUtils;
-import org.kin.framework.utils.StringUtils;
+import org.kin.framework.utils.*;
 import org.kin.kinrpc.message.core.RpcEndpointRef;
 import org.kin.kinrpc.message.core.RpcEnv;
 import org.kin.kinrpc.message.core.RpcMessageCallContext;
@@ -90,7 +87,7 @@ public class Executor extends ThreadSafeRpcEndpoint {
         }
         super.onStart();
 
-        executionContext = ExecutionContext.cache("executor-".concat(executorId));
+        executionContext = ExecutionContext.elastic(SysUtils.CPU_NUM, SysUtils.getSuitableThreadNum(), "executor-".concat(executorId));
         //启动log
         taskLoggerContext = new TaskLoggerContext(executorId);
         log = LogUtils.getExecutorLogger(logPath, workerId, executorId);
