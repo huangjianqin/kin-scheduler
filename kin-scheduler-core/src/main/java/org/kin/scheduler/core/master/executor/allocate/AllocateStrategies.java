@@ -53,13 +53,7 @@ public class AllocateStrategies {
      * @return executor分配策略实现类实例
      */
     public static AllocateStrategy getByName(String name) {
-        try {
-            return strategies.get(AllocateStrategyType.valueOf(name));
-        } catch (Exception e) {
-
-        }
-
-        return null;
+        return strategies.get(AllocateStrategyType.valueOf(name));
     }
 
     /**

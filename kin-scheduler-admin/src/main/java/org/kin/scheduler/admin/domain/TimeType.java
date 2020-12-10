@@ -1,5 +1,6 @@
 package org.kin.scheduler.admin.domain;
 
+import org.kin.framework.utils.ExceptionUtils;
 import org.kin.framework.utils.TimeUtils;
 import org.kin.scheduler.admin.core.TaskScheduleKeeper;
 
@@ -26,7 +27,7 @@ public enum TimeType {
             try {
                 return Objects.nonNull(TimeUtils.getDatetimeFormat().parse(timeStr));
             } catch (ParseException e) {
-
+                ExceptionUtils.throwExt(e);
             }
             return false;
         }

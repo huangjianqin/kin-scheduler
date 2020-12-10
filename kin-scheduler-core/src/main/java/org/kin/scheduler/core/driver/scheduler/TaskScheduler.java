@@ -1,5 +1,6 @@
 package org.kin.scheduler.core.driver.scheduler;
 
+import org.kin.framework.utils.ExceptionUtils;
 import org.kin.kinrpc.message.core.RpcEnv;
 import org.kin.kinrpc.message.core.RpcMessageCallContext;
 import org.kin.kinrpc.message.core.ThreadSafeRpcEndpoint;
@@ -246,7 +247,7 @@ public abstract class TaskScheduler<T> extends ThreadSafeRpcEndpoint {
         } catch (InterruptedException e) {
 
         } catch (ExecutionException e) {
-            log.error("", e);
+            ExceptionUtils.throwExt(e);
         }
         return null;
     }

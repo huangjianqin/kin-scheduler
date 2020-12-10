@@ -52,13 +52,7 @@ public class RouteStrategies {
      * @return executor分配策略实现类实例
      */
     public static RouteStrategy getByName(String name) {
-        try {
-            return strategies.get(RouteStrategyType.valueOf(name));
-        } catch (Exception e) {
-
-        }
-
-        return null;
+        return strategies.get(RouteStrategyType.valueOf(name));
     }
 
     /**

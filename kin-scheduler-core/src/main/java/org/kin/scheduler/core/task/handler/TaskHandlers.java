@@ -1,6 +1,7 @@
 package org.kin.scheduler.core.task.handler;
 
 import org.kin.framework.utils.ClassUtils;
+import org.kin.framework.utils.ExceptionUtils;
 import org.kin.scheduler.core.task.TaskDescription;
 import org.kin.scheduler.core.task.handler.domain.Singleton;
 import org.slf4j.Logger;
@@ -46,7 +47,7 @@ public class TaskHandlers {
                     paramType2TaskHandler.put(taskHandler.getTaskParamType(),
                             new TaskHandlerInfo(taskHandlerType, taskHandlerType.isAnnotationPresent(Singleton.class) ? taskHandler : null));
                 } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
-                    log.error("", e);
+                    ExceptionUtils.throwExt(e);
                 }
             }
 
@@ -97,7 +98,7 @@ public class TaskHandlers {
                     constructor = type.getConstructor();
                     return (TaskHandler) constructor.newInstance();
                 } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
-                    log.error("", e);
+                    ExceptionUtils.throwExt(e);
                 }
                 return null;
             }
