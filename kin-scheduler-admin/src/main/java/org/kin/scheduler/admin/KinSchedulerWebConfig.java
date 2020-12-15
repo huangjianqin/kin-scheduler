@@ -1,6 +1,5 @@
 package org.kin.scheduler.admin;
 
-import org.kin.framework.web.interceptor.CookiesInterceptor;
 import org.kin.scheduler.admin.interceptor.KinSchedulerPermissionInterceptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -22,11 +21,6 @@ public class KinSchedulerWebConfig extends SpringBootServletInitializer implemen
      */
     @Autowired
     private KinSchedulerPermissionInterceptor kinSchedulerPermissionInterceptor;
-    /**
-     * cookies缓存拦截器
-     */
-    @Autowired
-    private CookiesInterceptor cookiesInterceptor;
 
     @Override
     protected SpringApplicationBuilder configure(SpringApplicationBuilder builder) {
@@ -36,7 +30,6 @@ public class KinSchedulerWebConfig extends SpringBootServletInitializer implemen
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(cookiesInterceptor).addPathPatterns("/**");
         registry.addInterceptor(kinSchedulerPermissionInterceptor).addPathPatterns("/**");
     }
 }

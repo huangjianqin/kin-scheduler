@@ -31,8 +31,7 @@ public class KinSchedulerPermissionInterceptor extends PermissionInterceptor {
             return false;
         }
         if (needAdmin && !user.isAdmin()) {
-            log.warn("用户{}({})尝试使用管理员权限", user.getAccount(), user.getId());
-            return false;
+            throw new IllegalStateException(String.format("用户%s(%s)没有管理员权限", user.getAccount(), user.getId()));
         }
 
         return true;
