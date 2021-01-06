@@ -4,8 +4,8 @@
 app_user=bigdata1
 
 java="java"
-# todo 项目跟目录, 也可以写死在脚本中, 不用每次取参数
-base_dir=.
+# 项目根目录
+base_dir=$(dirname $0)/..
 # 项目main class
 main_class=org.kin.scheduler.admin.KinSchedulerApplication
 CLASSPATH=.:${base_dir}/lib/*:${base_dir}/resources/*:${CLASSPATH}
