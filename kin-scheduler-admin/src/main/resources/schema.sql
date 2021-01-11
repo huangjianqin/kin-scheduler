@@ -45,24 +45,25 @@ CREATE TABLE `task_info` (
 )   ENGINE = InnoDB DEFAULT CHARSET = utf8;
 
 CREATE TABLE `task_log` (
-    `id`  int(11) NOT NULL auto_increment COMMENT 'id',
-    `task_id`  int(11) NOT NULL COMMENT '所属任务',
-    `job_id`  int(11) NOT NULL COMMENT '所属作业',
-    `desc`    text NOT NULL COMMENT '任务描述',
-    `executor_address`    VARCHAR(200) DEFAULT '' COMMENT 'executor地址',
-    `route_strategy`    VARCHAR(50) NOT NULL COMMENT 'executor路由策略',
-    `type`    VARCHAR(50) NOT NULL COMMENT '任务类型',
-    `param`  tinytext NOT NULL COMMENT '任务参数(json)',
-    `exec_strategy` VARCHAR(50) NOT NULL COMMENT '任务执行策略',
-    `exec_timeout`    tinyint NOT NULL DEFAULT '0' COMMENT '任务执行超时',
-    `retry_times` tinyint NOT NULL DEFAULT '0'  COMMENT '任务当前执行重试次数',
-    `retry_times_limit` tinyint NOT NULL DEFAULT '0'  COMMENT '任务执行重试次数上限',
-    `trigger_time`  datetime     COMMENT '任务调度时间',
-    `triggr_code`  int  NULL COMMENT '任务调度结果',
-    `handle_time`  datetime  COMMENT '任务处理时间',
-    `handle_code`  int  NULL COMMENT '任务处理结果',
-    `log_path`  VARCHAR(400) NULL COMMENT '任务日志路径',
-    PRIMARY KEY (`id`)
+                            `id`                int(11)      NOT NULL auto_increment COMMENT 'id',
+                            `task_id`           int(11)      NOT NULL COMMENT '所属任务',
+                            `job_id`            int(11)      NOT NULL COMMENT '所属作业',
+                            `desc`              text         NOT NULL COMMENT '任务描述',
+                            `executor_address`  VARCHAR(200) DEFAULT '' COMMENT 'executor地址',
+                            `route_strategy`    VARCHAR(50)  NOT NULL COMMENT 'executor路由策略',
+                            `type`              VARCHAR(50)  NOT NULL COMMENT '任务类型',
+                            `param`             tinytext     NOT NULL COMMENT '任务参数(json)',
+                            `exec_strategy`     VARCHAR(50)  NOT NULL COMMENT '任务执行策略',
+                            `exec_timeout`      tinyint      NOT NULL DEFAULT '0' COMMENT '任务执行超时',
+                            `retry_times`       tinyint      NOT NULL DEFAULT '0' COMMENT '任务当前执行重试次数',
+                            `retry_times_limit` tinyint      NOT NULL DEFAULT '0' COMMENT '任务执行重试次数上限',
+                            `trigger_time`      datetime COMMENT '任务调度时间',
+                            `triggr_code`       int          NULL COMMENT '任务调度结果',
+                            `handle_time`       datetime COMMENT '任务处理时间',
+                            `handle_code`       int          NULL COMMENT '任务处理结果',
+                            `log_path`          VARCHAR(400) NULL COMMENT '任务日志路径',
+                            `output_path`       VARCHAR(400) NULL COMMENT '任务输出文件',
+                            PRIMARY KEY (`id`)
 )   ENGINE = InnoDB DEFAULT CHARSET = utf8;
 
 CREATE TABLE `task_lock` (

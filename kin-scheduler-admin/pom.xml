@@ -56,11 +56,11 @@
             <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
 
-        <!-- mybatis-starter：mybatis + mybatis-spring + tomcat-jdbc（default） -->
+        <!-- mybatis plus, 不需要在配置mybatis starter, 防止版本冲突 -->
         <dependency>
-            <groupId>org.mybatis.spring.boot</groupId>
-            <artifactId>mybatis-spring-boot-starter</artifactId>
-            <version>${mybatis-spring-boot-starter.version}</version>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-boot-starter</artifactId>
+            <version>${mybatis-plus.version}</version>
         </dependency>
 
         <!-- mysql -->

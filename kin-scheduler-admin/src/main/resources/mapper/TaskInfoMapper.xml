@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="org.kin.scheduler.admin.dao.TaskInfoDao">
+<mapper namespace="org.kin.scheduler.admin.mapper.TaskInfoMapper">
 
     <resultMap id="TaskInfo" type="org.kin.scheduler.admin.entity.TaskInfo">
         <result column="id" property="id"/>
@@ -81,121 +81,11 @@
         LIMIT #{offset}, #{pageSize}
     </select>
 
-    <select id="pageListCount" parameterType="java.util.HashMap" resultType="int">
-        SELECT count(1)
-        FROM task_info AS t LEFT JOIN `user` u ON t.user_id = u.id
-        <trim prefix="WHERE" prefixOverrides="AND | OR">
-            <if test="jobId gt 0">
-                AND t.job_id = #{jobId}
-            </if>
-            <if test="triggerStatus gte 0">
-                AND t.trigger_status = #{triggerStatus}
-            </if>
-            <if test="desc != null and desc != ''">
-                AND t.desc like CONCAT(CONCAT('%', #{desc}), '%')
-            </if>
-            <if test="type != null and type != ''">
-                AND t.type like CONCAT(CONCAT('%', #{type}), '%')
-            </if>
-            <if test="userName != null and userName != ''">
-                AND u.name like CONCAT(CONCAT('%', #{userName}), '%')
-            </if>
-        </trim>
-        ORDER BY t.id DESC
-        LIMIT #{offset}, #{pageSize}
-    </select>
-
-    <insert id="save" parameterType="org.kin.scheduler.admin.entity.TaskInfo" useGeneratedKeys="true" keyProperty="id"
-            keyColumn="id">
-        INSERT INTO task_info (
-        job_id,
-        time_type,
-        time_str,
-        `desc`,
-        add_time,
-        update_time,
-        user_id,
-        alarm_email,
-        route_strategy,
-        `type`,
-        param,
-        exec_strategy,
-        exec_timeout,
-        retry_times,
-        child_task_ids,
-        trigger_status,
-        trigger_last_time,
-        trigger_next_time
-        ) VALUES (
-        #{jobId},
-        #{timeType},
-        #{timeStr},
-        #{desc},
-        NOW(),
-        NOW(),
-        #{userId},
-        #{alarmEmail},
-        #{routeStrategy},
-        #{type},
-        #{param},
-        #{execStrategy},
-        #{execTimeout},
-        #{retryTimes},
-        #{childTaskIds},
-        #{triggerStatus},
-        #{triggerLastTime},
-        #{triggerNextTime}
-        );
-    </insert>
-
-    <select id="load" parameterType="java.util.HashMap" resultMap="TaskInfo">
-        SELECT
-        <include refid="Base_Column_List"/>, user_id
-        FROM task_info AS t
-        WHERE t.id = #{id}
-    </select>
-
-    <update id="update" parameterType="org.kin.scheduler.admin.entity.TaskInfo">
-		UPDATE task_info
-		SET
-			job_id=#{jobId},
-            time_type=#{timeType},
-            time_str=#{timeStr},
-            `desc`=#{desc},
-            add_time=#{addTime},
-            update_time=#{updateTime},
-            user_id=#{userId},
-            route_strategy=#{routeStrategy},
-            `type`=#{type},
-            param=#{param},
-            exec_strategy=#{execStrategy},
-            exec_timeout=#{execTimeout},
-            retry_times=#{retryTimes},
-            alarm_email=#{alarmEmail},
-            child_task_ids=#{childTaskIds},
-            trigger_status=#{triggerStatus},
-            trigger_last_time=#{triggerLastTime},
-            trigger_next_time=#{triggerNextTime}
-		WHERE id = #{id}
-	</update>
-
-    <delete id="delete" parameterType="java.util.HashMap">
-		DELETE
-		FROM task_info
-		WHERE id = #{id}
-	</delete>
-
     <select id="getTasksByJob" parameterType="java.util.HashMap" resultMap="TaskInfoVO">
         SELECT<include refid="Base_Column_List"/>, u.id as userId, u.name as userName
         FROM task_info AS t LEFT JOIN `user` u on t.user_id = u.id
         WHERE t.job_id = #{jobId}
     </select>
-
-    <select id="count" resultType="int">
-		SELECT count(1)
-		FROM task_info
-	</select>
-
 
     <select id="scheduleTaskQuery" parameterType="java.util.HashMap" resultMap="TaskInfo">
         SELECT

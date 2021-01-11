@@ -109,7 +109,7 @@ public class TaskScheduleKeeper {
             //预读 PRE_READ_MS 毫秒内调度任务
             TaskInfoDao taskInfoDao = KinSchedulerContext.instance().getTaskInfoDao();
             long nowTime = System.currentTimeMillis();
-            List<TaskInfo> waittingTaskInfos = taskInfoDao.scheduleTaskQuery(nowTime + PRE_READ_MS);
+            List<TaskInfo> waittingTaskInfos = taskInfoDao.mapper().scheduleTaskQuery(nowTime + PRE_READ_MS);
             if (CollectionUtils.isNonEmpty(waittingTaskInfos)) {
                 for (TaskInfo taskInfo : waittingTaskInfos) {
                     if (nowTime > taskInfo.getTriggerNextTime() + PRE_READ_MS) {
@@ -157,7 +157,7 @@ public class TaskScheduleKeeper {
 
                 // 更新trigger信息
                 for (TaskInfo taskInfo : waittingTaskInfos) {
-                    taskInfoDao.scheduleUpdate(taskInfo);
+                    taskInfoDao.mapper().scheduleUpdate(taskInfo);
                 }
 
             }

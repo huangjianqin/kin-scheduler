@@ -41,10 +41,10 @@ public class TaskController {
     @RequestMapping("/pageList")
     @ResponseBody
     @Permission
-    public Map<String, Object> pageList(@RequestParam(required = false, defaultValue = "0") int start,
-                                        @RequestParam(required = false, defaultValue = "10") int length,
+    public Map<String, Object> pageList(@RequestParam(required = false, defaultValue = "0") int page,
+                                        @RequestParam(required = false, defaultValue = "10") int pageSize,
                                         int jobId, int triggerStatus, String desc, String type, String userName) {
-        return jobService.pageList(start, length, jobId, triggerStatus, desc, type, userName);
+        return jobService.pageList(page, pageSize, jobId, triggerStatus, desc, type, userName);
     }
 
     @RequestMapping("/add")
@@ -90,7 +90,7 @@ public class TaskController {
     @ResponseBody
     @Permission
     public WebResponse<String> triggerTask(int id, @RequestParam(defaultValue = "") String forceParam) {
-        TaskInfo taskInfo = taskInfoDao.load(id);
+        TaskInfo taskInfo = taskInfoDao.selectById(id);
         if (Objects.isNull(taskInfo)) {
             return WebResponse.fail("unknown task");
         }
@@ -111,7 +111,7 @@ public class TaskController {
     @ResponseBody
     @Permission
     public WebResponse<List<TaskInfoVO>> getTasksByJob(int jobId) {
-        return WebResponse.success(taskInfoDao.getTasksByJob(jobId));
+        return WebResponse.success(taskInfoDao.mapper().getTasksByJob(jobId));
     }
 
     @RequestMapping("/kill")

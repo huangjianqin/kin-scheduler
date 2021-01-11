@@ -43,15 +43,14 @@ public class JobServiceImpl implements JobService {
     private UserService userService;
 
     @Override
-    public Map<String, Object> pageList(int start, int length, int jobId, int triggerStatus, String desc, String type, String userName) {
+    public Map<String, Object> pageList(int page, int pageSize, int jobId, int triggerStatus, String desc, String type, String userName) {
         // page list
-        List<TaskInfoVO> list = taskInfoDao.pageList(start, length, jobId, triggerStatus, desc, type, userName);
-        int listCount = taskInfoDao.pageListCount(start, length, jobId, triggerStatus, desc, type, userName);
+        List<TaskInfoVO> list = taskInfoDao.mapper().pageList((page - 1) * pageSize + 1, pageSize, jobId, triggerStatus, desc, type, userName);
 
         // package result
         Map<String, Object> maps = new HashMap<String, Object>();
         // 总记录数
-        maps.put("num", listCount);
+        maps.put("num", list.size());
         // 分页列表
         maps.put("data", list);
         return maps;
@@ -76,7 +75,7 @@ public class JobServiceImpl implements JobService {
         //清掉触发状态
         taskInfo.stop();
 
-        taskInfoDao.save(taskInfo);
+        taskInfoDao.insert(taskInfo);
         if (taskInfo.getId() < 1) {
             return WebResponse.fail("db error");
         }
@@ -124,7 +123,7 @@ public class JobServiceImpl implements JobService {
             String[] childTaskIds = taskInfo.getChildTaskIds().split(",");
             for (String childTaskId : childTaskIds) {
                 if (StringUtils.isNotBlank(childTaskId) && isNumeric(childTaskId)) {
-                    TaskInfo childTaskInfo = taskInfoDao.load(Integer.parseInt(childTaskId));
+                    TaskInfo childTaskInfo = taskInfoDao.selectById(Integer.parseInt(childTaskId));
                     if (Objects.isNull(childTaskInfo)) {
                         return WebResponse.fail("不存在子任务");
                     }
@@ -158,7 +157,7 @@ public class JobServiceImpl implements JobService {
             return validWebResponse;
         }
 
-        TaskInfo exist = taskInfoDao.load(taskInfo.getId());
+        TaskInfo exist = taskInfoDao.selectById(taskInfo.getId());
         if (exist == null) {
             return WebResponse.fail("不存在任务");
         }
@@ -187,19 +186,19 @@ public class JobServiceImpl implements JobService {
         exist.setRetryTimes(taskInfo.getRetryTimes());
         exist.setChildTaskIds(taskInfo.getChildTaskIds());
         exist.setTriggerNextTime(nextTriggerTime);
-        taskInfoDao.update(exist);
+        taskInfoDao.updateById(exist);
 
         return WebResponse.success();
     }
 
     @Override
     public WebResponse<String> remove(int id) {
-        TaskInfo task = taskInfoDao.load(id);
+        TaskInfo task = taskInfoDao.selectById(id);
         if (task == null) {
             return WebResponse.success();
         }
 
-        taskInfoDao.delete(id);
+        taskInfoDao.deleteById(id);
         //取消task执行
         KinSchedulerContext.instance().getDriver().cancelTask(String.valueOf(task.getId()));
         return WebResponse.success();
@@ -207,7 +206,7 @@ public class JobServiceImpl implements JobService {
 
     @Override
     public WebResponse<String> start(User user, int id) {
-        TaskInfo taskInfo = taskInfoDao.load(id);
+        TaskInfo taskInfo = taskInfoDao.selectById(id);
 
         if (!user.isAdmin() && user.getId() != taskInfo.getUserId()) {
             //非admin不得修改别人task
@@ -231,13 +230,13 @@ public class JobServiceImpl implements JobService {
         taskInfo.setTriggerLastTime(0);
         taskInfo.setTriggerNextTime(nextTriggerTime);
 
-        taskInfoDao.update(taskInfo);
+        taskInfoDao.updateById(taskInfo);
         return WebResponse.success();
     }
 
     @Override
     public WebResponse<String> stop(User user, int id) {
-        TaskInfo taskInfo = taskInfoDao.load(id);
+        TaskInfo taskInfo = taskInfoDao.selectById(id);
 
         if (!user.isAdmin() && user.getId() != taskInfo.getUserId()) {
             //非admin不得修改别人task
@@ -250,14 +249,14 @@ public class JobServiceImpl implements JobService {
 
     private void stop(TaskInfo taskInfo) {
         taskInfo.stop();
-        taskInfoDao.update(taskInfo);
+        taskInfoDao.updateById(taskInfo);
     }
 
     @Override
     public Map<String, Object> dashboardInfo() {
-        int taskInfoCount = taskInfoDao.count();
-        int taskLogCount = taskLogDao.countByHandleCode(-1);
-        int taskLogSuccessCount = taskLogDao.countByHandleCode(TaskLog.SUCCESS);
+        int taskInfoCount = taskInfoDao.selectCount(null);
+        int taskLogCount = taskLogDao.mapper().countByHandleCode(-1);
+        int taskLogSuccessCount = taskLogDao.mapper().countByHandleCode(TaskLog.SUCCESS);
 
         Map<String, Object> dashboardMap = new HashMap<>(3);
         dashboardMap.put("jobInfoCount", taskInfoCount);
@@ -269,8 +268,8 @@ public class JobServiceImpl implements JobService {
     @Override
     public WebResponse<String> kill(int logId) {
         // base check
-        TaskLog taskLog = taskLogDao.load(logId);
-        TaskInfo taskInfo = taskInfoDao.load(taskLog.getJobId());
+        TaskLog taskLog = taskLogDao.selectById(logId);
+        TaskInfo taskInfo = taskInfoDao.selectById(taskLog.getJobId());
         if (taskInfo == null) {
             return WebResponse.fail("unknown task");
         }
@@ -283,7 +282,7 @@ public class JobServiceImpl implements JobService {
             KinSchedulerContext.instance().getDriver().cancelTask(String.valueOf(taskLog.getTaskId()));
             taskLog.setHandleCode(TaskLog.FAILURE);
             taskLog.setHandleTime(new Date());
-            taskLogDao.updateHandleInfo(taskLog);
+            taskLogDao.mapper().updateHandleInfo(taskLog);
 
             MailUtils.sendAlarmEmail(taskInfo, taskLog, "被取消了");
 

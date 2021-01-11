@@ -53,7 +53,7 @@ public class TaskLogController {
         int sucTotal = 0;
         int failTotal = 0;
 
-        List<Map<String, Object>> triggerCountMap = taskLogDao.countByDay(startDate, endDate);
+        List<Map<String, Object>> triggerCountMap = taskLogDao.mapper().countByDay(startDate, endDate);
         if (CollectionUtils.isNonEmpty(triggerCountMap)) {
             for (Map<String, Object> item : triggerCountMap) {
                 String day = String.valueOf(item.get("day"));
@@ -113,15 +113,12 @@ public class TaskLogController {
         }
 
         // page query
-        List<TaskLog> list = taskLogDao.pageList(start, length, user.getId(), user.getRole(), jobId, taskId, triggerTimeStart, triggerTimeEnd, logStatus);
-        int listCount = taskLogDao.pageListCount(start, length, user.getId(), user.getRole(), jobId, taskId, triggerTimeStart, triggerTimeEnd, logStatus);
+        List<TaskLog> list = taskLogDao.mapper().pageList(start, length, user.getId(), user.getRole(), jobId, taskId, triggerTimeStart, triggerTimeEnd, logStatus);
 
         // package result
         Map<String, Object> maps = new HashMap<>(3);
         // 总记录数
-        maps.put("recordsTotal", listCount);
-        // 过滤后的总记录数
-        maps.put("recordsFiltered", listCount);
+        maps.put("recordsTotal", list.size());
         // 分页列表
         maps.put("data", list);
         return maps;
@@ -138,7 +135,7 @@ public class TaskLogController {
                 if (taskExecFileContent.isEnd()) {
                     return WebResponse.fail("log file reach end");
                 }
-                TaskLog taskLog = taskLogDao.load(logId);
+                TaskLog taskLog = taskLogDao.selectById(logId);
                 if (taskLog.getHandleCode() > 0) {
                     taskExecFileContent.setEnd(true);
                 }
@@ -164,7 +161,7 @@ public class TaskLogController {
                 if (taskExecFileContent.isEnd()) {
                     return WebResponse.fail("output file reach end");
                 }
-                TaskLog taskLog = taskLogDao.load(logId);
+                TaskLog taskLog = taskLogDao.selectById(logId);
                 if (taskLog.getHandleCode() > 0) {
                     taskExecFileContent.setEnd(true);
                 }
@@ -217,7 +214,7 @@ public class TaskLogController {
             return WebResponse.fail("未知请求类型");
         }
 
-        taskLogDao.clearLog(jobId, taskId, clearBeforeTime, clearBeforeNum);
+        taskLogDao.mapper().clearLog(jobId, taskId, clearBeforeTime, clearBeforeNum);
         return WebResponse.success();
     }
 }

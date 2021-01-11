@@ -117,7 +117,7 @@ public class UserServiceImpl implements UserService {
         user.setRole(role);
         user.setName(name);
 
-        userDao.save(user);
+        userDao.insert(user);
 
         return WebResponse.success(String.format("用户 '%s' 注册成功", account));
     }

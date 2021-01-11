@@ -1,9 +1,12 @@
 package org.kin.scheduler.admin.entity;
 
+import com.baomidou.mybatisplus.annotation.TableName;
+
 /**
  * @author huangjianqin
  * @date 2020-03-07
  */
+@TableName(value = "user", autoResultMap = true)
 public class User {
     /** 普通用户类型 */
     public static final int USER = 0;

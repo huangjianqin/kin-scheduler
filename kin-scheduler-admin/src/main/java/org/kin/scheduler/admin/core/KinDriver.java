@@ -37,7 +37,7 @@ public class KinDriver extends Driver {
      * @return log内容
      */
     public TaskExecFileContent readLog(int logId, int fromLineNum) {
-        TaskLog taskLog = KinSchedulerContext.instance().getTaskLogDao().load(logId);
+        TaskLog taskLog = KinSchedulerContext.instance().getTaskLogDao().selectById(logId);
         if (Objects.nonNull(taskLog)) {
             return readFile(taskLog.getWorkerId(), taskLog.getLogPath(), fromLineNum);
         }
@@ -52,7 +52,7 @@ public class KinDriver extends Driver {
      * @return output内容
      */
     public TaskExecFileContent readOutput(int logId, int fromLineNum) {
-        TaskLog taskLog = KinSchedulerContext.instance().getTaskLogDao().load(logId);
+        TaskLog taskLog = KinSchedulerContext.instance().getTaskLogDao().selectById(logId);
         if (Objects.nonNull(taskLog)) {
             return readFile(taskLog.getWorkerId(), taskLog.getOutputPath(), fromLineNum);
         }

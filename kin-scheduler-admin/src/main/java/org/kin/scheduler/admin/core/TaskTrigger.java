@@ -46,7 +46,7 @@ public class TaskTrigger {
      * @param taskId task id
      */
     public void trigger(int taskId) {
-        TaskInfo taskInfo = KinSchedulerContext.instance().getTaskInfoDao().load(taskId);
+        TaskInfo taskInfo = KinSchedulerContext.instance().getTaskInfoDao().selectById(taskId);
         if (Objects.isNull(taskInfo)) {
             log.warn("不存在task");
         }
@@ -97,7 +97,7 @@ public class TaskTrigger {
             }
 
             //获取tasklog
-            TaskLog taskLog = KinSchedulerContext.instance().getTaskLogDao().load(Integer.parseInt(taskLogIdStr));
+            TaskLog taskLog = KinSchedulerContext.instance().getTaskLogDao().selectById(Integer.parseInt(taskLogIdStr));
             if (Objects.isNull(taskLog)) {
                 log.error("task({}) log not found", taskId);
             }
@@ -107,10 +107,10 @@ public class TaskTrigger {
             taskLog.setHandleTime(new Date());
             taskLog.setHandleCode(taskStatus == TaskStatus.FINISHED ? TaskLog.SUCCESS : TaskLog.FAILURE);
 
-            KinSchedulerContext.instance().getTaskLogDao().updateHandleInfo(taskLog);
+            KinSchedulerContext.instance().getTaskLogDao().mapper().updateHandleInfo(taskLog);
 
             boolean isRaiseAlarm = false;
-            TaskInfo taskInfo = KinSchedulerContext.instance().getTaskInfoDao().load(Integer.parseInt(taskId));
+            TaskInfo taskInfo = KinSchedulerContext.instance().getTaskInfoDao().selectById(Integer.parseInt(taskId));
             if (Objects.nonNull(taskInfo)) {
                 if (taskStatus == TaskStatus.FINISHED) {
                     if (StringUtils.isNotBlank(taskInfo.getChildTaskIds())) {
@@ -144,12 +144,12 @@ public class TaskTrigger {
             trigger(taskLog.retry());
         } else {
             //没有重试次数
-            TaskInfo taskInfo = KinSchedulerContext.instance().getTaskInfoDao().load(taskLog.getTaskId());
+            TaskInfo taskInfo = KinSchedulerContext.instance().getTaskInfoDao().selectById(taskLog.getTaskId());
             if (Objects.isNull(taskInfo)) {
                 return;
             }
             taskInfo.stop();
-            KinSchedulerContext.instance().getTaskInfoDao().update(taskInfo);
+            KinSchedulerContext.instance().getTaskInfoDao().updateById(taskInfo);
             //发送警告邮件
             MailUtils.sendAlarmEmail(taskInfo, taskLog, String.format("task提交重试次数已超过%s次", taskLog.getRetryTimesLimit()));
         }
@@ -162,6 +162,6 @@ public class TaskTrigger {
         taskLog.setHandleCode(TaskLog.FAILURE);
         tryTriggerAgain(taskLog);
 
-        KinSchedulerContext.instance().getTaskLogDao().updateHandleInfo(taskLog);
+        KinSchedulerContext.instance().getTaskLogDao().mapper().updateHandleInfo(taskLog);
     }
 }

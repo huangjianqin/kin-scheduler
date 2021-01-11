@@ -1,5 +1,6 @@
 package org.kin.scheduler.admin.entity;
 
+import com.baomidou.mybatisplus.annotation.TableName;
 import org.kin.scheduler.admin.core.domain.TaskInfoDTO;
 
 import java.util.Date;
@@ -8,6 +9,7 @@ import java.util.Date;
  * @author huangjianqin
  * @date 2020-03-07
  */
+@TableName(value = "task_log", autoResultMap = true)
 public class TaskLog {
     /** 失败状态 */
     public static final int FAILURE = 0;

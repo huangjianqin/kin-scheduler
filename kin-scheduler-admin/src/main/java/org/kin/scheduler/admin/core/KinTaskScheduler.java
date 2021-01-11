@@ -49,7 +49,7 @@ public class KinTaskScheduler extends TaskScheduler<TaskInfoDTO> {
             taskLog.setRetryTimesLimit(dto.getRetryTimesLimit());
         }
         taskLog.setTriggerTime(new Date());
-        KinSchedulerContext.instance().getTaskLogDao().save(taskLog);
+        KinSchedulerContext.instance().getTaskLogDao().insert(taskLog);
 
         //转换成通用的task描述
         TaskDescription taskDescription = TaskDescription.of(String.valueOf(dto.getJobId()), String.valueOf(dto.getTaskId()));
@@ -81,12 +81,12 @@ public class KinTaskScheduler extends TaskScheduler<TaskInfoDTO> {
                 taskLog.setLogPath(future.getTaskSubmitResp().getLogPath());
                 taskLog.setOutputPath(future.getTaskSubmitResp().getOutputPath());
 
-                KinSchedulerContext.instance().getTaskLogDao().updateTriggerInfo(taskLog);
+                KinSchedulerContext.instance().getTaskLogDao().mapper().updateTriggerInfo(taskLog);
             } else {
                 //任务提交失败
                 TaskTrigger.instance().submitTaskFail(taskLog);
 
-                KinSchedulerContext.instance().getTaskLogDao().updateTriggerInfo(taskLog);
+                KinSchedulerContext.instance().getTaskLogDao().mapper().updateTriggerInfo(taskLog);
                 return null;
             }
 

@@ -44,10 +44,10 @@ public class JobController {
     @RequestMapping("/pageList")
     @ResponseBody
     @Permission
-    public List<JobInfo> pageList(@RequestParam(required = false, defaultValue = "0") int start,
-                                  @RequestParam(required = false, defaultValue = "10") int length,
+    public List<JobInfo> pageList(@RequestParam(required = false, defaultValue = "0") int pageId,
+                                  @RequestParam(required = false, defaultValue = "10") int pageSize,
                                   String appName, String title) {
-        return jobInfoDao.pageList(start, length, appName, title);
+        return jobInfoDao.pageList(pageId, pageSize, appName, title);
     }
 
     @RequestMapping("/save")
@@ -58,7 +58,7 @@ public class JobController {
         if (Objects.nonNull(checkResp)) {
             return checkResp;
         }
-        int ret = jobInfoDao.save(jobInfo);
+        int ret = jobInfoDao.insert(jobInfo);
         return (ret > 0) ? WebResponse.success() : WebResponse.fail("db error");
     }
 
@@ -70,7 +70,7 @@ public class JobController {
         if (Objects.nonNull(checkResp)) {
             return checkResp;
         }
-        int ret = jobInfoDao.update(jobInfo);
+        int ret = jobInfoDao.updateById(jobInfo);
         return (ret > 0) ? WebResponse.success() : WebResponse.fail("db error");
     }
 

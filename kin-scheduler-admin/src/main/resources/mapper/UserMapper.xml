@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="org.kin.scheduler.admin.dao.UserDao">
+<mapper namespace="org.kin.scheduler.admin.mapper.UserMapper">
 
     <resultMap id="User" type="org.kin.scheduler.admin.entity.User">
         <result column="id" property="id"/>
@@ -10,80 +10,5 @@
         <result column="role" property="role"/>
         <result column="name" property="name"/>
     </resultMap>
-
-    <sql id="Base_Column_List">
-		t.id,
-		t.account,
-		t.password,
-		t.role,
-		t.name
-	</sql>
-
-    <select id="pageList" parameterType="java.util.HashMap" resultMap="User">
-        SELECT
-        <include refid="Base_Column_List"/>
-        FROM `user` AS t
-        <trim prefix="WHERE" prefixOverrides="AND | OR">
-            <if test="account != null and account != ''">
-                AND t.account like CONCAT(CONCAT('%', #{account}), '%')
-            </if>
-            <if test="role gt -1">
-                AND t.role = #{role}
-            </if>
-        </trim>
-        ORDER BY account ASC
-        LIMIT #{offset}, #{pageSize}
-    </select>
-
-    <select id="pageListCount" parameterType="java.util.HashMap" resultType="int">
-        SELECT count(1)
-        FROM `user` AS t
-        <trim prefix="WHERE" prefixOverrides="AND | OR">
-            <if test="account != null and account != ''">
-                AND t.account like CONCAT(CONCAT('%', #{account}), '%')
-            </if>
-            <if test="role gt -1">
-                AND t.role = #{role}
-            </if>
-        </trim>
-        LIMIT #{offset}, #{pageSize}
-    </select>
-
-    <select id="loadByAccount" parameterType="java.util.HashMap" resultMap="User">
-        SELECT
-        <include refid="Base_Column_List"/>
-        FROM `user` AS t
-        WHERE t.account = #{account}
-    </select>
-
-    <insert id="save" parameterType="org.kin.scheduler.admin.entity.User" useGeneratedKeys="true" keyProperty="id">
-		INSERT INTO `user` (
-			account,
-			password,
-			role,
-			`name`
-		) VALUES (
-			#{account},
-			#{password},
-			#{role},
-			#{name}
-		);
-	</insert>
-
-    <update id="update" parameterType="org.kin.scheduler.admin.entity.User">
-        UPDATE `user`
-        SET
-        <if test="password != null and password != ''">
-            password = #{password},
-        </if>
-        role = #{role}
-        WHERE id = #{id}
-    </update>
-
-    <delete id="delete" parameterType="java.util.HashMap">
-		DELETE
-		FROM `user`
-		WHERE id = #{id}
-	</delete>
 
 </mapper>

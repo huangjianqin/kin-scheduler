@@ -1,11 +1,16 @@
 package org.kin.scheduler.admin.entity;
 
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+
 /**
  * @author huangjianqin
  * @date 2020-03-07
  */
+@TableName(value = "job_info", autoResultMap = true)
 public class JobInfo {
     /** 唯一id */
+    @TableId
     private int id;
     /** appName */
     private String appName;
