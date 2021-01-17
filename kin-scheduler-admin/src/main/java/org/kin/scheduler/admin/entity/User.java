@@ -14,7 +14,7 @@ public class User {
     public static final int ADMIN = 1;
 
     /** 唯一id */
-    private int id;
+    private Integer id;
     /** 账号 */
     private String account;
     /** 密码 */
@@ -29,11 +29,11 @@ public class User {
     }
 
     //-----------------------------------------------------------------------------------------------------------------
-    public int getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 

@@ -11,7 +11,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 public class JobInfo {
     /** 唯一id */
     @TableId
-    private int id;
+    private Integer id;
     /** appName */
     private String appName;
     /** 标题 */
@@ -19,11 +19,12 @@ public class JobInfo {
     /** 优先级 */
     private int order;
 
-    public int getId() {
+    //setter && getter
+    public Integer getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 

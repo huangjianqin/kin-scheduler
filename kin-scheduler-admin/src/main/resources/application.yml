@@ -102,7 +102,7 @@ kin:
     port: 46668
     logPath: logs
     serializer: kryo
-    #    compression: none
+    compression: none
     # scheduler core 配置
     workerHost: 0.0.0.0
     workerPort: 50000

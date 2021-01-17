@@ -59,7 +59,7 @@ public interface TaskLogMapper extends BaseMapper<TaskLog> {
      * @param taskId task id
      * @return
      */
-    int delete(@Param("taskId") int taskId);
+    int deleteByTaskId(@Param("taskId") int taskId);
 
     /**
      * 统计某@param handleCode task log数

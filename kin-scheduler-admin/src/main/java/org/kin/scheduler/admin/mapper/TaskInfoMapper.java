@@ -34,25 +34,6 @@ public interface TaskInfoMapper extends BaseMapper<TaskInfo> {
                               @Param("userName") String userName);
 
     /**
-     * task分页数量
-     *
-     * @param offset        偏移量, 相当于第n页*每页显示数量
-     * @param pageSize      每页显示数量
-     * @param jobId         job id
-     * @param triggerStatus 触发状态规则
-     * @param desc          描述规则
-     * @param type          任务类型规则
-     * @param userName      创建用户名规则
-     */
-    int pageListCount(@Param("offset") int offset,
-                      @Param("pageSize") int pageSize,
-                      @Param("jobId") int jobId,
-                      @Param("triggerStatus") int triggerStatus,
-                      @Param("desc") String desc,
-                      @Param("type") String type,
-                      @Param("userName") String userName);
-
-    /**
      * 根据job id获取task
      *
      * @param jobId job id

@@ -17,7 +17,7 @@ public class TaskLog {
     public static final int SUCCESS = 200;
 
     /** 唯一id */
-    private int id;
+    private Integer id;
     /** 所属taskId */
     private int taskId;
     /** 所属jobId */
@@ -67,12 +67,12 @@ public class TaskLog {
         return new TaskInfoDTO(jobId, taskId, desc, retryTimes + 1, retryTimesLimit, execTimeout, type, execStrategy, routeStrategy, param);
     }
 
-    //-----------------------------------------------------------------------------------------------------------------
-    public int getId() {
+    //setter && getter
+    public Integer getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 

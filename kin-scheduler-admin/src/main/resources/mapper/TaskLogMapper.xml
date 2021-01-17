@@ -95,18 +95,18 @@
 	</update>
 
     <update id="updateHandleInfo" parameterType="org.kin.scheduler.admin.entity.TaskLog">
-		UPDATE task_log
-		SET
-			`handle_time`= #{handleTime},
-			`handle_code`= #{handleCode},
-			`retry_times`= #{retryTimes}
-		WHERE `id`= #{id}
-	</update>
+        UPDATE task_log
+        SET `handle_time`= #{handleTime},
+            `handle_code`= #{handleCode},
+            `retry_times`= #{retryTimes}
+        WHERE `id` = #{id}
+    </update>
 
-    <delete id="delete">
-		delete from task_log
-		WHERE task_id = #{taskId}
-	</delete>
+    <delete id="deleteByTaskId">
+        delete
+        from task_log
+        WHERE task_id = #{taskId}
+    </delete>
 
     <select id="countByHandleCode" resultType="int">
         SELECT count(1)

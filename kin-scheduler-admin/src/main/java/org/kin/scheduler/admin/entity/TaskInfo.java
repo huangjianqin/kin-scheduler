@@ -19,7 +19,7 @@ public class TaskInfo {
     public static final int END = 2;
 
     /** 唯一id */
-    private int id;
+    private Integer id;
     /** 所属jobId */
     private int jobId;
     /** 时间类型 */
@@ -83,12 +83,12 @@ public class TaskInfo {
         setTriggerStatus(END);
     }
 
-    //--------------------------------------------------------------------------------------------------
-    public int getId() {
+    //setter && getter
+    public Integer getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 
