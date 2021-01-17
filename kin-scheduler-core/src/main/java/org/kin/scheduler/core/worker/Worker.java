@@ -92,8 +92,6 @@ public class Worker extends ThreadSafeRpcEndpoint {
 
     @Override
     public void onReceiveMessage(RpcMessageCallContext context) {
-        super.receive(context);
-
         Serializable message = context.getMessage();
         if (message instanceof RegisterWorkerResp) {
             registerWorkerResp((RegisterWorkerResp) message);

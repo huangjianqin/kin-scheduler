@@ -120,8 +120,6 @@ public class Executor extends ThreadSafeRpcEndpoint {
 
     @Override
     public void onReceiveMessage(RpcMessageCallContext context) {
-        super.receive(context);
-
         Serializable message = context.getMessage();
         if (message instanceof SubmitTask) {
             execTask(context, (((SubmitTask) message).getTaskDescription()));

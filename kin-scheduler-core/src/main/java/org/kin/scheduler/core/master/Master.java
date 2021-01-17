@@ -104,7 +104,6 @@ public class Master extends ThreadSafeRpcEndpoint {
 
     @Override
     public void onReceiveMessage(RpcMessageCallContext context) {
-        super.receive(context);
         Serializable message = context.getMessage();
         //master endpoint相关
         if (message instanceof RegisterWorker) {
