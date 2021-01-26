@@ -1,9 +1,6 @@
 package org.kin.scheduler.admin.core;
 
-import org.kin.framework.concurrent.TimeRing;
-import org.kin.framework.concurrent.keeper.Keeper;
-import org.kin.framework.concurrent.partition.EfficientHashPartitioner;
-import org.kin.framework.concurrent.partition.PartitionTaskExecutor;
+import org.kin.framework.concurrent.*;
 import org.kin.framework.utils.CollectionUtils;
 import org.kin.scheduler.admin.dao.TaskInfoDao;
 import org.kin.scheduler.admin.domain.TimeType;
@@ -43,7 +40,7 @@ public class TaskScheduleKeeper {
     }
 
     /** 分区线程池, 用于按task id分区提交task */
-    private PartitionTaskExecutor<Integer> triggerThreads;
+    private ScheduledPartitionExecutor<Integer> triggerThreads;
     private Keeper.KeeperStopper scheduleKeeper;
     /** 2s时间间隔的时间环, 模拟时间行走, 不太实时, 但是性能相对较好 */
     private TimeRing<Integer> timeRing;
@@ -53,9 +50,10 @@ public class TaskScheduleKeeper {
     /**
      * 初始化
      */
+    @SuppressWarnings("unchecked")
     private void init() {
         triggerThreads =
-                new PartitionTaskExecutor<>(
+                new DefaultPartitionExecutor<>(
                         KinSchedulerContext.instance().getParallism(),
                         EfficientHashPartitioner.INSTANCE,
                         "admin-schedule-");
