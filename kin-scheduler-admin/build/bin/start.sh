@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# app name
+app_name=Kin-Scheduler-Admin
 # 指定运行脚本user
 app_user=bigdata1
 
@@ -7,7 +9,7 @@ java="java"
 # 项目根目录
 base_dir=$(dirname $0)/..
 # 项目main class
-main_class=org.kin.scheduler.admin.KinSchedulerApplication
+main_class=org.kin.conf.diamond.DiamondApplication
 CLASSPATH=.:${base_dir}/lib/*:${base_dir}/resources/*:${CLASSPATH}
 
 if [ ! -d ${base_dir}/gclogs ]; then
@@ -15,7 +17,7 @@ if [ ! -d ${base_dir}/gclogs ]; then
 fi
 
 # java jvm参数, 可修改
-JAVA_OPT="${JAVA_OPT} -server -Xms512m -Xmx1g"
+JAVA_OPT="${JAVA_OPT} -server -Xms256m -Xmx512m"
 JAVA_OPT="${JAVA_OPT} -XX:MaxMetaspaceSize=256m"
 JAVA_OPT="${JAVA_OPT} -verbose:gc -Xloggc:${base_dir}/gclogs/gc.log -XX:+PrintGCDetails -XX:+PrintGCTimeStamps"
 JAVA_OPT="${JAVA_OPT} -XX:+UserGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=100m"
@@ -31,3 +33,7 @@ if [ "${current_user}" = "root" ]; then
 else
   `$cmd`
 fi
+
+current_path=$(dirname $0)
+echo $! >"${current_path}"/app.pid
+echo "${app_name} started"
