@@ -6,9 +6,9 @@ import org.kin.framework.utils.CommandUtils;
 import org.kin.framework.utils.ExceptionUtils;
 import org.kin.framework.utils.NetUtils;
 import org.kin.framework.utils.StringUtils;
+import org.kin.kinrpc.message.core.MessagePostContext;
 import org.kin.kinrpc.message.core.RpcEndpointRef;
 import org.kin.kinrpc.message.core.RpcEnv;
-import org.kin.kinrpc.message.core.RpcMessageCallContext;
 import org.kin.kinrpc.message.core.ThreadSafeRpcEndpoint;
 import org.kin.kinrpc.message.core.message.ClientDisconnected;
 import org.kin.kinrpc.transport.kinrpc.KinRpcAddress;
@@ -91,7 +91,7 @@ public class Worker extends ThreadSafeRpcEndpoint {
     }
 
     @Override
-    public void onReceiveMessage(RpcMessageCallContext context) {
+    public void onReceiveMessage(MessagePostContext context) {
         Serializable message = context.getMessage();
         if (message instanceof RegisterWorkerResp) {
             registerWorkerResp((RegisterWorkerResp) message);
@@ -246,7 +246,7 @@ public class Worker extends ThreadSafeRpcEndpoint {
     /**
      * scheduler 读取worker上的文件
      */
-    private void readFile(RpcMessageCallContext context, ReadFile readFile) {
+    private void readFile(MessagePostContext context, ReadFile readFile) {
         if (isStopped) {
             return;
         }

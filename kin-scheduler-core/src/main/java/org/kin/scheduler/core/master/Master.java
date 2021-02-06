@@ -5,9 +5,9 @@ import org.kin.framework.concurrent.ExecutionContext;
 import org.kin.framework.utils.CollectionUtils;
 import org.kin.framework.utils.StringUtils;
 import org.kin.framework.utils.SysUtils;
+import org.kin.kinrpc.message.core.MessagePostContext;
 import org.kin.kinrpc.message.core.RpcEndpointRef;
 import org.kin.kinrpc.message.core.RpcEnv;
-import org.kin.kinrpc.message.core.RpcMessageCallContext;
 import org.kin.kinrpc.message.core.ThreadSafeRpcEndpoint;
 import org.kin.kinrpc.message.core.message.ClientDisconnected;
 import org.kin.kinrpc.transport.kinrpc.KinRpcAddress;
@@ -103,7 +103,7 @@ public class Master extends ThreadSafeRpcEndpoint {
     }
 
     @Override
-    public void onReceiveMessage(RpcMessageCallContext context) {
+    public void onReceiveMessage(MessagePostContext context) {
         Serializable message = context.getMessage();
         //master endpoint相关
         if (message instanceof RegisterWorker) {
@@ -273,7 +273,7 @@ public class Master extends ThreadSafeRpcEndpoint {
      *
      * @param registerApplication 请求
      */
-    private void registerApplication(RpcMessageCallContext context, RegisterApplication registerApplication) {
+    private void registerApplication(MessagePostContext context, RegisterApplication registerApplication) {
         if (isStopped) {
             context.reply(RegisterApplicationResp.failure("master not started"));
             return;
@@ -424,7 +424,7 @@ public class Master extends ThreadSafeRpcEndpoint {
      *
      * @param readFile 读取文件所需参数, 也就是所在worker的唯一Id, 路径, 开始行数
      */
-    private void readFile(RpcMessageCallContext context, ReadFile readFile) {
+    private void readFile(MessagePostContext context, ReadFile readFile) {
         String workerId = readFile.getWorkerId();
         String path = readFile.getPath();
         int fromLineNum = readFile.getFromLineNum();

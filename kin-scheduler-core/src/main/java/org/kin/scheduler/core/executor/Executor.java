@@ -4,9 +4,9 @@ import ch.qos.logback.classic.Logger;
 import com.google.common.base.Preconditions;
 import org.kin.framework.concurrent.ExecutionContext;
 import org.kin.framework.utils.*;
+import org.kin.kinrpc.message.core.MessagePostContext;
 import org.kin.kinrpc.message.core.RpcEndpointRef;
 import org.kin.kinrpc.message.core.RpcEnv;
-import org.kin.kinrpc.message.core.RpcMessageCallContext;
 import org.kin.kinrpc.message.core.ThreadSafeRpcEndpoint;
 import org.kin.scheduler.core.driver.transport.CancelTask;
 import org.kin.scheduler.core.driver.transport.KillExecutor;
@@ -119,7 +119,7 @@ public class Executor extends ThreadSafeRpcEndpoint {
     }
 
     @Override
-    public void onReceiveMessage(RpcMessageCallContext context) {
+    public void onReceiveMessage(MessagePostContext context) {
         Serializable message = context.getMessage();
         if (message instanceof SubmitTask) {
             execTask(context, (((SubmitTask) message).getTaskDescription()));
@@ -152,7 +152,7 @@ public class Executor extends ThreadSafeRpcEndpoint {
      * @param context         消息通信上下文
      * @param taskDescription task描述
      */
-    private void execTask(RpcMessageCallContext context, TaskDescription taskDescription) {
+    private void execTask(MessagePostContext context, TaskDescription taskDescription) {
         TaskSubmitResp taskSubmitResp = execTask0(taskDescription);
         log.info("exec task({}) finished, resulst >>>> {}", taskDescription.getTaskId(), taskSubmitResp);
         context.reply(taskSubmitResp);
@@ -229,7 +229,7 @@ public class Executor extends ThreadSafeRpcEndpoint {
     /**
      * scheduler 通知取消执行task
      */
-    private void cancelTask(RpcMessageCallContext context, CancelTask cancelTask) {
+    private void cancelTask(MessagePostContext context, CancelTask cancelTask) {
         String taskId = cancelTask.getTaskId();
         log.info("task({}) cancel >>>>", taskId);
         if (!isStopped) {

@@ -1,8 +1,8 @@
 package org.kin.scheduler.core.driver.scheduler;
 
 import org.kin.framework.utils.ExceptionUtils;
+import org.kin.kinrpc.message.core.MessagePostContext;
 import org.kin.kinrpc.message.core.RpcEnv;
-import org.kin.kinrpc.message.core.RpcMessageCallContext;
 import org.kin.kinrpc.message.core.ThreadSafeRpcEndpoint;
 import org.kin.scheduler.core.driver.Application;
 import org.kin.scheduler.core.driver.ExecutorContext;
@@ -85,7 +85,7 @@ public abstract class TaskScheduler<T> extends ThreadSafeRpcEndpoint {
     }
 
     @Override
-    public void onReceiveMessage(RpcMessageCallContext context) {
+    public void onReceiveMessage(MessagePostContext context) {
         Serializable message = context.getMessage();
         if (message instanceof ExecutorStateUpdate) {
             executorStatusChange(((ExecutorStateUpdate) message).getUnavailableExecutorIds());
