@@ -148,7 +148,7 @@ public class KinSchedulerContext implements InitializingBean, ApplicationListene
                                     //占用所有worker的所有cpu核心数
                                     .cpuCore(Integer.MAX_VALUE)
                                     //如果允许, 所有worker都启动executor
-                                    .allocateStrategy(AllocateStrategyType.All)
+                                    .allocateStrategy(AllocateStrategyType.ALL)
                                     //每个worker一个executor, 方便应用层面故障隔离
                                     .oneExecutorPerWorker()
                                     //异步模式

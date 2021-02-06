@@ -20,7 +20,7 @@ public class Application {
     /** master rpc接口 */
     private String masterAddress = "0.0.0.0:46668";
     /** executor分配策略 */
-    private AllocateStrategyType allocateStrategyType = AllocateStrategyType.Hash;
+    private AllocateStrategyType allocateStrategyType = AllocateStrategyType.HASH;
     /** driver rpc服务端口 */
     private int driverPort = 46000;
     /** 需要cpu核心数 */

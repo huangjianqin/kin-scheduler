@@ -12,7 +12,7 @@ public enum RouteStrategyType {
     /**
      * Hash分配
      */
-    Hash("Hash分配"),
+    HASH("Hash分配"),
     /**
      * 最不经常使用分配
      */
@@ -24,11 +24,11 @@ public enum RouteStrategyType {
     /**
      * 随机分配
      */
-    Random("随机分配"),
+    RANDOM("随机分配"),
     /**
      * 轮询分配
      */
-    RoundRobin("轮询分配"),
+    ROUND_ROBIN("轮询分配"),
     ;
 
     //------------------------------------------------------

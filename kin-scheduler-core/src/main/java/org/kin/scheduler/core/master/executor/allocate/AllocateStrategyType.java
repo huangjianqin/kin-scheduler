@@ -10,11 +10,11 @@ public enum AllocateStrategyType {
     /**
      * 根据资源分配
      */
-    Res,
+    RES,
     /**
      * Hash分配
      */
-    Hash,
+    HASH,
     /**
      * 最不经常使用分配
      */
@@ -26,15 +26,15 @@ public enum AllocateStrategyType {
     /**
      * 随机分配
      */
-    Random,
+    RANDOM,
     /**
      * 轮询分配
      */
-    RoundRobin,
+    ROUND_ROBIN,
     /**
      * 获取全部executor
      */
-    All,
+    ALL,
     ;
 
     //------------------------------------------------------

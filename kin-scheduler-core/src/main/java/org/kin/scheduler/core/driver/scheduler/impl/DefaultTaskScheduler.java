@@ -43,7 +43,7 @@ public class DefaultTaskScheduler extends TaskScheduler<TaskDescription> {
         //初始化TaskContext 用于任务状态追踪
         TaskContext taskContext = taskSetManager.init(taskDescription);
         //默认使用随机的executor路由策略选择executor
-        ExecutorContext selected = getAvailableExecutors(taskContext, RouteStrategies.getByName(RouteStrategyType.Random));
+        ExecutorContext selected = getAvailableExecutors(taskContext, RouteStrategies.getByName(RouteStrategyType.RANDOM));
         if (Objects.nonNull(selected)) {
             //提交task
             return submitTask(selected, taskContext);
