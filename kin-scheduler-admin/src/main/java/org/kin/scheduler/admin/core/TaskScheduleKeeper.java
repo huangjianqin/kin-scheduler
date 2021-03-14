@@ -43,7 +43,7 @@ public class TaskScheduleKeeper {
     private ScheduledPartitionExecutor<Integer> triggerThreads;
     private Keeper.KeeperStopper scheduleKeeper;
     /** 2s时间间隔的时间环, 模拟时间行走, 不太实时, 但是性能相对较好 */
-    private TimeRing<Integer> timeRing;
+    private WheelTimer<Integer> timeRing;
     /** 数据库连接 */
     private Connection conn = null;
 
@@ -58,7 +58,7 @@ public class TaskScheduleKeeper {
                         EfficientHashPartitioner.INSTANCE,
                         "admin-schedule-");
         scheduleKeeper = Keeper.keep(this::schedule);
-        timeRing = TimeRing.second(2, this::trigger);
+        timeRing = WheelTimer.second(2, this::trigger);
         timeRing.start();
     }
 
