@@ -26,7 +26,7 @@ public class WorkerRunner {
 
             //创建rpc环境
             RpcEnv rpcEnv = new RpcEnv(config.getWorkerHost(), config.getWorkerPort(), config.getCpuCore(),
-                    config.getSerializerObj(), config.getCompressionType());
+                    config.getSerializationObj(), config.getCompressionType());
             //启动server
             rpcEnv.startServer();
             Worker worker = new Worker(rpcEnv, workerId, config);

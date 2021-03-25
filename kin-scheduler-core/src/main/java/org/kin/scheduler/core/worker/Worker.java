@@ -210,7 +210,7 @@ public class Worker extends ThreadSafeRpcEndpoint {
                             "", "./",
                             appName, workerId, executorId, config.getWorkerHost(), String.valueOf(executorPort),
                             config.getLogPath(), launchInfo.getExecutorSchedulerAddress(), executorWorkerAddress,
-                            config.getSerializer(), Integer.toString(config.getCompressionType().getId()));
+                            config.getSerialization(), Integer.toString(config.getCompressionType().getId()));
                 } catch (Exception e) {
                     reason = ExceptionUtils.getExceptionDesc(e);
                 }

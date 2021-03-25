@@ -98,7 +98,7 @@ public enum ConfigKeys {
     Serialize("通信序列化方式") {
         @Override
         void updateConfig(Config config, Properties properties) {
-            config.setSerializer(ConfigUtils.getValue(properties, this));
+            config.setSerialization(ConfigUtils.getValue(properties, this));
         }
     },
     /**

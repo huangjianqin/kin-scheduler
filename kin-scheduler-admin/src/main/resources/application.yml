@@ -46,7 +46,7 @@ spring:
   mail:
     host: smtp.qq.com
     port: 25
-    #    username:
+#    username:
     # 填授权码
     #    password:
     properties:
@@ -101,7 +101,7 @@ kin:
     host: 0.0.0.0
     port: 46668
     logPath: logs
-    serializer: kryo
+    serialization: kryo
     compression: none
     # scheduler core 配置
     workerHost: 0.0.0.0

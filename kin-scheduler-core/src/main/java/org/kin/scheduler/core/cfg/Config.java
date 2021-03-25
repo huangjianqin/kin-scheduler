@@ -1,9 +1,9 @@
 package org.kin.scheduler.core.cfg;
 
 import org.kin.framework.utils.SysUtils;
-import org.kin.kinrpc.serializer.Serializer;
-import org.kin.kinrpc.serializer.SerializerType;
-import org.kin.kinrpc.serializer.Serializers;
+import org.kin.kinrpc.serialization.Serialization;
+import org.kin.kinrpc.serialization.SerializationType;
+import org.kin.kinrpc.serialization.Serializations;
 import org.kin.transport.netty.CompressionType;
 
 /**
@@ -32,7 +32,7 @@ public class Config {
     /** CPU核心数, 默认等于系统cpu核心数 */
     private int cpuCore = SysUtils.CPU_NUM;
     /** 通信序列化方式, 默认是kryo */
-    private String serializer = SerializerType.KRYO.name();
+    private String serialization = SerializationType.KRYO.name();
     /** 通信是否支持压缩 */
     private CompressionType compressionType = CompressionType.NONE;
 
@@ -43,8 +43,8 @@ public class Config {
         return heartbeatTime + 2000;
     }
 
-    public Serializer getSerializerObj() {
-        return Serializers.getSerializer(serializer);
+    public Serialization getSerializationObj() {
+        return Serializations.getSerialization(serialization);
     }
 
     //setter && getter
@@ -121,12 +121,12 @@ public class Config {
         this.cpuCore = cpuCore;
     }
 
-    public String getSerializer() {
-        return serializer;
+    public String getSerialization() {
+        return serialization;
     }
 
-    public void setSerializer(String serializer) {
-        this.serializer = serializer;
+    public void setSerialization(String serialization) {
+        this.serialization = serialization;
     }
 
     public CompressionType getCompressionType() {

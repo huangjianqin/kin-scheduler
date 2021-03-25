@@ -4,9 +4,9 @@ import com.google.common.base.Preconditions;
 import org.kin.framework.utils.NetUtils;
 import org.kin.framework.utils.SysUtils;
 import org.kin.kinrpc.message.core.RpcEnv;
-import org.kin.kinrpc.serializer.Serializer;
-import org.kin.kinrpc.serializer.SerializerType;
-import org.kin.kinrpc.serializer.Serializers;
+import org.kin.kinrpc.serialization.Serialization;
+import org.kin.kinrpc.serialization.SerializationType;
+import org.kin.kinrpc.serialization.Serializations;
 import org.kin.scheduler.admin.dao.JobInfoDao;
 import org.kin.scheduler.admin.dao.TaskInfoDao;
 import org.kin.scheduler.admin.dao.TaskLogDao;
@@ -61,8 +61,8 @@ public class KinSchedulerContext implements InitializingBean, ApplicationListene
     @Value("${kin.scheduler.logPath}")
     private String logPath;
     /** 通信序列化方式 */
-    @Value("${kin.scheduler.serializer}")
-    private String serializer = SerializerType.KRYO.name();
+    @Value("${kin.scheduler.serialization}")
+    private String serialization = SerializationType.KRYO.name();
     /** 通信是否支持压缩 */
     @Value("${kin.scheduler.compression}")
     private String compression;
@@ -102,14 +102,14 @@ public class KinSchedulerContext implements InitializingBean, ApplicationListene
     @Override
     public void onApplicationEvent(ContextRefreshedEvent refreshedEvent) {
         if (refreshedEvent.getApplicationContext().getParent() == null) {
-            Serializer serializer = Serializers.getSerializer(this.serializer);
+            Serialization serialization = Serializations.getSerialization(this.serialization);
             CompressionType compressionType = CompressionType.getByName(compression);
 
-            Preconditions.checkNotNull(serializer, String.format("can't find Serializer with type = %s", this.serializer));
+            Preconditions.checkNotNull(serialization, String.format("can't find Serialization with type = %s", this.serialization));
             Preconditions.checkNotNull(compressionType, String.format("can't find CompressionType with name '%s'", compression));
 
             //spring 容器初始化后, 初始化rpc环境和master
-            rpcEnv = new RpcEnv(host, port, SysUtils.getSuitableThreadNum(), serializer, compressionType);
+            rpcEnv = new RpcEnv(host, port, SysUtils.getSuitableThreadNum(), serialization, compressionType);
             //启动服务器
             rpcEnv.startServer();
 
@@ -243,12 +243,12 @@ public class KinSchedulerContext implements InitializingBean, ApplicationListene
         this.logPath = logPath;
     }
 
-    public String getSerializer() {
-        return serializer;
+    public String getSerialization() {
+        return serialization;
     }
 
-    public void setSerializer(String serializer) {
-        this.serializer = serializer;
+    public void setSerialization(String serialization) {
+        this.serialization = serialization;
     }
 
     public String getCompression() {

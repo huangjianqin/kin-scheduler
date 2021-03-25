@@ -2,9 +2,9 @@ package org.kin.scheduler.core.driver;
 
 import com.google.common.base.Preconditions;
 import org.kin.framework.utils.SysUtils;
-import org.kin.kinrpc.serializer.Serializer;
-import org.kin.kinrpc.serializer.SerializerType;
-import org.kin.kinrpc.serializer.Serializers;
+import org.kin.kinrpc.serialization.Serialization;
+import org.kin.kinrpc.serialization.SerializationType;
+import org.kin.kinrpc.serialization.Serializations;
 import org.kin.scheduler.core.master.executor.allocate.AllocateStrategyType;
 import org.kin.transport.netty.CompressionType;
 
@@ -32,7 +32,7 @@ public class Application {
     /** application是否缓存结果 */
     private boolean dropResult;
     /** 通信序列化方式, 默认是kryo */
-    private int serializerCode = SerializerType.KRYO.getCode();
+    private int serializationCode = SerializationType.KRYO.getCode();
     /** 通信是否支持压缩 */
     private CompressionType compressionType = CompressionType.NONE;
 
@@ -76,8 +76,8 @@ public class Application {
         return dropResult;
     }
 
-    public int getSerializerCode() {
-        return serializerCode;
+    public int getSerializationCode() {
+        return serializationCode;
     }
 
     public CompressionType getCompressionType() {
@@ -153,15 +153,15 @@ public class Application {
             return this;
         }
 
-        public ApplicationBuilder serializer(String serializerName) {
-            Serializer serializer = Serializers.getSerializer(serializerName);
-            Preconditions.checkNotNull(String.format("%s serializer must loaded", serializerName));
-            application.serializerCode = serializer.type();
+        public ApplicationBuilder serialization(String serializationName) {
+            Serialization serialization = Serializations.getSerialization(serializationName);
+            Preconditions.checkNotNull(String.format("%s serialization must loaded", serializationName));
+            application.serializationCode = serialization.type();
             return this;
         }
 
-        public ApplicationBuilder serializer(SerializerType serializerType) {
-            application.serializerCode = serializerType.getCode();
+        public ApplicationBuilder serialization(SerializationType serializationType) {
+            application.serializationCode = serializationType.getCode();
             return this;
         }
 
