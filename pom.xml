@@ -39,11 +39,22 @@
         <mybatis-spring-boot-starter.version>2.1.1</mybatis-spring-boot-starter.version>
     </properties>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.kin</groupId>
+                <artifactId>kin-framework-bom</artifactId>
+                <version>${kin-framework.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
         <dependency>
             <groupId>org.kin</groupId>
             <artifactId>kin-framework-java</artifactId>
-            <version>${kin-framework.version}</version>
         </dependency>
     </dependencies>
 
