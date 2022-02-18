@@ -17,7 +17,7 @@ public abstract class TaskTest {
     protected void run() throws InterruptedException {
         Driver driver = Driver.common(Application.builder().appName("test").allocateStrategy(AllocateStrategyType.ALL).build());
         driver.start();
-        JvmCloseCleaner.DEFAULT().add(driver::stop);
+        JvmCloseCleaner.instance().add(driver::stop);
         try {
             Thread.sleep(200);
 

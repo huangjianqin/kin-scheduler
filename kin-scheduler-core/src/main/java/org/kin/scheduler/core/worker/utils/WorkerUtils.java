@@ -66,7 +66,7 @@ public class WorkerUtils {
         }
 
         if (CollectionUtils.isNonEmpty(threads)) {
-            JvmCloseCleaner.DEFAULT().add(JvmCloseCleaner.MAX_PRIORITY, () -> {
+            JvmCloseCleaner.instance().add(JvmCloseCleaner.MAX_PRIORITY, () -> {
                 for (Thread thread : threads) {
                     thread.interrupt();
                 }

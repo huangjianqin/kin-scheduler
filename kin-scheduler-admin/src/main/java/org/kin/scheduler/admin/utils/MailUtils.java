@@ -16,6 +16,8 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 
 import javax.mail.internet.MimeMessage;
 import java.text.MessageFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -58,7 +60,7 @@ public class MailUtils {
         JobInfo jobInfo = KinSchedulerContext.instance().getJobInfoDao().load(taskLog.getJobId());
 
         StringBuffer triggerMsg = new StringBuffer();
-        triggerMsg.append("<br>调度时间: ").append(TimeUtils.formatDateTime(taskLog.getTriggerTime()));
+        triggerMsg.append("<br>调度时间: ").append(TimeUtils.formatDateTime(LocalDateTime.ofInstant(taskLog.getTriggerTime().toInstant(), ZoneId.systemDefault())));
         triggerMsg.append("<br>调度结果: ").append(taskLog.getTriggerCode() == TaskLog.SUCCESS ? "成功" : "失败");
         triggerMsg.append("<br>Executor地址: ").append(taskLog.getExecutorAddress());
         triggerMsg.append("<br>Task类型: ").append(TaskType.getDescByName(taskLog.getType()));
@@ -71,7 +73,7 @@ public class MailUtils {
         triggerMsg.append("<br>Task output地址: ").append(taskLog.getOutputPath());
 
         StringBuffer handlerMsg = new StringBuffer();
-        handlerMsg.append("<br>任务执行完成时间: ").append(TimeUtils.formatDateTime(taskLog.getHandleTime()));
+        handlerMsg.append("<br>任务执行完成时间: ").append(TimeUtils.formatDateTime(LocalDateTime.ofInstant(taskLog.getHandleTime().toInstant(), ZoneId.systemDefault())));
         handlerMsg.append("<br>任务执行结果: ").append(taskLog.getHandleCode() == TaskLog.SUCCESS ? "成功" : "失败");
         handlerMsg.append("<br>任务执行结果描述: ").append(reason);
 

@@ -25,7 +25,7 @@ public class MasterRunner {
             master.createEndpoint();
             synchronized (master) {
                 try {
-                    JvmCloseCleaner.DEFAULT().add(rpcEnv::stop);
+                    JvmCloseCleaner.instance().add(rpcEnv::stop);
                     master.wait();
                 } catch (InterruptedException e) {
 

@@ -47,7 +47,7 @@ public class ExecutorRunner {
                 executor.createEndpoint();
                 synchronized (executor) {
                     try {
-                        JvmCloseCleaner.DEFAULT().add(rpcEnv::stop);
+                        JvmCloseCleaner.instance().add(rpcEnv::stop);
                         executor.wait();
                     } catch (InterruptedException e) {
                         throw e;

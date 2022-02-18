@@ -70,7 +70,7 @@ public class Driver {
         //启动taskscheduler
         taskScheduler.start();
 
-        JvmCloseCleaner.DEFAULT().add(JvmCloseCleaner.MAX_PRIORITY, this::stop);
+        JvmCloseCleaner.instance().add(JvmCloseCleaner.MAX_PRIORITY, this::stop);
 
         //注册application
         try {

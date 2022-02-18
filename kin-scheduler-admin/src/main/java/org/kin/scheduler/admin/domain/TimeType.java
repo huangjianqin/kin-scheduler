@@ -1,12 +1,10 @@
 package org.kin.scheduler.admin.domain;
 
-import org.kin.framework.utils.ExceptionUtils;
 import org.kin.framework.utils.TimeUtils;
 import org.kin.scheduler.admin.core.TaskScheduleKeeper;
 
-import java.text.ParseException;
+import java.time.ZoneId;
 import java.util.Date;
-import java.util.Objects;
 
 /**
  * @author huangjianqin
@@ -18,18 +16,13 @@ public enum TimeType {
      */
     ABSOLUTE {
         @Override
-        public long parseTime(String timeStr) throws Exception {
-            return TimeUtils.parseDateTime(timeStr).getTime();
+        public long parseTime(String timeStr) {
+            return Date.from(TimeUtils.parseDateTime(timeStr).atZone(ZoneId.systemDefault()).toInstant()).getTime();
         }
 
         @Override
         public boolean validTimeFormat(String timeStr) {
-            try {
-                return Objects.nonNull(TimeUtils.getDatetimeFormat().parse(timeStr));
-            } catch (ParseException e) {
-                ExceptionUtils.throwExt(e);
-            }
-            return false;
+            return true;
         }
     },
     /**

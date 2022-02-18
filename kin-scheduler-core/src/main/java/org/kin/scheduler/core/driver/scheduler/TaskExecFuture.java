@@ -26,7 +26,7 @@ public class TaskExecFuture<R extends Serializable> implements Future<R> {
     public static ExecutionContext CALLBACK_EXECUTORS = ExecutionContext.fix(SysUtils.CPU_NUM, "TaskSubmitFuture-Callback-Thread");
 
     static {
-        JvmCloseCleaner.DEFAULT().add(CALLBACK_EXECUTORS::shutdown);
+        JvmCloseCleaner.instance().add(CALLBACK_EXECUTORS::shutdown);
     }
 
     /** task submit 返回结果 */

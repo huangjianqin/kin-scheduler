@@ -34,7 +34,7 @@ public class WorkerRunner {
                 worker.createEndpoint();
                 synchronized (worker) {
                     try {
-                        JvmCloseCleaner.DEFAULT().add(rpcEnv::stop);
+                        JvmCloseCleaner.instance().add(rpcEnv::stop);
                         worker.wait();
                     } catch (InterruptedException e) {
 

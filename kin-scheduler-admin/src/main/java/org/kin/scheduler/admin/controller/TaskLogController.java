@@ -3,7 +3,6 @@ package org.kin.scheduler.admin.controller;
 import org.kin.framework.utils.CollectionUtils;
 import org.kin.framework.utils.ExceptionUtils;
 import org.kin.framework.utils.StringUtils;
-import org.kin.framework.utils.TimeUtils;
 import org.kin.framework.web.domain.Permission;
 import org.kin.framework.web.domain.WebResponse;
 import org.kin.scheduler.admin.core.KinSchedulerContext;
@@ -21,6 +20,9 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
@@ -39,7 +41,7 @@ public class TaskLogController {
 
     @InitBinder
     public void initBinder(WebDataBinder binder) {
-        binder.registerCustomEditor(Date.class, new CustomDateEditor(TimeUtils.getDatetimeFormat(), true));
+        binder.registerCustomEditor(Date.class, new CustomDateEditor(new SimpleDateFormat("yyyy-MM-dd"), true));
     }
 
     @RequestMapping("/chartInfo")
@@ -72,8 +74,11 @@ public class TaskLogController {
                 failTotal += failCount;
             }
         } else {
+            DateFormat format = new SimpleDateFormat("yyyy-MM-dd");
             for (int i = 4; i > -1; i--) {
-                dayList.add(TimeUtils.formatDate(TimeUtils.addDays(new Date(), -i)));
+                Calendar calendar = Calendar.getInstance();
+                calendar.add(Calendar.DAY_OF_MONTH, -i);
+                dayList.add(format.format(calendar));
                 runningList.add(0);
                 sucList.add(0);
                 failList.add(0);
@@ -102,13 +107,19 @@ public class TaskLogController {
                                         int jobId, int taskId, int logStatus, String filterTime) {
         User user = userService.getLoginUser(request, response);
 
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
         Date triggerTimeStart = null;
         Date triggerTimeEnd = null;
         if (filterTime != null && filterTime.trim().length() > 0) {
             String[] temp = filterTime.split(" - ");
             if (temp.length == 2) {
-                triggerTimeStart = TimeUtils.parseDateTime(temp[0]);
-                triggerTimeEnd = TimeUtils.parseDateTime(temp[1]);
+                try {
+                    triggerTimeStart = format.parse(temp[0]);
+                    triggerTimeEnd = format.parse(temp[1]);
+                } catch (ParseException e) {
+                    log.error("", e);
+                }
             }
         }
 
@@ -185,16 +196,24 @@ public class TaskLogController {
         int clearBeforeNum = 0;
         if (type == 1) {
             // 清理一个月之前日志数据
-            clearBeforeTime = TimeUtils.addMonths(new Date(), -1);
+            Calendar c = Calendar.getInstance();
+            c.add(Calendar.MONTH, -1);
+            clearBeforeTime = c.getTime();
         } else if (type == 2) {
             // 清理三个月之前日志数据
-            clearBeforeTime = TimeUtils.addMonths(new Date(), -3);
+            Calendar c = Calendar.getInstance();
+            c.add(Calendar.MONTH, -3);
+            clearBeforeTime = c.getTime();
         } else if (type == 3) {
             // 清理六个月之前日志数据
-            clearBeforeTime = TimeUtils.addMonths(new Date(), -6);
+            Calendar c = Calendar.getInstance();
+            c.add(Calendar.MONTH, -6);
+            clearBeforeTime = c.getTime();
         } else if (type == 4) {
             // 清理一年之前日志数据
-            clearBeforeTime = TimeUtils.addYears(new Date(), -1);
+            Calendar c = Calendar.getInstance();
+            c.add(Calendar.MONTH, -1);
+            clearBeforeTime = c.getTime();
         } else if (type == 5) {
             // 清理一千条以前日志数据
             clearBeforeNum = 1000;

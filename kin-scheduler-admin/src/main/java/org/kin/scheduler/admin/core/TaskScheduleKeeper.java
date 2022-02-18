@@ -42,8 +42,8 @@ public class TaskScheduleKeeper {
     /** 分区线程池, 用于按task id分区提交task */
     private ScheduledPartitionExecutor<Integer> triggerThreads;
     private Keeper.KeeperStopper scheduleKeeper;
-    /** 2s时间间隔的时间环, 模拟时间行走, 不太实时, 但是性能相对较好 */
-    private WheelTimer<Integer> timeRing;
+    /** time wheel */
+    private HashedWheelTimer wheelTimer;
     /** 数据库连接 */
     private Connection conn = null;
 
@@ -58,8 +58,7 @@ public class TaskScheduleKeeper {
                         EfficientHashPartitioner.INSTANCE,
                         "admin-schedule-");
         scheduleKeeper = Keeper.keep(this::schedule);
-        timeRing = WheelTimer.second(2, this::trigger);
-        timeRing.start();
+        wheelTimer = new HashedWheelTimer(2, TimeUnit.SECONDS);
     }
 
     /**
@@ -206,7 +205,7 @@ public class TaskScheduleKeeper {
      */
     private void pushRing(TaskInfo taskInfo) {
         // 推进时间环
-        timeRing.push(taskInfo.getTriggerNextTime(), taskInfo.getId());
+        wheelTimer.newTimeout(to -> trigger(taskInfo.getId()), taskInfo.getTriggerNextTime(), TimeUnit.MILLISECONDS);
 
         // 刷新下次触发时间
         taskInfo.setTriggerLastTime(taskInfo.getTriggerNextTime());
@@ -223,7 +222,7 @@ public class TaskScheduleKeeper {
      */
     public void stop() {
         scheduleKeeper.stop();
-        timeRing.stop();
+        wheelTimer.stop();
         triggerThreads.shutdown();
     }
 }
