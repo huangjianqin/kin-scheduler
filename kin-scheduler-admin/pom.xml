@@ -26,7 +26,7 @@
     <dependencies>
         <dependency>
             <groupId>org.kin</groupId>
-            <artifactId>kin-framework-web</artifactId>
+            <artifactId>kin-framework-web-common</artifactId>
             <version>${kin-framework-web.version}</version>
         </dependency>
 
