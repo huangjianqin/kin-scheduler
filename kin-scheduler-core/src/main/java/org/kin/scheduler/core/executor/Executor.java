@@ -93,11 +93,11 @@ public class Executor extends ThreadSafeRpcEndpoint {
         log = LogUtils.getExecutorLogger(logPath, workerId, executorId);
         taskLoggerContext.start();
         //通知worker executor status change
-        workerRef.send(ExecutorStateChanged.running(appName, executorId));
+        workerRef.fireAndForget(ExecutorStateChanged.running(appName, executorId));
         //往scheduler注册exeuctor
-        schedulerRef.send(RegisterExecutor.of(workerId, executorId, ref()));
+        schedulerRef.fireAndForget(RegisterExecutor.of(workerId, executorId, ref()));
         log.info("executor({}) started on {} with {} processor",
-                executorId, rpcEnv.address().address(), Runtime.getRuntime().availableProcessors());
+                executorId, rpcEnv.address(), Runtime.getRuntime().availableProcessors());
     }
 
     @Override
@@ -110,7 +110,7 @@ public class Executor extends ThreadSafeRpcEndpoint {
         isStopped = true;
 
         //移除与scheduler的通信
-        rpcEnv.removeOutBox(schedulerRef.getEndpointAddress().getRpcAddress());
+        rpcEnv.destroyEndpointRef(schedulerRef);
 
         executionContext.shutdown();
         taskLoggerContext.stop();
@@ -155,7 +155,7 @@ public class Executor extends ThreadSafeRpcEndpoint {
     private void execTask(MessagePostContext context, TaskDescription taskDescription) {
         TaskSubmitResp taskSubmitResp = execTask0(taskDescription);
         log.info("exec task({}) finished, resulst >>>> {}", taskDescription.getTaskId(), taskSubmitResp);
-        context.reply(taskSubmitResp);
+        context.response(taskSubmitResp);
     }
 
     /**
@@ -238,13 +238,13 @@ public class Executor extends ThreadSafeRpcEndpoint {
                     taskRunner.interrupt();
                 }
                 taskId2TaskRunners.remove(taskId);
-                context.reply(RPCResp.success());
+                context.response(RPCResp.success());
                 return;
             }
-            context.reply(RPCResp.failure(String.format("executor(%s) has not run task(%s)", executorId, taskId)));
+            context.response(RPCResp.failure(String.format("executor(%s) has not run task(%s)", executorId, taskId)));
             return;
         }
-        context.reply(RPCResp.failure(String.format("executor(%s) stopped", executorId)));
+        context.response(RPCResp.failure(String.format("executor(%s) stopped", executorId)));
     }
 
     /**
@@ -262,13 +262,13 @@ public class Executor extends ThreadSafeRpcEndpoint {
     public void executorStateChanged(ExecutorState state) {
         switch (state) {
             case KILLED:
-                workerRef.send(ExecutorStateChanged.kill(appName, executorId));
+                workerRef.fireAndForget(ExecutorStateChanged.kill(appName, executorId));
                 break;
             case FAIL:
-                workerRef.send(ExecutorStateChanged.fail(appName, executorId));
+                workerRef.fireAndForget(ExecutorStateChanged.fail(appName, executorId));
                 break;
             case EXIT:
-                workerRef.send(ExecutorStateChanged.exit(appName, executorId));
+                workerRef.fireAndForget(ExecutorStateChanged.exit(appName, executorId));
                 break;
             default:
         }
@@ -328,7 +328,7 @@ public class Executor extends ThreadSafeRpcEndpoint {
                     Loggers.logger().info("task({}) execute error >>>> {}", taskDescription.getTaskId(), e);
                 }
 
-                schedulerRef.send(execResult);
+                schedulerRef.fireAndForget(execResult);
             } finally {
                 Loggers.removeAll();
                 lock.lock();

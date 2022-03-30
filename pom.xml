@@ -23,8 +23,9 @@
 
         <revision>0.1.0.0</revision>
 
-        <kin-framework.version>0.1.0.0</kin-framework.version>
-        <kin-rpc.version>0.1.0.0</kin-rpc.version>
+        <kin-framework-java.version>0.1.0.0</kin-framework-java.version>
+        <kin-framework-dependencies.version>0.1.0.0</kin-framework-dependencies.version>
+        <kin-rpc.version>0.2.0.0</kin-rpc.version>
         <kin-framework-web.version>0.1.0.0</kin-framework-web.version>
         <jyaml.version>1.3</jyaml.version>
         <commons-exec.version>1.3</commons-exec.version>
@@ -37,22 +38,21 @@
         <jackson.version>2.10.1</jackson.version>
         <mybatis-plus.version>3.4.1</mybatis-plus.version>
         <mybatis-spring-boot-starter.version>2.1.1</mybatis-spring-boot-starter.version>
+        <kin-serialization.version>0.1.0.0</kin-serialization.version>
     </properties>
 
     <dependencyManagement>
         <dependencies>
             <dependency>
                 <groupId>org.kin</groupId>
-                <artifactId>kin-framework-bom</artifactId>
-                <version>${kin-framework.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
+                <artifactId>kin-framework-java</artifactId>
+                <version>${kin-framework-java.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.kin</groupId>
                 <artifactId>kin-framework-dependencies</artifactId>
-                <version>${kin-framework.version}</version>
+                <version>${kin-framework-dependencies.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>

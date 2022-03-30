@@ -2,11 +2,12 @@ package org.kin.scheduler.core.driver;
 
 import org.kin.framework.JvmCloseCleaner;
 import org.kin.framework.utils.ExceptionUtils;
+import org.kin.framework.utils.ExtensionLoader;
 import org.kin.framework.utils.NetUtils;
 import org.kin.framework.utils.SysUtils;
 import org.kin.kinrpc.message.core.RpcEndpointRef;
 import org.kin.kinrpc.message.core.RpcEnv;
-import org.kin.kinrpc.serialization.Serializations;
+import org.kin.kinrpc.serialization.Serialization;
 import org.kin.scheduler.core.driver.exception.RegisterApplicationFailureException;
 import org.kin.scheduler.core.driver.scheduler.TaskContext;
 import org.kin.scheduler.core.driver.scheduler.TaskExecFuture;
@@ -47,7 +48,7 @@ public class Driver {
     //---------------------------------------------------------------------------------------------------------------------
     public static Driver common(Application app) {
         RpcEnv rpcEnv = new RpcEnv("0.0.0.0", app.getDriverPort(), SysUtils.CPU_NUM,
-                Serializations.getSerialization(app.getSerializationCode()), app.getCompressionType());
+                ExtensionLoader.getExtension(Serialization.class, app.getSerializationCode()), app.getCompressionType());
         rpcEnv.startServer();
         return new Driver(rpcEnv, app, new DefaultTaskScheduler(rpcEnv, app));
     }
@@ -81,14 +82,14 @@ public class Driver {
             appDesc.setMinCoresPerExecutor(app.getMinCoresPerExecutor());
             appDesc.setOneExecutorPerWorker(app.isOneExecutorPerWorker());
 
-            RegisterApplicationResp registerApplicationResp = (RegisterApplicationResp) masterRef.ask(RegisterApplication.of(appDesc, taskScheduler.ref())).get();
+            RegisterApplicationResp registerApplicationResp = (RegisterApplicationResp) masterRef.requestResponse(RegisterApplication.of(appDesc, taskScheduler.ref())).get();
             if (!registerApplicationResp.isSuccess()) {
                 throw new RegisterApplicationFailureException(registerApplicationResp.getDesc());
             }
         } catch (Exception e) {
             throw new RegisterApplicationFailureException(e.getMessage());
         }
-        log.info("driver(appName={}, master={}) started on {}", app.getAppName(), app.getMasterAddress(), rpcEnv.address().address());
+        log.info("driver(appName={}, master={}) started on {}", app.getAppName(), app.getMasterAddress(), rpcEnv.address());
     }
 
     public void stop() {
@@ -97,7 +98,7 @@ public class Driver {
         }
 
         //先通知master 应用stop
-        masterRef.send(ApplicationEnd.of(app.getAppName()));
+        masterRef.fireAndForget(ApplicationEnd.of(app.getAppName()));
         isStopped = true;
         //再shutdown executor
         //防止无用executor分配, 如果先shutdown executor再通知master 应用stop, master存在再次为该应用分配资源的可能
@@ -122,7 +123,7 @@ public class Driver {
      * call线程
      * 向master请求某worker上的log文件
      *
-     * @param taskId      task id
+     * @param taskId task id
      * @return log info
      */
     public final TaskExecFileContent readLog(String taskId, int fromLineNum) {
@@ -138,7 +139,7 @@ public class Driver {
      * call线程
      * 向master请求某worker上的output文件
      *
-     * @param taskId      task id
+     * @param taskId task id
      * @return output info
      */
     public final TaskExecFileContent readOutput(String taskId, int fromLineNum) {
@@ -160,7 +161,7 @@ public class Driver {
      */
     protected final TaskExecFileContent readFile(String workerId, String path, int fromLineNum) {
         try {
-            return (TaskExecFileContent) masterRef.ask(ReadFile.of(workerId, path, fromLineNum)).get();
+            return (TaskExecFileContent) masterRef.requestResponse(ReadFile.of(workerId, path, fromLineNum)).get();
         } catch (InterruptedException e) {
             return TaskExecFileContent.fail(workerId, path, fromLineNum, "thread interrupted");
         } catch (ExecutionException e) {

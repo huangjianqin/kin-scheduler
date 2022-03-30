@@ -1,10 +1,10 @@
 package org.kin.scheduler.core.driver;
 
 import com.google.common.base.Preconditions;
+import org.kin.framework.utils.ExtensionLoader;
 import org.kin.framework.utils.SysUtils;
 import org.kin.kinrpc.serialization.Serialization;
 import org.kin.kinrpc.serialization.SerializationType;
-import org.kin.kinrpc.serialization.Serializations;
 import org.kin.scheduler.core.master.executor.allocate.AllocateStrategyType;
 import org.kin.transport.netty.CompressionType;
 
@@ -154,7 +154,7 @@ public class Application {
         }
 
         public ApplicationBuilder serialization(String serializationName) {
-            Serialization serialization = Serializations.getSerialization(serializationName);
+            Serialization serialization = ExtensionLoader.getExtension(Serialization.class, serializationName);
             Preconditions.checkNotNull(String.format("%s serialization must loaded", serializationName));
             application.serializationCode = serialization.type();
             return this;

@@ -64,13 +64,13 @@ public class UserServiceImpl implements UserService {
 
         // do login
         CookieUtils.set(response, CookieUtils.LOGIN_IDENTITY, loginToken, ifRemember);
-        return WebResponse.success("登陆成功", null);
+        return WebResponse.success("登陆成功");
     }
 
     @Override
     public WebResponse<String> logout(HttpServletRequest request, HttpServletResponse response) {
         CookieUtils.remove(request, response, CookieUtils.LOGIN_IDENTITY);
-        return WebResponse.success("登出成功", null);
+        return WebResponse.success("登出成功");
     }
 
     @Override

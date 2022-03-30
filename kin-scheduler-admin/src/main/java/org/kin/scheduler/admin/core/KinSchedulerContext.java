@@ -1,12 +1,12 @@
 package org.kin.scheduler.admin.core;
 
 import com.google.common.base.Preconditions;
+import org.kin.framework.utils.ExtensionLoader;
 import org.kin.framework.utils.NetUtils;
 import org.kin.framework.utils.SysUtils;
 import org.kin.kinrpc.message.core.RpcEnv;
 import org.kin.kinrpc.serialization.Serialization;
 import org.kin.kinrpc.serialization.SerializationType;
-import org.kin.kinrpc.serialization.Serializations;
 import org.kin.scheduler.admin.dao.JobInfoDao;
 import org.kin.scheduler.admin.dao.TaskInfoDao;
 import org.kin.scheduler.admin.dao.TaskLogDao;
@@ -102,7 +102,7 @@ public class KinSchedulerContext implements InitializingBean, ApplicationListene
     @Override
     public void onApplicationEvent(ContextRefreshedEvent refreshedEvent) {
         if (refreshedEvent.getApplicationContext().getParent() == null) {
-            Serialization serialization = Serializations.getSerialization(this.serialization);
+            Serialization serialization = ExtensionLoader.getExtension(Serialization.class, this.serialization);
             CompressionType compressionType = CompressionType.getByName(compression);
 
             Preconditions.checkNotNull(serialization, String.format("can't find Serialization with type = %s", this.serialization));

@@ -1,9 +1,9 @@
 package org.kin.scheduler.core.cfg;
 
+import org.kin.framework.utils.ExtensionLoader;
 import org.kin.framework.utils.SysUtils;
 import org.kin.kinrpc.serialization.Serialization;
 import org.kin.kinrpc.serialization.SerializationType;
-import org.kin.kinrpc.serialization.Serializations;
 import org.kin.transport.netty.CompressionType;
 
 /**
@@ -44,7 +44,7 @@ public class Config {
     }
 
     public Serialization getSerializationObj() {
-        return Serializations.getSerialization(serialization);
+        return ExtensionLoader.getExtension(Serialization.class, serialization);
     }
 
     //setter && getter

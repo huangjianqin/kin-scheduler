@@ -35,7 +35,7 @@ public class ExecutorContext {
     }
 
     public String getExecutorAddress() {
-        return executorRef.getEndpointAddress().getRpcAddress().address();
+        return executorRef.getEndpointAddress().getRpcAddress().toString();
     }
 
 }

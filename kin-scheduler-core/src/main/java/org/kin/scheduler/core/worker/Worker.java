@@ -69,7 +69,7 @@ public class Worker extends ThreadSafeRpcEndpoint {
         registerWorker();
         //启动定时心跳
         heartbeatKeeper = Keeper.keep(this::sendHeartbeat);
-        log.info("worker({}) started on {}", workerId, rpcEnv.address().address());
+        log.info("worker({}) started on {}", workerId, rpcEnv.address());
     }
 
     @Override
@@ -125,7 +125,7 @@ public class Worker extends ThreadSafeRpcEndpoint {
             return;
         }
         //注册worker
-        masterRef.send(RegisterWorker.of(WorkerInfo.of(workerId, config.getCpuCore(), 0, config.isAllowEmbeddedExecutor()), ref()));
+        masterRef.fireAndForget(RegisterWorker.of(WorkerInfo.of(workerId, config.getCpuCore(), 0, config.isAllowEmbeddedExecutor()), ref()));
     }
 
     /**
@@ -160,7 +160,7 @@ public class Worker extends ThreadSafeRpcEndpoint {
             return;
         }
 
-        masterRef.send(WorkerHeartbeat.of(workerId, ref()));
+        masterRef.fireAndForget(WorkerHeartbeat.of(workerId, ref()));
     }
 
     private String appExecutorId(String appName, String executorId) {
@@ -254,13 +254,13 @@ public class Worker extends ThreadSafeRpcEndpoint {
         int fromLineNum = readFile.getFromLineNum();
 
         if (StringUtils.isBlank(path)) {
-            context.reply(TaskExecFileContent.fail(workerId, path, fromLineNum, "path is blank"));
+            context.response(TaskExecFileContent.fail(workerId, path, fromLineNum, "path is blank"));
             return;
         }
 
         File logFile = new File(path);
         if (!logFile.exists()) {
-            context.reply(TaskExecFileContent.fail(workerId, path, fromLineNum, "read file fail, file not found"));
+            context.response(TaskExecFileContent.fail(workerId, path, fromLineNum, "read file fail, file not found"));
             return;
         }
 
@@ -277,10 +277,10 @@ public class Worker extends ThreadSafeRpcEndpoint {
             }
         } catch (IOException e) {
             log.error("read log file encounter error >>>>", e);
-            context.reply(TaskExecFileContent.fail(workerId, path, fromLineNum, ExceptionUtils.getExceptionDesc(e)));
+            context.response(TaskExecFileContent.fail(workerId, path, fromLineNum, ExceptionUtils.getExceptionDesc(e)));
             return;
         }
-        context.reply(TaskExecFileContent.success(workerId, path, fromLineNum, toLineNum, logContentBuffer.toString(), fromLineNum == toLineNum));
+        context.response(TaskExecFileContent.success(workerId, path, fromLineNum, toLineNum, logContentBuffer.toString(), fromLineNum == toLineNum));
     }
 
     /**
@@ -290,7 +290,7 @@ public class Worker extends ThreadSafeRpcEndpoint {
         if (isStopped) {
             return;
         }
-        masterRef.send(executorStateChanged);
+        masterRef.fireAndForget(executorStateChanged);
         if (executorStateChanged.getState().isFinished()) {
             Executor invalidExecutor =
                     embeddedExecutors.remove(
@@ -307,8 +307,7 @@ public class Worker extends ThreadSafeRpcEndpoint {
         if (masterRef.getEndpointAddress().getRpcAddress().equals(rpcAddress)) {
             //master 断链
             registered = false;
-            rpcEnv.removeOutBox(masterRef.getEndpointAddress().getRpcAddress());
-            rpcEnv.removeClient(masterRef.getEndpointAddress().getRpcAddress());
+            rpcEnv.destroyEndpointRef(masterRef);
         }
     }
 }

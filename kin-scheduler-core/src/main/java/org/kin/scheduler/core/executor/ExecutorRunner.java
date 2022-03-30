@@ -2,10 +2,10 @@ package org.kin.scheduler.core.executor;
 
 import com.google.common.base.Preconditions;
 import org.kin.framework.JvmCloseCleaner;
+import org.kin.framework.utils.ExtensionLoader;
 import org.kin.framework.utils.SysUtils;
 import org.kin.kinrpc.message.core.RpcEnv;
 import org.kin.kinrpc.serialization.Serialization;
-import org.kin.kinrpc.serialization.Serializations;
 import org.kin.scheduler.core.executor.domain.ExecutorState;
 import org.kin.transport.netty.CompressionType;
 
@@ -28,7 +28,7 @@ public class ExecutorRunner {
             String workerAddress = args[7];
             String serializationName = args[8];
 
-            Serialization serialization = Serializations.getSerialization(serializationName);
+            Serialization serialization = ExtensionLoader.getExtension(Serialization.class, serializationName);
 
             int compressionTypeId = Integer.parseInt(args[9]);
             CompressionType compressionType = CompressionType.getById(compressionTypeId);

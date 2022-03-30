@@ -89,7 +89,7 @@ public class Master extends ThreadSafeRpcEndpoint {
         commonWorkers.scheduleAtFixedRate(() -> send2Self(CheckHeartbeatTimeout.INSTANCE),
                 config.getHeartbeatCheckInterval(), config.getHeartbeatCheckInterval(), TimeUnit.MILLISECONDS);
 
-        log.info("Master '{}' started on {}", name, rpcEnv.address().address());
+        log.info("Master '{}' started on {}", name, rpcEnv.address());
     }
 
     @Override
@@ -140,7 +140,7 @@ public class Master extends ThreadSafeRpcEndpoint {
         if (Objects.nonNull(workerInfo)) {
             RpcEndpointRef workerRef = registerWorker.getWorkerRef();
             if (isStopped) {
-                workerRef.send(RegisterWorkerResp.failure("master not started"));
+                workerRef.fireAndForget(RegisterWorkerResp.failure("master not started"));
                 return;
             }
 
@@ -151,13 +151,13 @@ public class Master extends ThreadSafeRpcEndpoint {
                 workers.put(workerId, worker);
 
                 log.info("worker '{}' registered >>>>> address:{}, cpu:{}, memory:{}",
-                        workerId, workerRef.getEndpointAddress().getRpcAddress().address(),
+                        workerId, workerRef.getEndpointAddress().getRpcAddress(),
                         workerInfo.getMaxCpuCore(), workerInfo.getMaxMemory());
-                workerRef.send(RegisterWorkerResp.success());
+                workerRef.fireAndForget(RegisterWorkerResp.success());
                 //调度资源
                 scheduleResource();
             } else {
-                workerRef.send(RegisterWorkerResp.failure(String.format("worker(workerId=%s) has registered", workerId)));
+                workerRef.fireAndForget(RegisterWorkerResp.failure(String.format("worker(workerId=%s) has registered", workerId)));
             }
         } else {
             log.error("worker(workerId=null) register info error");
@@ -195,7 +195,7 @@ public class Master extends ThreadSafeRpcEndpoint {
                 worker.setLastHeartbeatTime(System.currentTimeMillis());
             } else {
                 //发现心跳worker还没注册, 通知其注册
-                heartbeat.getWorkerRef().send(WorkerReRegister.INSTANCE);
+                heartbeat.getWorkerRef().fireAndForget(WorkerReRegister.INSTANCE);
             }
         }
     }
@@ -219,7 +219,7 @@ public class Master extends ThreadSafeRpcEndpoint {
             if (!executorState.isFinished()) {
                 if (ExecutorState.RUNNING.equals(executorState)) {
                     //已在启动executor时预占用资源
-                    driver.ref().send(ExecutorStateUpdate.of(Collections.singletonList(executorId), Collections.emptyList()));
+                    driver.ref().fireAndForget(ExecutorStateUpdate.of(Collections.singletonList(executorId), Collections.emptyList()));
                 }
                 //TODO 启动状态暂时不处理
             } else {
@@ -231,7 +231,7 @@ public class Master extends ThreadSafeRpcEndpoint {
                         worker.recoverMemory(executorDesc.getUsedMemory());
                     }
                     try {
-                        driver.ref().send(ExecutorStateUpdate.of(Collections.emptyList(), Collections.singletonList(executorId)));
+                        driver.ref().fireAndForget(ExecutorStateUpdate.of(Collections.emptyList(), Collections.singletonList(executorId)));
                     } catch (Exception e) {
                         log.error("", e);
                     }
@@ -256,7 +256,7 @@ public class Master extends ThreadSafeRpcEndpoint {
             List<String> unavailableExecutorIds =
                     driver.workerUnavailable(worker.getWorkerInfo().getWorkerId());
             if (CollectionUtils.isNonEmpty(unavailableExecutorIds)) {
-                driver.ref().send(ExecutorStateUpdate.of(Collections.emptyList(), unavailableExecutorIds));
+                driver.ref().fireAndForget(ExecutorStateUpdate.of(Collections.emptyList(), unavailableExecutorIds));
                 tryWaitingResource(driver);
                 needSchedule = true;
             }
@@ -275,7 +275,7 @@ public class Master extends ThreadSafeRpcEndpoint {
      */
     private void registerApplication(MessagePostContext context, RegisterApplication registerApplication) {
         if (isStopped) {
-            context.reply(RegisterApplicationResp.failure("master not started"));
+            context.response(RegisterApplicationResp.failure("master not started"));
             return;
         }
 
@@ -283,18 +283,18 @@ public class Master extends ThreadSafeRpcEndpoint {
 
         String appName = appDesc.getAppName();
         if (drivers.containsKey(appName)) {
-            context.reply(RegisterApplicationResp.failure(String.format("application '%s' has registered", appName)));
+            context.response(RegisterApplicationResp.failure(String.format("application '%s' has registered", appName)));
             return;
         }
 
         if (Objects.isNull(registerApplication.getAppDesc().getAllocateStrategy())) {
-            context.reply(RegisterApplicationResp.failure("unknown allocate strategy type"));
+            context.response(RegisterApplicationResp.failure("unknown allocate strategy type"));
             return;
         }
 
         ApplicationContext driver = new ApplicationContext(appDesc, registerApplication.getSchedulerRef());
         drivers.put(appName, driver);
-        context.reply(RegisterApplicationResp.success());
+        context.response(RegisterApplicationResp.success());
         log.info("application '{}' registered", appName);
         scheduleResource(driver);
     }
@@ -362,8 +362,8 @@ public class Master extends ThreadSafeRpcEndpoint {
                     String executorId = driver.useExecutorResource(worker, minAllocateCpuCore);
 
                     //启动Executor
-                    worker.ref().send(LaunchExecutor.of(ref(), driver.getAppDesc().getAppName(),
-                            driver.ref().getEndpointAddress().getRpcAddress().address(), executorId, minAllocateCpuCore));
+                    worker.ref().fireAndForget(LaunchExecutor.of(ref(), driver.getAppDesc().getAppName(),
+                            driver.ref().getEndpointAddress().getRpcAddress().toString(), executorId, minAllocateCpuCore));
                 } catch (Exception e) {
                     log.error("master '" + name + "' allocate executor error >>> ", e);
                 }
@@ -431,12 +431,12 @@ public class Master extends ThreadSafeRpcEndpoint {
         WorkerContext worker = workers.get(workerId);
         if (Objects.nonNull(worker)) {
             try {
-                context.reply(worker.ref().ask(readFile).get());
+                context.response(worker.ref().requestResponse(readFile).get());
             } catch (Exception e) {
                 log.error("", e);
             }
         }
-        context.reply(TaskExecFileContent.fail(workerId, path, fromLineNum, String.format("unknow worker(workerId='%s')", workerId)));
+        context.response(TaskExecFileContent.fail(workerId, path, fromLineNum, String.format("unknow worker(workerId='%s')", workerId)));
     }
 
     //-------------------------------------------------------------内部-------------------------------------------

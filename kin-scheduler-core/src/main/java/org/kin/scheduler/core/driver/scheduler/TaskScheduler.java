@@ -74,12 +74,12 @@ public abstract class TaskScheduler<T> extends ThreadSafeRpcEndpoint {
             String runningExecutorId = taskContext.getRunningExecutorId();
             ExecutorContext runningExecutorContext = executors.get(runningExecutorId);
             if (Objects.nonNull(runningExecutorContext)) {
-                runningExecutorContext.ref().send(CancelTask.of(taskContext.getTaskDescription().getTaskId()));
+                runningExecutorContext.ref().fireAndForget(CancelTask.of(taskContext.getTaskDescription().getTaskId()));
             }
         }
         //kill executor
         for (ExecutorContext executorContext : executors.values()) {
-            executorContext.ref().send(KillExecutor.INSTANCE);
+            executorContext.ref().fireAndForget(KillExecutor.INSTANCE);
             log.info("kill worker '{}'s executor '{}' address: {}", executorContext.getWorkerId(), executorContext.getExecutorId(), executorContext.getExecutorAddress());
         }
     }
@@ -124,7 +124,7 @@ public abstract class TaskScheduler<T> extends ThreadSafeRpcEndpoint {
             for (String unAvailableExecutorId : unavailableExecutorIds) {
                 ExecutorContext executorContext = executorContexts.remove(unAvailableExecutorId);
                 if (Objects.nonNull(executorContext)) {
-                    executorContext.ref().send(KillExecutor.INSTANCE);
+                    executorContext.ref().fireAndForget(KillExecutor.INSTANCE);
                 }
             }
             this.executors = executorContexts;
@@ -231,7 +231,7 @@ public abstract class TaskScheduler<T> extends ThreadSafeRpcEndpoint {
         taskContext.preSubmit(ec.getWorkerId(), ec.getExecutorId());
         TaskSubmitResp submitResult = null;
         try {
-            submitResult = (TaskSubmitResp) ec.ref().ask(SubmitTask.of(taskDescription)).get();
+            submitResult = (TaskSubmitResp) ec.ref().requestResponse(SubmitTask.of(taskDescription)).get();
             if (Objects.nonNull(submitResult)) {
                 if (submitResult.isSuccess()) {
                     TaskExecFuture<R> future = new TaskExecFuture<>(submitResult, this);
@@ -366,7 +366,7 @@ public abstract class TaskScheduler<T> extends ThreadSafeRpcEndpoint {
                 if (Objects.nonNull(runningExecutorContext)) {
                     boolean askResult = false;
                     try {
-                        RPCResp result = (RPCResp) runningExecutorContext.ref().ask(CancelTask.of(taskContext.getTaskDescription().getTaskId())).get();
+                        RPCResp result = (RPCResp) runningExecutorContext.ref().requestResponse(CancelTask.of(taskContext.getTaskDescription().getTaskId())).get();
                         askResult = result.isSuccess();
                     } catch (Exception e) {
                         log.error("", e);
